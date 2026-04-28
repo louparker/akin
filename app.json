@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "akin",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.ourakin.app"
@@ -17,8 +16,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.ourakin.app",
-      "edgeToEdgeLayoutEnabled": true
+      "package": "com.ourakin.app"
     },
     "plugins": [
       "expo-router"
