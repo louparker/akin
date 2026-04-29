@@ -1,8 +1,8 @@
 **Akin — Product Requirements Document**
 
-*Version 1.2 (MVP) — Tech stack revised for 2026*
+_Version 1.2 (MVP) — Tech stack revised for 2026_
 
-Author: Louparker  |  Status: Draft  |  Date: April 25, 2026
+Author: Louparker | Status: Draft | Date: April 25, 2026
 
 # 1. Introduction
 
@@ -112,7 +112,7 @@ This revision (v1.2) preserves the original product scope and updates the techno
 
 - **US7.3: **As a user, I want to block another anonymous user so I no longer see their posts or comments.
 
-*Trust **&** Safety was previously deferred to post-v1. Given the dating-adjacent, anonymous nature of the app, basic reporting and blocking are now part of v1 to limit launch-day risk.*
+_Trust **&** Safety was previously deferred to post-v1. Given the dating-adjacent, anonymous nature of the app, basic reporting and blocking are now part of v1 to limit launch-day risk._
 
 # 5. Functional Requirements
 
@@ -204,7 +204,7 @@ Categories (fixed enum):
 
 - If a user attempts to comment on a 4th non-full post, they see "You are currently active in 3 conversations. Conclude one to join another."
 
-*These rules are enforced server-side as Postgres constraints/triggers via Supabase, not in client code, to prevent race conditions and tampering.*
+_These rules are enforced server-side as Postgres constraints/triggers via Supabase, not in client code, to prevent race conditions and tampering._
 
 ## 5.6 Create Post Page (/create-post)
 
@@ -240,7 +240,7 @@ Categories (fixed enum):
 
 - **Legal: **links to Privacy Policy and Terms of Service.
 
-- **Trust ****&**** Safety: **view blocked users, manage notification preferences (where applicable).
+- **Trust \*\***&\***\* Safety: **view blocked users, manage notification preferences (where applicable).
 
 - **Support: **app version, feedback link (mailto: in v1), optional FAQ.
 
@@ -390,7 +390,7 @@ Recommendation: Supabase. Rationale below.
 
 - **OTA updates: **EAS Update — push JS-only fixes and tweaks without a store review cycle. High-value during early MVP iteration.
 
-- **Crash ****&**** error reporting: **Sentry (preferred over Crashlytics). Better DX, full source map support for RN, and platform-agnostic if the backend changes later.
+- **Crash \*\***&\***\* error reporting: **Sentry (preferred over Crashlytics). Better DX, full source map support for RN, and platform-agnostic if the backend changes later.
 
 - **Product analytics: **PostHog (open-source-friendly, self-host option) or Amplitude. Track funnel events, retention cohorts, and feature usage.
 
@@ -424,7 +424,7 @@ Akin is built by the founder using AI coding agents (Claude Code as primary, opt
 
 - Critical paths (auth flows, RLS policies, payment integration in v2) are reviewed by a paid human expert before they ship to production. Recommended: 2–4 hours per quarter.
 
-*AI agents are an implementation force multiplier, not a replacement for craft. Code quality remains the founder’s responsibility — the agent accelerates typing, the founder is accountable for what ships.*
+_AI agents are an implementation force multiplier, not a replacement for craft. Code quality remains the founder’s responsibility — the agent accelerates typing, the founder is accountable for what ships._
 
 ## 7.7 Anonymous Identifier Generation
 
@@ -446,7 +446,7 @@ User-facing debug pages remain out of scope. Production diagnosis relies on:
 
 - PostHog for behavioural analytics.
 
-- A developer-only menu (visible only in dev/staging builds via __DEV__ or an EAS build profile flag) for: viewing local state, clearing AsyncStorage, jumping to specific screens, and toggling feature flags.
+- A developer-only menu (visible only in dev/staging builds via **DEV** or an EAS build profile flag) for: viewing local state, clearing AsyncStorage, jumping to specific screens, and toggling feature flags.
 
 # 9. Out of Scope for v1.0
 
@@ -548,6 +548,6 @@ Still out of scope:
 
 - **Delivery: **added EAS Build, Submit, and Update.
 
-- **Trust ****&**** Safety: **pulled reporting, blocking, and 18+ gating into v1.
+- **Trust \*\***&\***\* Safety: **pulled reporting, blocking, and 18+ gating into v1.
 
 - **Data model: **added Report and Block tables; added ageVerifiedAt on User.

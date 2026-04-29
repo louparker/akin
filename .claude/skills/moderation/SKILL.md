@@ -195,11 +195,11 @@ The audit log is the founder's defence in a regulatory complaint or a user dispu
 
 Three flags in `feature_flags`. Set via SQL or via a moderator-only edit screen.
 
-| Flag | Effect when false |
-| --- | --- |
-| `signups_open` | New signups blocked with a friendly "we're full right now" page. |
-| `posting_open` | Post and comment creation disabled with a friendly message. |
-| `realtime_open` | Realtime subscriptions disabled (clients fall back to polling). |
+| Flag            | Effect when false                                                |
+| --------------- | ---------------------------------------------------------------- |
+| `signups_open`  | New signups blocked with a friendly "we're full right now" page. |
+| `posting_open`  | Post and comment creation disabled with a friendly message.      |
+| `realtime_open` | Realtime subscriptions disabled (clients fall back to polling).  |
 
 Use cases:
 

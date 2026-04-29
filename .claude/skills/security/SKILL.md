@@ -156,8 +156,8 @@ const scrub = (context?: Record<string, unknown>) => {
   if (!context) return undefined;
   return Object.fromEntries(
     Object.entries(context).map(([k, v]) =>
-      PII_KEYS.includes(k.toLowerCase()) ? [k, '[redacted]'] : [k, v]
-    )
+      PII_KEYS.includes(k.toLowerCase()) ? [k, '[redacted]'] : [k, v],
+    ),
   );
 };
 ```

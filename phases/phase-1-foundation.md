@@ -323,6 +323,7 @@
 - `console.log` ESLint rule is set to `error` for production code so the agent reaches for the logger.
 
 **Tests to write first:** unit tests that confirm:
+
 1. Each PII key is replaced with `[redacted]`.
 2. Non-PII keys pass through unchanged.
 3. Nested objects are scrubbed recursively.

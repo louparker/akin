@@ -18,9 +18,7 @@
       },
       "package": "com.ourakin.app"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     }

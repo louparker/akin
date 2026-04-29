@@ -11,7 +11,9 @@ description: Read this skill before building any UI — components, screens, ani
 
 ## 1. The design language in one sentence
 
-Calm, warm, restrained. Akin should feel closer to Substack or Headspace than to Tinder. No saturated red/pink. No bouncy animations. No badges, streaks, or red dots. White space is a feature.
+Calm, warm, restrained. Akin should feel closer to Substack or Granta than to Tinder. White space is a feature.
+
+Before any meaningful design decision, read `docs/brand.md`. The "What it's definitely NOT" list is non-negotiable, and the five feel-adjectives in §"How it should feel to use" are the test for any new component or screen.
 
 If a design instinct says "make it pop," say no. The product is a place for words.
 
@@ -25,10 +27,10 @@ If a design instinct says "make it pop," say no. The product is a place for word
 export const colors = {
   // Backgrounds
   bg: {
-    base: '#FAF7F2',     // warm off-white (light)
+    base: '#FAF7F2', // warm off-white (light)
     raised: '#FFFFFF',
     sunken: '#F2EEE7',
-    inverse: '#1B1419',  // deep aubergine, near-black (dark)
+    inverse: '#1B1419', // deep aubergine, near-black (dark)
   },
   // Foregrounds
   fg: {
@@ -40,9 +42,9 @@ export const colors = {
   },
   // Brand
   brand: {
-    primary: '#5B2A4D',   // deep aubergine
+    primary: '#5B2A4D', // deep aubergine
     primarySoft: '#E8DCE5',
-    accent: '#C2664A',    // warm terracotta
+    accent: '#C2664A', // warm terracotta
     accentSoft: '#F2DDD2',
   },
   // Semantic
@@ -91,13 +93,26 @@ export const typography = {
   // Display: soft serif for warmth
   displayFamily: 'GT Sectra',
   sizes: {
-    xs: 12, sm: 14, base: 16, lg: 18, xl: 20, xxl: 24, xxxl: 30, display: 36,
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    xxl: 24,
+    xxxl: 30,
+    display: 36,
   },
   weights: {
-    regular: '400', medium: '500', semibold: '600', bold: '700',
+    regular: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
   },
   lineHeight: {
-    tight: 1.2, snug: 1.35, normal: 1.5, relaxed: 1.65,
+    tight: 1.2,
+    snug: 1.35,
+    normal: 1.5,
+    relaxed: 1.65,
   },
 } as const;
 ```
@@ -117,7 +132,7 @@ import { Text, View } from '@/components/primitives';
 
 <View className="flex-1 bg-bg-base px-lg py-md">
   <Text className="text-xl font-semibold text-fg-primary">Hello</Text>
-</View>
+</View>;
 ```
 
 - Class names map to design tokens, configured in `tailwind.config.js`.
@@ -133,21 +148,20 @@ import { cn } from '@/lib/cn';
 
 type Variant = 'body' | 'bodyMuted' | 'caption' | 'title' | 'display';
 
-export const Text = ({ variant = 'body', className, ...props }: TextProps & { variant?: Variant }) => {
-  return (
-    <RNText
-      className={cn(variantClasses[variant], className)}
-      {...props}
-    />
-  );
+export const Text = ({
+  variant = 'body',
+  className,
+  ...props
+}: TextProps & { variant?: Variant }) => {
+  return <RNText className={cn(variantClasses[variant], className)} {...props} />;
 };
 
 const variantClasses: Record<Variant, string> = {
-  body:       'text-base text-fg-primary leading-normal',
-  bodyMuted:  'text-base text-fg-secondary leading-normal',
-  caption:    'text-sm text-fg-tertiary leading-snug',
-  title:      'text-xl font-semibold text-fg-primary leading-snug',
-  display:    'text-3xl font-display text-fg-primary leading-tight',
+  body: 'text-base text-fg-primary leading-normal',
+  bodyMuted: 'text-base text-fg-secondary leading-normal',
+  caption: 'text-sm text-fg-tertiary leading-snug',
+  title: 'text-xl font-semibold text-fg-primary leading-snug',
+  display: 'text-3xl font-display text-fg-primary leading-tight',
 };
 ```
 
@@ -206,14 +220,14 @@ import { FlashList } from '@shopify/flash-list';
   data={posts}
   renderItem={({ item }) => <PostCard post={item} />}
   estimatedItemSize={120} // not required in v2 but speeds first render
-  keyExtractor={item => item.id}
+  keyExtractor={(item) => item.id}
   ItemSeparatorComponent={Divider}
   contentContainerStyle={{ paddingVertical: spacing.md }}
   onEndReached={fetchMore}
   onEndReachedThreshold={0.5}
   refreshing={isRefreshing}
   onRefresh={refetch}
-/>
+/>;
 ```
 
 - `keyExtractor` is mandatory. Use the row's UUID.
@@ -298,7 +312,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+const {
+  control,
+  handleSubmit,
+  formState: { errors, isSubmitting },
+} = useForm<FormValues>({
   resolver: zodResolver(schema),
 });
 ```

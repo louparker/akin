@@ -14,16 +14,16 @@
 
 ## Estimated timeline
 
-| Phase | Name | Estimated calendar days | Why this slot |
-| --- | --- | --- | --- |
-| 1 | Foundation | 3–5 days | Repo, tooling, environments, CI. Boring but load-bearing. |
-| 2 | Database & backend core | 7–10 days | Schema, RLS, the participation-limit triggers, identifier generator. The most important phase. |
-| 3 | App shell & design system | 4–6 days | Expo setup, theme, primitives, i18n scaffolding. |
-| 4 | Auth & onboarding | 5–7 days | Signup, login, email verification, age gate, identifier reveal. |
-| 5 | Feed & posts | 6–9 days | Feed, filters, sort, categories, post detail, post creation. |
-| 6 | Comments & limits | 5–7 days | Commenting, the limit UI states, spice voting, realtime. |
-| 7 | Trust & safety | 5–7 days | Reporting, blocking, keyword filtering, moderator dashboard. |
-| 8 | Polish & launch | 5–8 days | Profile, settings, accessibility audit, performance, App Store submission. |
+| Phase | Name                      | Estimated calendar days | Why this slot                                                                                  |
+| ----- | ------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| 1     | Foundation                | 3–5 days                | Repo, tooling, environments, CI. Boring but load-bearing.                                      |
+| 2     | Database & backend core   | 7–10 days               | Schema, RLS, the participation-limit triggers, identifier generator. The most important phase. |
+| 3     | App shell & design system | 4–6 days                | Expo setup, theme, primitives, i18n scaffolding.                                               |
+| 4     | Auth & onboarding         | 5–7 days                | Signup, login, email verification, age gate, identifier reveal.                                |
+| 5     | Feed & posts              | 6–9 days                | Feed, filters, sort, categories, post detail, post creation.                                   |
+| 6     | Comments & limits         | 5–7 days                | Commenting, the limit UI states, spice voting, realtime.                                       |
+| 7     | Trust & safety            | 5–7 days                | Reporting, blocking, keyword filtering, moderator dashboard.                                   |
+| 8     | Polish & launch           | 5–8 days                | Profile, settings, accessibility audit, performance, App Store submission.                     |
 
 **Total:** ~6–8 weeks of focused build, assuming the founder is full-time and the agent absorbs most implementation work.
 

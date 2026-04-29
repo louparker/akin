@@ -1,10 +1,10 @@
 **Akin**
 
-*Connect with no names*
+_Connect with no names_
 
 Strategy Document — v1.0
 
-April 2026  |  Author: Louparker  |  Based in Sweden  |  Solo founder, AI-agent build  |  Status: Draft
+April 2026 | Author: Louparker | Based in Sweden | Solo founder, AI-agent build | Status: Draft
 
 # 1. Executive Summary
 
@@ -158,9 +158,9 @@ Core Value Proposition: Akin is a safe discussion space for people to engage wit
 
 ## SWOT Analysis
 
-| **Strengths** • Differentiated, anti-swipe positioning in a fatigued market • Strict participant limits reduce noise and create scarcity • Anonymity lowers vulnerability, encourages honest discussion • Solo-founder agility — fast iteration, no internal politics • Founder based in Sweden — native market understanding • AI-agent build collapses dev cost to subscription fees • Low recurring infrastructure cost via Supabase + Expo | **Weaknesses** • Solo founder — single point of failure across the entire stack • Cold-start problem: discussion apps need critical mass to feel alive • No revenue from day one; monetisation deferred to v2+ • Anonymity makes paid acquisition harder (no lookalike targeting) • No prior brand or audience • Bilingual content moderation doubles the moderation surface • AI-agent build means founder must review code without a peer reviewer |
-| --- | --- |
-| **Opportunities** • Sweden has high dating-app saturation — fertile ground for an alternative • Reddit-style discussion is underserved on mobile in the Nordics • High English fluency enables Nordic and EU expansion without re-platforming • Universities and young-professional communities offer concentrated launch beachheads • Growing demand for slower, less performative social spaces • Swedish privacy culture aligns with anonymity-first positioning | **Threats** • GDPR breach or moderation failure could end the app early • Reddit, Lex, or Feeld could ship a similar feature • Anonymity attracts bad actors — abuse, harassment, scams • App Store rejection risk for dating-adjacent anonymous content • Solo-founder burnout risk • Small home market caps revenue potential without expansion • AI-generated code can introduce subtle security bugs without good review discipline |
+| **Strengths** • Differentiated, anti-swipe positioning in a fatigued market • Strict participant limits reduce noise and create scarcity • Anonymity lowers vulnerability, encourages honest discussion • Solo-founder agility — fast iteration, no internal politics • Founder based in Sweden — native market understanding • AI-agent build collapses dev cost to subscription fees • Low recurring infrastructure cost via Supabase + Expo                      | **Weaknesses** • Solo founder — single point of failure across the entire stack • Cold-start problem: discussion apps need critical mass to feel alive • No revenue from day one; monetisation deferred to v2+ • Anonymity makes paid acquisition harder (no lookalike targeting) • No prior brand or audience • Bilingual content moderation doubles the moderation surface • AI-agent build means founder must review code without a peer reviewer |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Opportunities** • Sweden has high dating-app saturation — fertile ground for an alternative • Reddit-style discussion is underserved on mobile in the Nordics • High English fluency enables Nordic and EU expansion without re-platforming • Universities and young-professional communities offer concentrated launch beachheads • Growing demand for slower, less performative social spaces • Swedish privacy culture aligns with anonymity-first positioning | **Threats** • GDPR breach or moderation failure could end the app early • Reddit, Lex, or Feeld could ship a similar feature • Anonymity attracts bad actors — abuse, harassment, scams • App Store rejection risk for dating-adjacent anonymous content • Solo-founder burnout risk • Small home market caps revenue potential without expansion • AI-generated code can introduce subtle security bugs without good review discipline              |
 
 # 5. Product Vision & Goals
 
@@ -218,7 +218,7 @@ In five years, Akin is the default mobile space across the Nordics for honest co
 
 # 6. Core Features & Functionality
 
-*Detailed in the PRD v1.2 — summarised here for strategic context.*
+_Detailed in the PRD v1.2 — summarised here for strategic context._
 
 ## User Onboarding / Signup
 
@@ -376,7 +376,7 @@ Out of scope for this strategy doc. Wireframes will be produced in Figma during 
 
 # 8. Technology & Architecture
 
-*Full detail in PRD v1.2; summary here.*
+_Full detail in PRD v1.2; summary here._
 
 ## Platforms
 
@@ -482,7 +482,7 @@ Akin is being built by the founder using AI coding agents (primarily Claude Code
 
 - **What stays human: **product strategy, design taste, brand voice, copywriting (Swedish + English), legal review, moderation decisions, user research interviews, App Store communication. These are the founder’s job and don’t scale through agents.
 
-*The AI-agent build approach is a force multiplier, not a replacement for craft. Code quality is the founder’s responsibility, full stop. The agent accelerates the typing; the founder is still accountable for everything that ships.*
+_The AI-agent build approach is a force multiplier, not a replacement for craft. Code quality is the founder’s responsibility, full stop. The agent accelerates the typing; the founder is still accountable for everything that ships._
 
 # 9. Moderation & Community Management
 
@@ -678,7 +678,7 @@ Free for v1.0. Monetisation is a v2 problem — the priority is engagement and r
 
 - Early access to new categories or features.
 
-*Critical: premium must never give a user a louder voice than free users — that would corrupt the discussion. Premium features are about personal utility, not social leverage.*
+_Critical: premium must never give a user a louder voice than free users — that would corrupt the discussion. Premium features are about personal utility, not social leverage._
 
 ## Ads / Brand Partnerships
 
@@ -832,7 +832,7 @@ Free for v1.0. Monetisation is a v2 problem — the priority is engagement and r
 
 - AI translation review — first-pass Swedish/English copy translations, with native human review for legal and high-stakes UI text only.
 
-*Treating agents as **"**team members**"** mentally is useful for planning capacity, but they are tools — the founder is solely accountable for everything they produce.*
+_Treating agents as **"**team members**"** mentally is useful for planning capacity, but they are tools — the founder is solely accountable for everything they produce._
 
 ## Advisors (to recruit)
 
@@ -920,7 +920,7 @@ The AI-agent build collapses the engineering hire timeline. The first roles to a
 
 # 17. Budget & Resources
 
-*All figures in SEK; ranges reflect lean / mid scenarios for a self-funded solo founder building with AI coding agents. The thesis is that AI agents collapse the dominant historical cost (development) into a fixed monthly subscription, leaving legal, design, and infrastructure as the only material spend.*
+_All figures in SEK; ranges reflect lean / mid scenarios for a self-funded solo founder building with AI coding agents. The thesis is that AI agents collapse the dominant historical cost (development) into a fixed monthly subscription, leaving legal, design, and infrastructure as the only material spend._
 
 ## Build Costs (year 1) — the AI-agent advantage
 

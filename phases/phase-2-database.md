@@ -350,7 +350,7 @@
 **Self-review (data lens):**
 
 - [ ] Trigger is idempotent (safe to fire multiple times for the same change).
-- [ ] No overflow on `total_spice_score` (use `int8` if you're paranoid, but `int4` is fine — max is 5 * 4 commenters = 20 per post).
+- [ ] No overflow on `total_spice_score` (use `int8` if you're paranoid, but `int4` is fine — max is 5 \* 4 commenters = 20 per post).
 
 **Done when:** pgTAP green.
 

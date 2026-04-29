@@ -52,7 +52,9 @@ export const en = {
         ageNotConfirmed: 'You must confirm you are 18 or older.',
       },
     },
-    login: { /* ... */ },
+    login: {
+      /* ... */
+    },
   },
   feed: {
     title: 'Latest',
@@ -68,8 +70,12 @@ export const en = {
     },
   },
   post: {
-    create: { /* ... */ },
-    detail: { /* ... */ },
+    create: {
+      /* ... */
+    },
+    detail: {
+      /* ... */
+    },
     spice: {
       label_one: 'One flame',
       label_other: '{{count}} flames',
@@ -78,7 +84,7 @@ export const en = {
     },
     limits: {
       postFull: 'This conversation has reached its participant limit.',
-      userActiveCap: 'You\'re currently active in 3 conversations. Conclude one to join another.',
+      userActiveCap: "You're currently active in 3 conversations. Conclude one to join another.",
     },
   },
   // ...

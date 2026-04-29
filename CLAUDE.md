@@ -54,6 +54,16 @@ Do not introduce new top-level dependencies without updating this list and `DECI
 
 ---
 
+## 3.5 Reference documents
+
+These live in `docs/` and are read on demand, not on every session.
+
+- **`docs/brand.md`** — design positioning, what Akin is and isn't, how it should feel, who it's for. **Read this before designing any user-facing screen or writing any user-visible copy.** The "What it's definitely NOT" section is non-negotiable.
+- **`docs/Akin_PRD_v1.2.md`** — full product requirements. Reference when implementing specific screens, validation rules, or data schemas.
+- **`docs/Akin_Strategy_v1.0.md`** — context only; not required for implementation tasks.
+
+---
+
 ## 4. Repo layout
 
 ```

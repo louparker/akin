@@ -12,13 +12,13 @@ Akin lets users post short text discussions across 9 fixed categories. The defin
 
 ## Canonical documentation
 
-| Document | Purpose |
-|----------|---------|
-| [`CLAUDE.md`](./CLAUDE.md) | Agent rules — read at the start of every session |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System shape, data model, RLS strategy, trigger design |
-| [`DECISIONS.md`](./DECISIONS.md) | Append-only architecture decision log |
-| [`docs/Akin_PRD_v1.2.md`](./docs/Akin_PRD_v1.2.md) | Full product requirements |
-| [`phases/`](./phases/) | Phase-by-phase build plan |
+| Document                                           | Purpose                                                |
+| -------------------------------------------------- | ------------------------------------------------------ |
+| [`CLAUDE.md`](./CLAUDE.md)                         | Agent rules — read at the start of every session       |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md)             | System shape, data model, RLS strategy, trigger design |
+| [`DECISIONS.md`](./DECISIONS.md)                   | Append-only architecture decision log                  |
+| [`docs/Akin_PRD_v1.2.md`](./docs/Akin_PRD_v1.2.md) | Full product requirements                              |
+| [`phases/`](./phases/)                             | Phase-by-phase build plan                              |
 
 ---
 
@@ -77,12 +77,12 @@ pnpm test           # Jest + RTL
 
 Copy `.env.example` to `.env.local` and fill in your values. Required keys:
 
-| Key | Description |
-|-----|-------------|
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| Key                             | Description                |
+| ------------------------------- | -------------------------- |
+| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase project URL       |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
-| `EXPO_PUBLIC_SENTRY_DSN` | Sentry DSN |
-| `EXPO_PUBLIC_POSTHOG_KEY` | PostHog project API key |
+| `EXPO_PUBLIC_SENTRY_DSN`        | Sentry DSN                 |
+| `EXPO_PUBLIC_POSTHOG_KEY`       | PostHog project API key    |
 
 The Supabase service-role key is **never** an environment variable in the client. It lives only in Supabase function secrets and CI.
 
@@ -92,11 +92,11 @@ The Supabase service-role key is **never** an environment variable in the client
 
 The `.claude/skills/` directory contains context-specific guides for the AI agent:
 
-| Skill | When to read |
-|-------|-------------|
-| [`security/SKILL.md`](./.claude/skills/security/SKILL.md) | Auth, RLS, env vars, PII, self-review checklist |
-| [`database/SKILL.md`](./.claude/skills/database/SKILL.md) | Migrations, RLS patterns, participation-limit trigger, pgTAP |
-| [`testing/SKILL.md`](./.claude/skills/testing/SKILL.md) | Jest, RTL, MSW, Maestro, CI |
-| [`ui/SKILL.md`](./.claude/skills/ui/SKILL.md) | NativeWind, design tokens, FlashList, Reanimated, a11y |
-| [`i18n/SKILL.md`](./.claude/skills/i18n/SKILL.md) | Adding strings, sv/en structure, category labels |
-| [`moderation/SKILL.md`](./.claude/skills/moderation/SKILL.md) | Reports, blocks, strikes, audit log, moderator role |
+| Skill                                                         | When to read                                                 |
+| ------------------------------------------------------------- | ------------------------------------------------------------ |
+| [`security/SKILL.md`](./.claude/skills/security/SKILL.md)     | Auth, RLS, env vars, PII, self-review checklist              |
+| [`database/SKILL.md`](./.claude/skills/database/SKILL.md)     | Migrations, RLS patterns, participation-limit trigger, pgTAP |
+| [`testing/SKILL.md`](./.claude/skills/testing/SKILL.md)       | Jest, RTL, MSW, Maestro, CI                                  |
+| [`ui/SKILL.md`](./.claude/skills/ui/SKILL.md)                 | NativeWind, design tokens, FlashList, Reanimated, a11y       |
+| [`i18n/SKILL.md`](./.claude/skills/i18n/SKILL.md)             | Adding strings, sv/en structure, category labels             |
+| [`moderation/SKILL.md`](./.claude/skills/moderation/SKILL.md) | Reports, blocks, strikes, audit log, moderator role          |

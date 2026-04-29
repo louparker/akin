@@ -43,13 +43,13 @@ If a test is hard to write, the design is wrong. Refactor the interface, not the
                                     Every RLS policy + trigger
 ```
 
-| Layer | Tool | Speed | What goes here |
-| --- | --- | --- | --- |
-| Pure logic | Jest | < 10ms / test | Utility functions, Zod schemas, reducers, hooks that don't render. |
-| Component | Jest + RTL | 50–500ms / test | Component rendering, props → output, user interactions. Mock the API layer. |
+| Layer                 | Tool             | Speed           | What goes here                                                                      |
+| --------------------- | ---------------- | --------------- | ----------------------------------------------------------------------------------- |
+| Pure logic            | Jest             | < 10ms / test   | Utility functions, Zod schemas, reducers, hooks that don't render.                  |
+| Component             | Jest + RTL       | 50–500ms / test | Component rendering, props → output, user interactions. Mock the API layer.         |
 | Integration (feature) | Jest + RTL + MSW | 200ms–2s / test | Wire a feature's screens to mocked Supabase responses. Verify navigation and state. |
-| Database | pgTAP | seconds | Every RLS policy, every trigger, every Edge Function. See `database/SKILL.md` §6. |
-| E2E | Maestro | 30s–5min / flow | The 5 critical user flows: signup, post, comment up to the limit, report, block. |
+| Database              | pgTAP            | seconds         | Every RLS policy, every trigger, every Edge Function. See `database/SKILL.md` §6.   |
+| E2E                   | Maestro          | 30s–5min / flow | The 5 critical user flows: signup, post, comment up to the limit, report, block.    |
 
 Most of the value is in the unit + component + integration layers. E2E is a smoke test, not a regression suite.
 
@@ -115,7 +115,7 @@ import { setupServer } from 'msw/node';
 export const supabaseServer = setupServer(
   rest.get('https://*.supabase.co/rest/v1/posts', (req, res, ctx) => {
     return res(ctx.json([{ id: '...', title: '...' /* ... */ }]));
-  })
+  }),
 );
 ```
 
@@ -241,26 +241,26 @@ appId: com.akin.app
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Welcome to Akin"
-- tapOn: "Get started"
-- inputText: "test+e2e@akin.app"
-- tapOn: "Email"
-- tapOn: "Password"
-- inputText: "Test1234!"
-- tapOn: "I am 18 or older"
-- tapOn: "Sign up"
+- assertVisible: 'Welcome to Akin'
+- tapOn: 'Get started'
+- inputText: 'test+e2e@akin.app'
+- tapOn: 'Email'
+- tapOn: 'Password'
+- inputText: 'Test1234!'
+- tapOn: 'I am 18 or older'
+- tapOn: 'Sign up'
 - assertVisible:
-    text: ".*[A-Z][a-z]+[A-Z][a-z]+\\d+"  # the anonymous identifier reveal
-- tapOn: "Continue"
-- assertVisible: "Vent Space"
+    text: ".*[A-Z][a-z]+[A-Z][a-z]+\\d+" # the anonymous identifier reveal
+- tapOn: 'Continue'
+- assertVisible: 'Vent Space'
 - tapOn:
-    id: "create-post-button"
-- inputText: "My first vent"
-- tapOn: "Body"
-- inputText: "Just trying this out."
-- tapOn: "Vent Space"
-- tapOn: "Post"
-- assertVisible: "My first vent"
+    id: 'create-post-button'
+- inputText: 'My first vent'
+- tapOn: 'Body'
+- inputText: 'Just trying this out.'
+- tapOn: 'Vent Space'
+- tapOn: 'Post'
+- assertVisible: 'My first vent'
 ```
 
 The 5 critical flows:

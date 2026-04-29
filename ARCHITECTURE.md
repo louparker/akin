@@ -215,18 +215,18 @@ A user is active in at most 3 not-yet-full posts. Enforced by:
 
 **Default deny on every table.** Policies grant access; nothing else does.
 
-| Table | Read | Insert | Update | Delete |
-| --- | --- | --- | --- | --- |
-| profiles | `status = 'active'` for anon-id only via view; self-row for full | self only on signup | self only, restricted columns | never |
-| posts | `status = 'active'` AND (no block exists between viewer and author) | `auth.uid() = author_id` AND email_verified AND age_verified | self only, body/title only, within 15 min of creation | self only (soft-delete via status) |
-| comments | same as posts (status + block check) | `auth.uid() = author_id` AND email_verified AND limits-trigger-passes | self only, body only, within 15 min | self only (soft) |
-| spice_votes | self-row only | self only, post must be active | self only, score change allowed | self only |
-| reports | reporter sees own only; moderators see all | self only | moderators only | never |
-| blocks | self only | self only | never | self only |
-| post_participants | viewer must be a participant of the post | inserted only by the limit trigger | never | never |
-| feature_flags | public read | service-role only | service-role only | service-role only |
-| identifier_words | public read | service-role only | service-role only | service-role only |
-| audit_log | moderators only | service-role only (via SECURITY DEFINER functions) | never | never |
+| Table             | Read                                                                | Insert                                                                | Update                                                | Delete                             |
+| ----------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------- |
+| profiles          | `status = 'active'` for anon-id only via view; self-row for full    | self only on signup                                                   | self only, restricted columns                         | never                              |
+| posts             | `status = 'active'` AND (no block exists between viewer and author) | `auth.uid() = author_id` AND email_verified AND age_verified          | self only, body/title only, within 15 min of creation | self only (soft-delete via status) |
+| comments          | same as posts (status + block check)                                | `auth.uid() = author_id` AND email_verified AND limits-trigger-passes | self only, body only, within 15 min                   | self only (soft)                   |
+| spice_votes       | self-row only                                                       | self only, post must be active                                        | self only, score change allowed                       | self only                          |
+| reports           | reporter sees own only; moderators see all                          | self only                                                             | moderators only                                       | never                              |
+| blocks            | self only                                                           | self only                                                             | never                                                 | self only                          |
+| post_participants | viewer must be a participant of the post                            | inserted only by the limit trigger                                    | never                                                 | never                              |
+| feature_flags     | public read                                                         | service-role only                                                     | service-role only                                     | service-role only                  |
+| identifier_words  | public read                                                         | service-role only                                                     | service-role only                                     | service-role only                  |
+| audit_log         | moderators only                                                     | service-role only (via SECURITY DEFINER functions)                    | never                                                 | never                              |
 
 **Block enforcement** is done in policy `USING` clauses with a NOT EXISTS subquery. Yes, this has a performance cost — that's what indexes are for. Do not "optimise" by moving block filtering to the client.
 
