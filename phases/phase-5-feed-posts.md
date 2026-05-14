@@ -89,7 +89,9 @@
 **Implementation notes:**
 
 - Use the `Pressable` primitive from Phase 3 — handles haptics and reduced-motion automatically.
-- The category chip uses brand colours — soft background, no harsh contrast.
+- The category chip (`CategoryTag`) is Inter 11.5pt, weight 500, uppercase, 0.3 letter-spacing, `brand.primary` (teal). NO background pill — just the text.
+- **Design spec (from handoff):** Card padding 20/22pt, hairline bottom border. Row 1: CategoryTag · dot · timestamp (Inter 12pt `fg.tertiary`). Title: Source Serif 4 19pt `fg.primary` lineHeight 1.3 letterSpacing -0.2. Excerpt: Inter 14pt `fg.secondary` lineHeight 1.5, 2-line clamp. Footer: Ident chip left; Capacity dots + "n/4" + Spice flames right (11pt flames). Excerpt clamp is 2 lines (handoff shows 2, not 3 — use 2 in PostCard).
+- The "Full" state is shown as "4/4 · full" in the footer (no badge chip — just text).
 
 **Self-review:**
 
@@ -128,6 +130,7 @@
 
 - The category chip list scrolls horizontally; when one is selected, the screen scrolls to top to make it clear that the list changed.
 - Don't auto-load the next page on every scroll event — use `onEndReachedThreshold: 0.5`.
+- **Design spec (from handoff):** Feed header: serif "akin" wordmark 30pt letterSpacing -0.5. Below: "All" | "Categories" tab row (Inter 13.5pt `fg.tertiary`) + sort icon+label right. Sort sheet has 3 options + minimum spice filter (Any, 1+…5+) with full-width "Apply" button. Categories tab shows a list (not chips) of all 9 categories with names in serif 19pt + mono count + "open" label + chevron. Empty state: centred serif message with italic category name, sans explainer, one secondary button "Start one".
 
 **Self-review (performance lens):**
 
@@ -194,6 +197,7 @@
 
 - The view count increment uses a Postgres function `increment_view(post_id uuid)` called via `rpc()`. The function debounces internally using a small `view_events` table or just upserts based on `(user_id, post_id, hour_bucket)`.
 - Don't fetch comments in a separate query unless needed — for v1 they come with the post (small enough).
+- **Design spec (from handoff):** TopBar back + `···` right. Post header section: CategoryTag + dot + timestamp → Serif title 24pt lineHeight 1.25 letterSpacing -0.3 → body Inter 15pt lineHeight 1.6 `fg.secondary` → Ident chip + Capacity dots. Spice section (separate row with hairline borders): "Spice level" mono label + large flames (16pt) + average + vote count right. "N replies" mono label row. Comment rows: Ident chip + optional "OP" teal badge + timestamp right → body Inter 14.5pt. Reply bar at bottom: pill input (rounded, `bg.sunken`, `border.divider`) + circular send button (`bg.inverse`, `fg.inverse` icon). "Full" state: comments replaced by skeleton placeholders, bottom bar replaced by `bg.raised` lock message panel.
 
 **Self-review:**
 
@@ -275,6 +279,8 @@
 
 - The "active limit reached" state should ALSO be shown on the create-post entry point itself — disable the FAB if the user is already at 3 active. Show a tooltip on tap explaining why.
 - Keep the form simple. No image picker, no rich-text, no draft-saving in v1.
+- **Design spec (from handoff):** The Write tab opens the composer directly. TopBar: "Cancel" ghost text left (dismiss modal), "Post" ink text right (submit, disabled until valid). Category selector row: mono "Category" label + serif selected name 18pt + chevron — tapping opens the Category Picker screen. Title field: Source Serif 4 26pt, auto-expanding (no border, no label). Body field: Inter 15.5pt `fg.secondary` lineHeight 1.6, auto-expanding, cursor is a 1.5pt vertical ink bar. Bottom toolbar (`bg.raised`): "Posting as [mono identifier]" copy + char counters "Title N / 150" and "Body N / 2000" in mono 11pt. Guidelines sheet (bottom sheet): "Before you post." serif 24pt + 3 rule rows (bold label + description) + "Continue" primary button + "Read the full guidelines" text link. Show guidelines on first post only.
+- Tab structure: "Write" tab in the bottom TabBar opens the composer as a modal/presented sheet — it's NOT a navigation stack push.
 
 **Self-review (security lens):**
 

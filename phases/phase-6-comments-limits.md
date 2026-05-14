@@ -54,6 +54,9 @@
 
 - The state machine for "can this user comment here" is non-trivial. Encapsulate in a hook `useCanComment(post)` that returns `{ canComment, reason, message }`. Test the hook in isolation.
 - Don't surface the raw error code from the server. Map to bilingual messages.
+- **Design spec — reply bar (from handoff):** Fixed bottom bar: pill input (borderRadius 22, `bg.sunken`, `border.divider`, Inter 14.5pt `fg.faint` placeholder) + circular send button (40×40pt, `bg.inverse`, `fg.inverse` send icon 18pt). Padding: 12pt top, 28pt bottom (home indicator zone), 16pt sides.
+- **Design spec — post-full lock bar (from handoff):** `bg.raised` panel replaces the reply bar. Lock icon + "This conversation is full." (Inter 13.5pt 500-weight `fg.primary`) + explanation copy (Inter 13pt `fg.tertiary` lineHeight 1.5). Never punitive tone — the cap is framed as "what keeps it small."
+- **Design spec — "Already in 3" bottom sheet (from handoff):** Sheet with scrim. Serif "You're in three conversations already." 24pt. Explainer copy. List of 3 active conversations (each: category label + serif truncated title + Capacity dots). "Got it" secondary button.
 
 **Self-review (UX lens):**
 
