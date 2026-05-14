@@ -177,9 +177,9 @@
 
 **Self-review:**
 
-- [ ] `pnpm test` runs and passes.
-- [ ] Test exits cleanly (no open handles).
-- [ ] MSW logs an unhandled-request warning if a test makes a real network call (this catches mocking gaps).
+- [x] `pnpm test` runs and passes.
+- [x] Test exits cleanly (no open handles).
+- [x] MSW logs an unhandled-request warning if a test makes a real network call (this catches mocking gaps).
 
 **Done when:** PR merged, CI green.
 
