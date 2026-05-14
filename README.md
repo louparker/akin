@@ -71,6 +71,23 @@ pnpm format:check   # Prettier
 pnpm test           # Jest + RTL
 ```
 
+### E2E tests (Maestro)
+
+E2E flows are not run on every PR — they run as part of the release pipeline. To run locally:
+
+```bash
+# Install Maestro (once)
+brew install mobile-dev-inc/tap/maestro
+
+# Run all flows on iOS simulator
+pnpm test:e2e:ios
+
+# Run all flows on Android emulator
+pnpm test:e2e:android
+```
+
+See [`e2e/README.md`](./e2e/README.md) for full setup instructions including how to build the dev binary.
+
 ---
 
 ## Environment variables

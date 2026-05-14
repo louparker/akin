@@ -1,9 +1,15 @@
+import { screen } from '@testing-library/react-native';
 import { Text } from '@/components/primitives/Text';
 import { renderWithProviders } from '@/lib/test-utils/render';
 
-describe('Text primitive', () => {
+describe('Text', () => {
   it('renders its children', () => {
-    const { getByText } = renderWithProviders(<Text>hello akin</Text>);
-    expect(getByText('hello akin')).toBeTruthy();
+    renderWithProviders(<Text>Hello Akin</Text>);
+    expect(screen.getByText('Hello Akin')).toBeOnTheScreen();
+  });
+
+  it('forwards a testID', () => {
+    renderWithProviders(<Text testID="greeting">Hej</Text>);
+    expect(screen.getByTestId('greeting')).toBeOnTheScreen();
   });
 });

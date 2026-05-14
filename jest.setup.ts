@@ -1,7 +1,14 @@
-import '@testing-library/jest-native/extend-expect';
+// RTL 13+ auto-loads its matchers when any RTL import runs — no extend-expect needed.
+import { supabaseServer } from '@/lib/test-utils/supabase-mock';
 
-import { server } from '@/lib/test-utils/supabase-mock';
+beforeAll(() =>
+  supabaseServer.listen({
+    // Warn (not error) on unhandled requests — catches gaps in mocking without
+    // failing unrelated tests.
+    onUnhandledRequest: 'warn',
+  }),
+);
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+afterEach(() => supabaseServer.resetHandlers());
+
+afterAll(() => supabaseServer.close());
