@@ -34,6 +34,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.10",
     "babel-plugin-module-resolver": "^5.0.3",
+    "babel-preset-expo": "~55.0",
     "eslint": "8",
     "eslint-config-expo": "55.0.0",
     "eslint-config-prettier": "^10.1.8",
@@ -48,5 +49,10 @@
     "typescript": "~5.9.2"
   },
   "packageManager": "pnpm@8.15.9",
-  "private": true
+  "private": true,
+  "pnpm": {
+    "overrides": {
+      "hermes-parser": "0.35.0"
+    }
+  }
 }
