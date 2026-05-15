@@ -29,6 +29,76 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-009 — Jest + RTL setup and react-native 0.83 Flow workaround (Task 1.5)
+
+Date: 2026-05-01
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Task 1.5 sets up Jest, React Native Testing Library, MSW, and the `renderWithProviders` helper. Three non-obvious decisions were made during setup.
+
+### Options considered
+
+**MSW version:**
+1. **MSW 2** — modern ESM-first API (`http`, `HttpResponse`). Incompatible with Jest's CommonJS transform: MSW 2 and all its transitive dependencies are ESM-only. Trying to transform them via Babel causes cascading failures.
+2. **MSW 1** — CJS-first (`rest`, `ctx`). Works with `jest-expo` and Babel without any extra config. Matches the API shown in the testing skill.
+
+**RTL matchers:**
+1. **`@testing-library/jest-native`** — deprecated as of RTL 12.4. Shows a deprecation warning on install.
+2. **`@testing-library/react-native` built-ins** — RTL 13 auto-loads `extend-expect` when the main package is imported. No separate package needed.
+
+**react-native 0.83 Flow compatibility:**
+- `react-native@0.83.6` introduced `const T:` in Flow generic type parameters in `ViewConfigIgnore.js`. `@babel/parser@7.28` does not support this syntax.
+- jest-expo transforms react-native source files via Babel, so the parse fails.
+- Workaround: a custom Jest transformer (`src/__mocks__/ViewConfigIgnoreTransformer.js`) is registered for `ViewConfigIgnore\\.js$` files, bypassing Babel and returning a simple stub. Remove when `@babel/parser` adds support.
+
+### Decision
+
+Use MSW 1. Use RTL 13's built-in matchers (no `jest-native`). Apply the custom transformer workaround for `ViewConfigIgnore.js`.
+
+### Consequences
+
+- Upgrade path: when MSW 2 + Jest ESM support matures, migrate `supabase-mock.ts` to the new `http`/`HttpResponse` API and remove the MSW 1 entry from `DECISIONS.md`.
+- When `@babel/parser` or `babel-preset-expo` adds support for Flow `const T:` generics, remove `ViewConfigIgnoreTransformer.js` and the `transform` entry from `jest.config.ts`.
+- The custom transform is matched by file name, not package version — it's safe to leave in until removed.
+
+---
+
+## ADR-008 — Folder scaffold and path alias strategy (Task 1.4)
+
+Date: 2026-05-01
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Task 1.4 establishes the canonical directory structure and path aliases before any feature code lands. The goal is to lock in layout conformance and ensure aliases work in three environments: TypeScript (type-checker), Metro (bundler), and Jest.
+
+### Options considered
+
+1. **`babel-plugin-module-resolver` + `tsconfig.paths` + `moduleNameMapper`** — three configs, each targeting one runtime. Verbose but explicit; each resolver is independently verifiable.
+2. **`tsconfig.paths` only** — TypeScript is happy, but Metro and Jest still use node resolution by default, so `@/…` imports would fail at runtime and in tests.
+3. **`expo/tsconfig.base` absolute imports** — Expo's base config doesn't support `@/` style by default; would require the same `paths` additions anyway.
+
+### Decision
+
+Use all three in concert:
+- `tsconfig.json` `paths` for TypeScript type resolution.
+- `babel.config.js` with `babel-plugin-module-resolver` for Metro runtime resolution.
+- `jest.config.ts` `moduleNameMapper` for Jest.
+
+Alias set: `@/components`, `@/features`, `@/lib`, `@/i18n`, `@/theme`, `@/types` — mapping to `./src/<name>`.
+
+### Consequences
+
+- All three must stay in sync when a new top-level alias is added.
+- `ts-node` is a dev-only dependency required to parse `jest.config.ts` as TypeScript.
+- Stub alias-resolution tests (and their `__stub__.ts` files) are deleted once CI is green, per the task brief.
+
+---
+
 ## ADR-007 — pnpm `node-linker=hoisted` and minimal babel.config.js
 
 Date: 2026-05-02
@@ -104,6 +174,9 @@ Worse, the workaround actively broke runtime: `lib/commonjs/fabric/*.js` files d
 `metro.config.js` removed. ADR-007 (`.npmrc` with `node-linker=hoisted`) is the actual fix — once the right `babel-preset-expo` resolves, the codegen plugin inlines view configs correctly and there's nothing left to work around. Bundles still work on iOS / Android / web, and runtime now works because view configs are present at first render.
 
 Lesson kept here for history: when an Expo / Metro / codegen error looks like a third-party-library bug, first verify which copy of `babel-preset-expo` Babel is actually loading. A stray top-level `~/node_modules/` will silently win Node's walk-up resolution under any pnpm project that doesn't use `node-linker=hoisted`.
+
+---
+
 ## ADR-006 — Design system: colour palette, typography, and visual identity
 
 Date: 2026-04-30

@@ -2,8 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text>Akin</Text>
+    <View style={styles.container} testID="home-screen">
+      <Text testID="home-title">Akin</Text>
     </View>
   );
 }
