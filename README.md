@@ -88,6 +88,25 @@ pnpm test:e2e:android
 
 See [`e2e/README.md`](./e2e/README.md) for full setup instructions including how to build the dev binary.
 
+### CI
+
+Every PR runs `typecheck`, `lint`, `format:check`, and `test` in parallel via [GitHub Actions](./.github/workflows/ci.yml). All four must pass before merge.
+
+Branch protection on `main` requires:
+- All CI status checks to pass.
+- At least one approving review.
+
+To enable: GitHub → Settings → Branches → Add rule → `main` → check "Require status checks" and select `TypeScript`, `ESLint`, `Prettier`, `Jest`.
+
+The CI workflow injects placeholder values for the `EXPO_PUBLIC_*` env vars (so `app.config.ts` doesn't throw during typecheck/lint/test). When Supabase is wired up, add real values as GitHub Actions repository secrets:
+
+| Secret                          | Where to find it                              |
+| ------------------------------- | --------------------------------------------- |
+| `EXPO_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API            |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API            |
+| `EXPO_PUBLIC_SENTRY_DSN`        | Sentry → Project → Settings → Client Keys    |
+| `EXPO_PUBLIC_POSTHOG_KEY`       | PostHog → Project Settings → Project API Key |
+
 ---
 
 ## Environment variables

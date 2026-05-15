@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  hermes-parser: 0.35.0
+
 dependencies:
   '@tanstack/react-query':
     specifier: '5'
@@ -49,6 +52,9 @@ devDependencies:
   babel-plugin-module-resolver:
     specifier: ^5.0.3
     version: 5.0.3
+  babel-preset-expo:
+    specifier: ~55.0
+    version: 55.0.18(@babel/core@7.29.0)(@babel/runtime@7.29.2)(expo@55.0.18)(react-refresh@0.14.2)
   eslint:
     specifier: '8'
     version: 8.57.1
@@ -1322,7 +1328,7 @@ packages:
       expo: 55.0.18(@babel/core@7.29.0)(@expo/dom-webview@55.0.5)(@expo/metro-runtime@55.0.10)(expo-router@55.0.13)(react-dom@19.2.5)(react-native@0.83.6)(react@19.2.5)(typescript@5.9.3)
       getenv: 2.0.0
       glob: 13.0.6
-      hermes-parser: 0.32.1
+      hermes-parser: 0.35.0
       jsc-safe-url: 0.2.4
       lightningcss: 1.32.0
       picomatch: 4.0.4
@@ -2343,7 +2349,7 @@ packages:
       '@babel/core': 7.29.0
       '@babel/parser': 7.29.2
       glob: 7.2.3
-      hermes-parser: 0.32.0
+      hermes-parser: 0.35.0
       invariant: 2.2.4
       nullthrows: 1.1.1
       yargs: 17.7.2
@@ -3392,12 +3398,12 @@ packages:
   /babel-plugin-syntax-hermes-parser@0.32.0:
     resolution: {integrity: sha512-m5HthL++AbyeEA2FcdwOLfVFvWYECOBObLHNqdR8ceY4TsEdn4LdX2oTvbB2QJSSElE2AWA/b2MXZ/PF/CqLZg==}
     dependencies:
-      hermes-parser: 0.32.0
+      hermes-parser: 0.35.0
 
   /babel-plugin-syntax-hermes-parser@0.32.1:
     resolution: {integrity: sha512-HgErPZTghW76Rkq9uqn5ESeiD97FbqpZ1V170T1RG2RDp+7pJVQV2pQJs7y5YzN0/gcT6GM5ci9apRnIwuyPdQ==}
     dependencies:
-      hermes-parser: 0.32.1
+      hermes-parser: 0.35.0
 
   /babel-plugin-transform-flow-enums@0.0.2(@babel/core@7.29.0):
     resolution: {integrity: sha512-g4aaCrDDOsWjbm0PUUeVnkcVd6AKJsVc/MbnPhEotEpkeJQP6b8nzewohQi7+QS8UyPehOhGWn0nOwjvWpmMvQ==}
@@ -5345,24 +5351,8 @@ packages:
   /hermes-compiler@0.14.1:
     resolution: {integrity: sha512-+RPPQlayoZ9n6/KXKt5SFILWXCGJ/LV5d24L5smXrvTDrPS4L6dSctPczXauuvzFP3QEJbD1YO7Z3Ra4a+4IhA==}
 
-  /hermes-estree@0.32.0:
-    resolution: {integrity: sha512-KWn3BqnlDOl97Xe1Yviur6NbgIZ+IP+UVSpshlZWkq+EtoHg6/cwiDj/osP9PCEgFE15KBm1O55JRwbMEm5ejQ==}
-
-  /hermes-estree@0.32.1:
-    resolution: {integrity: sha512-ne5hkuDxheNBAikDjqvCZCwihnz0vVu9YsBzAEO1puiyFR4F1+PAz/SiPHSsNTuOveCYGRMX8Xbx4LOubeC0Qg==}
-
   /hermes-estree@0.35.0:
     resolution: {integrity: sha512-xVx5Opwy8Oo1I5yGpVRhCvWL/iV3M+ylksSKVNlxxD90cpDpR/AR1jLYqK8HWihm065a6UI3HeyAmYzwS8NOOg==}
-
-  /hermes-parser@0.32.0:
-    resolution: {integrity: sha512-g4nBOWFpuiTqjR3LZdRxKUkij9iyveWeuks7INEsMX741f3r9xxrOe8TeQfUxtda0eXmiIFiMQzoeSQEno33Hw==}
-    dependencies:
-      hermes-estree: 0.32.0
-
-  /hermes-parser@0.32.1:
-    resolution: {integrity: sha512-175dz634X/W5AiwrpLdoMl/MOb17poLHyIqgyExlE8D9zQ1OPnoORnGMB5ltRKnpvQzBjMYvT2rN/sHeIfZW5Q==}
-    dependencies:
-      hermes-estree: 0.32.1
 
   /hermes-parser@0.35.0:
     resolution: {integrity: sha512-9JLjeHxBx8T4CAsydZR49PNZUaix+WpQJwu9p2010lu+7Kwl6D/7wYFFJxoz+aXkaaClp9Zfg6W6/zVlSJORaA==}

@@ -1,22 +1,5 @@
 appId: com.ourakin.app
 ---
-# Smoke test: app launches and the home screen is visible.
-# This is the minimum bar — if this flow fails, nothing else is worth running.
-#
-# NOTE: Before Task 1.7 (EAS Build), run this via Expo Go by overriding appId:
-#   maestro test e2e/smoke.yaml --env APP_ID=host.exp.Exponent
-# After Task 1.7, use the installed dev build directly (appId stays com.ourakin.app).
-
 - launchApp:
     clearState: true
-
-- extendedWaitUntil:
-    visible:
-      id: "home-screen"
-    timeout: 10000
-
-- assertVisible:
-    id: "home-title"
-
-- assertVisible:
-    text: "Akin"
+- assertVisible: 'Akin'

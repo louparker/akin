@@ -1,105 +1,52 @@
-# E2E tests — Maestro
+# Maestro E2E flows
 
-E2E flows live in this directory. Each file is one critical user journey. Flows are **not** run on every PR (too slow); they run as part of the release pipeline (Phase 8).
+End-to-end flows that exercise the real app binary on a simulator/emulator. Live next to the code so they're easy to find and update alongside features.
 
----
+See [`.claude/skills/testing/SKILL.md`](../.claude/skills/testing/SKILL.md) §9 for the test pyramid context and the five critical flows we eventually ship.
 
-## Setup
+## Prerequisites
 
-### 1. Install Maestro CLI
+1. Install the Maestro CLI:
 
-```bash
-brew install mobile-dev-inc/tap/maestro
-```
+   ```bash
+   # macOS / Linux
+   curl -fsSL "https://get.maestro.mobile.dev" | bash
+   # OR via Homebrew on macOS
+   brew install mobile-dev-inc/tap/maestro
+   ```
 
-Verify:
+   Verify with `maestro --version` (need 1.39+).
 
-```bash
-maestro --version
-```
+2. Have a simulator or emulator running:
+   - **iOS:** open Xcode → `Open Developer Tool` → `Simulator`. The default name is `iPhone 15` (matches the script). Adjust the `--device` flag in `package.json` if you use a different simulator.
+   - **Android:** start an emulator via Android Studio's Device Manager. The default AVD name is `emulator-5554`.
 
-Maestro requires Java 11+. If `java` is not on your PATH, install it via:
+3. Install the dev app onto the simulator/emulator first:
 
-```bash
-brew install --cask temurin
-```
+   ```bash
+   pnpm ios       # builds + installs the iOS dev client
+   pnpm android   # same for Android
+   ```
 
-### 2. Build the development app
-
-E2E tests run against a real native binary — the Expo Go client is **not** sufficient. You need an EAS development build installed on the simulator/emulator.
-
-```bash
-# First time: create a development build
-eas build --profile development --platform ios   # or android
-
-# Subsequent runs: start the dev server and open the installed build
-pnpm ios    # or pnpm android
-```
-
-### 3. Start the Metro bundler
-
-```bash
-pnpm start
-```
-
-Leave this running in a separate terminal while Maestro executes flows.
-
----
+   Maestro launches the already-installed app — it doesn't build it.
 
 ## Running flows
 
-### iOS simulator
-
 ```bash
-pnpm test:e2e:ios
+pnpm test:e2e:ios       # all flows on iOS simulator
+pnpm test:e2e:android   # all flows on Android emulator
+pnpm exec maestro test e2e/smoke.yaml   # single flow
 ```
 
-Or run a single flow:
+## Writing flows
 
-```bash
-maestro test e2e/smoke.yaml
-```
+- One YAML file per critical journey (`signup.yaml`, `create-post.yaml`, etc.) — not per screen.
+- Start every flow with `launchApp: { clearState: true }` so flows are independent.
+- Prefer text assertions over `id:` selectors when copy is stable. Use `testID` only when the same text appears in multiple places.
+- Keep flows under ~20 steps. If a flow needs more, split it.
 
-### Android emulator
+The bundle ID for both platforms is `com.ourakin.app` — set in [`app.json`](../app.json) and referenced at the top of every flow.
 
-```bash
-pnpm test:e2e:android
-```
+## CI
 
-### Targeting a specific device
-
-```bash
-maestro --device <udid-or-emulator-name> test e2e/smoke.yaml
-```
-
-List available devices:
-
-```bash
-maestro devices
-```
-
----
-
-## Flows
-
-| File | What it tests |
-|------|---------------|
-| [`smoke.yaml`](./smoke.yaml) | App launches and home screen is visible |
-
-The 5 critical flows (added in Phase 8):
-
-1. Signup → verify email → identifier reveal → first feed view
-2. Create post → see it in the feed
-3. Comment on a post until it fills (4 participants)
-4. Report a post
-5. Block a user → verify their posts disappear
-
----
-
-## Debugging
-
-**Flow fails immediately:** check the `appId` in the flow file matches the bundle identifier in `app.json` (`com.ourakin.app`).
-
-**Element not found:** use `maestro studio` to inspect the running app and find the correct `id` or `text` to assert.
-
-**App crashes on launch:** check Metro is running and the dev build is installed.
+E2E doesn't run in the per-PR CI loop yet — it's too slow. Phase 8 wires it into the release pipeline ([`phases/phase-8-polish-launch.md`](../phases/phase-8-polish-launch.md)).

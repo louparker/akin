@@ -1,13 +1,11 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 // Baseline handlers — individual tests can override via server.use(...)
 const handlers = [
-  rest.get('https://*.supabase.co/rest/v1/*', (_req, res, ctx) =>
-    res(ctx.json([])),
-  ),
-  rest.post('https://*.supabase.co/rest/v1/*', (_req, res, ctx) =>
-    res(ctx.status(201), ctx.json([])),
+  http.get('https://*.supabase.co/rest/v1/*', () => HttpResponse.json([])),
+  http.post('https://*.supabase.co/rest/v1/*', () =>
+    HttpResponse.json([], { status: 201 }),
   ),
 ];
 
