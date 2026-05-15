@@ -21,51 +21,64 @@ If a design instinct says "make it pop," say no. The product is a place for word
 
 ## 2. Design tokens — the only place colours live
 
+These tokens come directly from the design handoff (`akin-handoff.zip`, April 2026). They are the canonical values — do not substitute or invent alternatives.
+
 `src/theme/colors.ts`:
 
 ```ts
 export const colors = {
-  // Backgrounds
+  // Surfaces — warm bone, not pure white
   bg: {
-    base: '#FAF7F2', // warm off-white (light)
-    raised: '#FFFFFF',
-    sunken: '#F2EEE7',
-    inverse: '#1B1419', // deep aubergine, near-black (dark)
+    base:    '#EFEAE2', // bone — primary app surface
+    raised:  '#F6F2EB', // cards, elevated surfaces
+    sunken:  '#FBF8F3', // input fields, modals
+    inverse: '#231F21', // shadow grey — dark surfaces
   },
-  // Foregrounds
+  // Ink
   fg: {
-    primary: '#1B1419',
-    secondary: '#5C5159',
-    tertiary: '#8B8088',
-    inverse: '#FAF7F2',
-    onAccent: '#FFFFFF',
+    primary:   '#231F21', // shadow grey
+    secondary: '#3F3A3B', // inkSoft
+    tertiary:  '#6A6464', // inkMute
+    faint:     '#9C9692', // inkFaint — timestamps, placeholders
+    inverse:   '#EFEAE2', // on dark surfaces
+    onAccent:  '#FFFFFF',
   },
-  // Brand
+  // Brand — teal (Dark Slate Grey), NOT aubergine
   brand: {
-    primary: '#5B2A4D', // deep aubergine
-    primarySoft: '#E8DCE5',
-    accent: '#C2664A', // warm terracotta
-    accentSoft: '#F2DDD2',
+    primary:     '#2C4D55', // teal — links, active tabs, interactive accents
+    primarySoft: '#5C7C84', // tealSoft — secondary teal text
+    primaryTint: 'rgba(44,77,85,0.08)', // tealTint — subtle backgrounds
+  },
+  // Spice — rust/flame. Used ONLY on the 1–5 flame icons and spice-vote UI.
+  spice: {
+    color: '#B54C26', // rust
+    soft:  'rgba(181,76,38,0.12)',
+  },
+  // "You" marker — blue. Used ONLY on the current-user identifier chip.
+  you: {
+    color: '#788BFF',
+    soft:  'rgba(120,139,255,0.10)',
+  },
+  // Borders + dividers
+  border: {
+    divider:  'rgba(35,31,33,0.10)',
+    hairline: 'rgba(35,31,33,0.06)',
   },
   // Semantic
   semantic: {
-    danger: '#A23B2C',
-    dangerSoft: '#F2D9D5',
-    success: '#3F7A5B',
-    successSoft: '#DBE8E0',
-    warning: '#A87A2C',
-    warningSoft: '#F2E5C8',
-  },
-  // Spice (1–5 flames) — interpolated
-  spice: ['#F2DDD2', '#E8B59C', '#D88E6F', '#C2664A', '#A23B2C'],
-  // Borders + dividers
-  border: {
-    subtle: '#EDE6DD',
-    default: '#DCD3C7',
-    strong: '#B8AC9D',
+    danger:    '#A23B2C',
+    dangerSoft:'rgba(162,59,44,0.12)',
+    success:   '#3F7A5B',
   },
 } as const;
 ```
+
+**Critical colour rules:**
+
+- `brand.primary` is **teal (#2C4D55)** — NOT aubergine, NOT terracotta. No pink, red, or heart colours anywhere.
+- `spice.color` (rust) is **only** for flame icons and the spice-vote sheet. Never use it as a general accent.
+- `you.color` (blue) is **only** for the "you" chip on identifier components. Nowhere else.
+- No saturated brand colours. No hearts, pinks, or reds outside the spice system.
 
 `src/theme/spacing.ts`:
 
@@ -73,14 +86,14 @@ export const colors = {
 // 4px scale. Don't use other spacing values.
 export const spacing = {
   none: 0,
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  xs:   4,
+  sm:   8,
+  md:   12,
+  lg:   16,
+  xl:   24,
+  xxl:  32,
   xxxl: 48,
-  xxxxl: 64,
+  xxxxl:64,
 } as const;
 ```
 
@@ -88,34 +101,43 @@ export const spacing = {
 
 ```ts
 export const typography = {
-  // Body: humanist sans
+  // Body: Inter (open-source, Google Fonts)
   bodyFamily: 'Inter',
-  // Display: soft serif for warmth
-  displayFamily: 'GT Sectra',
+  // Display: Source Serif 4 (open-source, Google Fonts) — confirmed in design handoff
+  displayFamily: 'Source Serif 4',
+  // Mono: JetBrains Mono (open-source) — used ONLY for anonymous identifiers
+  monoFamily: 'JetBrains Mono',
   sizes: {
-    xs: 12,
-    sm: 14,
-    base: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    xxxl: 30,
+    xs:      12,
+    sm:      14,
+    base:    16,
+    lg:      18,
+    xl:      20,
+    xxl:     24,
+    xxxl:    30,
     display: 36,
   },
   weights: {
-    regular: '400',
-    medium: '500',
+    regular:  '400',
+    medium:   '500',
     semibold: '600',
-    bold: '700',
+    bold:     '700',
   },
   lineHeight: {
-    tight: 1.2,
-    snug: 1.35,
-    normal: 1.5,
+    tight:   1.2,
+    snug:    1.35,
+    normal:  1.5,
     relaxed: 1.65,
   },
 } as const;
 ```
+
+**Font usage rules:**
+
+- `Source Serif 4` — wordmark ("akin"), post titles, screen headlines, display text. Weight 400 only (no bold serif).
+- `Inter` — all body copy, labels, captions, buttons, metadata.
+- `JetBrains Mono` — anonymous identifiers (`AmberLark82`) and character counters in the composer. Nowhere else.
+- All three fonts load via `expo-font` in the root layout. GT Sectra was considered but not chosen (paid licence; Source Serif 4 is the confirmed free alternative).
 
 **Rules:**
 
@@ -352,3 +374,156 @@ Before committing a new component:
 - [ ] Memoised correctly (no re-renders on parent state changes that don't affect the component's props).
 - [ ] No animations on the JS thread.
 - [ ] Snapshot test exists. A11y check exists.
+
+---
+
+## 11. Screen inventory & design specs
+
+> Source: `akin-handoff.zip` (April 2026). All screens are 390×844pt (iPhone 14 / design baseline).
+
+### Shared chrome
+
+**TopBar** — 52pt height, `bg.base` background, hairline bottom border. Left slot (56pt): back chevron or Cancel text. Centre: title in Inter 500 / 16pt or serif 22pt for display titles. Right slot (56pt): action or `···` menu.
+
+**TabBar** — 3 tabs only: **Read** (feed icon), **Write** (pencil icon), **You** (user icon). `bg.base` background, hairline top border. 8pt top padding + 28pt bottom (home indicator zone). Active tab: `fg.primary` + weight 600. Inactive: `fg.faint`.
+
+**Bottom sheets** — `rgba(35,31,33,0.4–0.55)` scrim, `bg.base` sheet with `borderRadius: 20` on top corners. 4×36pt drag handle centred at top (colour `border.divider`). Bottom padding 36pt.
+
+**Icons** — hairline stroke weight (1.5px), rounded caps. No filled icons except for the send button and the `···` dots.
+
+### Auth screens
+
+**Welcome** (`(auth)/welcome`)
+- Top 2/3: flex content area with `pt: 120`, padding `32`.
+- Mono label "Akin" in `fg.tertiary`, 11pt, 2pt letter-spacing, uppercase — above headline.
+- Headline: "A quieter place\nto talk about\ndating." — Source Serif 4, 44pt, `-0.8` letter-spacing, `fg.primary`.
+- Body: Inter 16pt, `fg.secondary`, max-width 290.
+- Bottom: two buttons stacked (gap 12) + ToS note in Inter 11.5pt `fg.faint`.
+- Buttons: "Make an account" (primary, lg, full) → signup. "I already have one" (ghost, md, full) → login.
+
+**Sign Up** (`(auth)/signup`)
+- TopBar with back. Serif headline "Make an account" 30pt.
+- Subtitle: "Email is private. Used only for sign-in and account recovery."
+- Fields: EMAIL, PASSWORD (with "At least 8 characters." hint).
+- 18+ checkbox block (bordered card, `bg.raised`, `border.hairline`): checkbox + "I am 18 or older." label + explainer.
+- CTA: "Continue" (primary, lg, full).
+
+**Identifier Reveal** (`(auth)/identifier-reveal`)
+- No TopBar. Full-screen centred layout with `pt: 100`.
+- Mono label "This is who you'll be here" above the identifier.
+- Identifier displayed as Source Serif 4 52pt: adjective+noun in `fg.primary`, digits in `brand.primary` (teal).
+- Explainer copy (Inter 15pt) + divider + example identifiers in mono.
+- Buttons: "This is me" (primary, lg, full) + "Try another one" (ghost, sm, full).
+
+**Login** (`(auth)/login`)
+- TopBar with back. Serif headline "Welcome back" 30pt.
+- Fields: EMAIL, PASSWORD. Forgot password link right-aligned in `brand.primary`.
+- CTA: "Sign in" (primary, lg, full).
+
+### Feed screens
+
+**Main Feed** (`(main)/feed` — Read tab)
+- Header: serif "akin" wordmark 30pt, letter-spacing -0.5.
+- Segment row below wordmark: "All" | "Categories" tabs + sort icon right. Active tab uses `fg.primary` 500-weight with 1.5pt underline; inactive `fg.tertiary`.
+- PostCard list (FlashList). Each card: 20/22pt padding, hairline bottom border.
+  - Row 1: CategoryTag (teal uppercase 11.5pt, 500-weight, 0.3 letter-spacing) · dot · timestamp (12pt `fg.tertiary`).
+  - Title: Source Serif 4 19pt, `-0.2` letter-spacing, `fg.primary`, `lineHeight: 1.3`.
+  - Excerpt: Inter 14pt `fg.secondary` `lineHeight: 1.5`, 2-line clamp.
+  - Footer row: Ident chip (left) + Capacity dots + "n/4" + optional Spice flames (right).
+
+**Categories Index** (`(main)/feed` — Categories tab)
+- Same header structure, "Categories" tab active.
+- Each category row: 20/22pt padding, serif name 19pt + sans description 13pt + mono count right + chevron.
+
+**Category Detail** (drill-in from Categories)
+- TopBar back. Mono "Category" label + Serif title 32pt + Sans description 14pt.
+- Filter pills below: "3+ flames", "Most comments".
+- PostCard list.
+
+**Filter Sheet** (bottom sheet)
+- "Sort & filter" heading (serif 22pt).
+- Sort section: 3 items, checkmark on active.
+- Minimum spice section: 6 cells (Any, 1+…5+), `bg.raised` + ink border on selected.
+- CTA: "Apply" (primary, lg, full).
+
+**Empty State**
+- Header with wordmark only. Centred content: serif italic category name in message + sans CTA copy. One "Start one" secondary button.
+
+### Post screens
+
+**Post Detail** (`(main)/post/[id]`)
+- TopBar back + `···` right.
+- Post header section (padded, hairline bottom): CategoryTag + timestamp → Serif title 24pt → body copy Inter 15pt `lineHeight: 1.6` → Ident + Capacity.
+- Spice section (padded, hairline bottom): "Spice level" mono label + flames (large, 16pt) + average + vote count right.
+- "N replies" mono label row.
+- Comments: each is padded 14/22pt, hairline top. Ident chip + "OP" badge (teal uppercase 500-weight 10.5pt) + timestamp right → body Inter 14.5pt.
+- Bottom reply bar: pill input (rounded-full, `bg.sunken`, `border.divider`) + circular send button (`bg.inverse`, `fg.inverse` icon).
+
+**Conversation Full** (read-only state)
+- Same post header. Comments replaced by skeleton placeholder rows (40%/100%/85% width rectangles in `border.divider`).
+- Bottom area: `bg.raised` surface, lock icon + "This conversation is full." (500-weight) + explanation copy.
+
+**Already In 3 Sheet** (bottom sheet)
+- Serif headline "You're in three conversations already." 24pt.
+- List of 3 active conversations: category label + serif truncated title + Capacity dots.
+- "Got it" secondary button.
+
+**Spice Vote Sheet** (bottom sheet)
+- Serif "How spicy was this?" 22pt + explainer.
+- 5 rows: flames + bold label + description. Selected row has `bg.raised` + ink border + checkmark.
+
+### Create screens
+
+**Category Picker** (modal, full-screen)
+- TopBar: back + "Pick a category" title.
+- Each category row: serif name 17pt + sans description 13pt. Selected row has `bg.raised` + checkmark.
+
+**Guidelines Sheet** (bottom sheet — first post only)
+- Serif "Before you post." 24pt.
+- 3 rules: bold label + description.
+- "Continue" primary button + "Read the full guidelines" ghost text link below.
+
+**Composer** (`(main)/create`)
+- TopBar: "Cancel" ghost text left + "Post" ink text right.
+- Category row (padded, hairline bottom): mono label "Category" + serif selected name 18pt + chevron.
+- Editable title: serif 26pt, `fg.primary`.
+- Editable body: Inter 15.5pt, `fg.secondary`, `lineHeight: 1.6`. Cursor is 1.5pt vertical ink bar.
+- Bottom bar (`bg.raised`): "Posting as [mono identifier]" copy + char counters in mono 11pt.
+
+### Profile screens
+
+**Profile** (`(main)/you` — You tab)
+- TopBar: `···` right only.
+- Header section: mono "You are" label + serif identifier 36pt (digits in teal) + join date + post/reply counts.
+- Active conversations section (mono "Active conversations" + "n / 3" right): hint copy + list of up to 3 conversations.
+- Your posts list.
+
+**Settings** (`(main)/settings`)
+- TopBar: back + "Settings".
+- Grouped list items: mono group header + rows with chevrons. Danger items (`fg.danger` = rust) have no chevron.
+
+**Report Sheet** (bottom sheet)
+- Serif "Report this comment" 22pt + explainer.
+- Radio list of 6 reasons. Radio circle is 18×18pt.
+- "Send report" primary button.
+
+**Blocked People** (`(main)/settings/blocked`)
+- Explanation copy (hairline bottom). List: Ident + block date + "Unblock" ghost button.
+
+### Shared UI components
+
+**Ident chip** — JetBrains Mono 12.5pt. Leading 6×6pt square marker (teal for others, blue for "you"). "you" label in faint sans 11pt after the name. No avatars, no rings, no colour-coded roles.
+
+**Capacity dots** — 4 dots × 6pt. Filled = `brand.primary` (teal). Empty = transparent with `border.divider` ring.
+
+**Spice flames** — 1–5 SVG flames, `spice.color` (rust) filled for active, `fg.faint` at 0.35 opacity for inactive. Sizes: 11pt in feed, 14pt in compose/profile, 16pt in post detail.
+
+**CategoryTag** — Inter 11.5pt, weight 500, uppercase, 0.3 letter-spacing, `brand.primary` (teal). No background pill — just the text.
+
+**Buttons** — 4px border-radius, 200ms ease-out transitions. Heights: sm=36, md=48, lg=54.
+- `primary`: `bg.inverse` background, `fg.inverse` text.
+- `secondary`: transparent bg, `fg.primary` text + `fg.primary` 1px border.
+- `ghost`: transparent bg, `fg.secondary` text, no border.
+- `danger`: transparent bg, `spice.color` text + `spice.color` border.
+
+**Fields** — mono uppercase label (12pt 500-weight `fg.tertiary`), `bg.sunken` input area (14–16pt), `border.divider` border, 4px border-radius. Hint text in `fg.faint` 12pt below.

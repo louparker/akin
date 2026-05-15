@@ -49,6 +49,7 @@
 
 - Use `Text` primitive variant `display` for the wordmark.
 - Subtle fade-in on first render (200ms), respecting reduced motion.
+- **Design spec (from handoff):** top 2/3 is flex content area with `pt-xxxl` (120) and `px-xxl` (32). Mono label "Akin" in `fg.tertiary` above the headline. Headline "A quieter place\nto talk about\ndating." in Source Serif 4 44pt, letterSpacing -0.8. Body copy Inter 16pt `fg.secondary` maxWidth 290. Bottom section: two buttons (gap 12) + ToS note Inter 11.5pt `fg.faint`. Primary button "Make an account" (lg, full) → signup. Ghost button "I already have one" (md, full) → login.
 
 **Self-review:**
 
@@ -171,6 +172,7 @@
 
 - The identifier might still be `pending_NNN` if the Edge Function from Phase 2 hasn't completed. If so, poll the profile every 1s for up to 10s; show a "preparing your name" loading state. After 10s, surface an error and offer to retry.
 - This is the only screen where the identifier is presented as ceremonial. Everywhere else it's just a display name.
+- **Design spec (from handoff):** no TopBar. `pt: 100` full-screen centred layout. Mono label "This is who you'll be here" in `fg.tertiary` 11pt 1.5 letterSpacing uppercase above the identifier. Identifier in Source Serif 4 52pt letterSpacing -1: adjective+noun in `fg.primary`, trailing digits in `brand.primary` (teal). Explainer Inter 15pt `fg.secondary` maxWidth 310. Divider + "Other people you'll meet here:" copy in Inter 13pt, example identifiers in mono `fg.secondary`. Two buttons: "This is me" (primary, lg, full) + "Try another one" (ghost, sm, full) — the latter regenerates the identifier.
 
 **Self-review:**
 

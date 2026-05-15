@@ -69,12 +69,12 @@
 
 **Acceptance criteria:**
 
-- `src/theme/colors.ts` exports light and dark colour palettes per the skill file.
+- `src/theme/colors.ts` exports light and dark colour palettes per the skill file. **Key colours from design handoff:** `bg.base #EFEAE2` (bone), `brand.primary #2C4D55` (teal), `spice.color #B54C26` (rust — flames only), `you.color #788BFF` (blue — "you" chip only). There is no aubergine in the design; the brand primary is teal.
 - `src/theme/spacing.ts` exports the 4px scale.
-- `src/theme/typography.ts` exports families, sizes, weights, line-heights.
+- `src/theme/typography.ts` exports families, sizes, weights, line-heights. Families: `Inter` (body), `Source Serif 4` (display), `JetBrains Mono` (identifiers only).
 - `tailwind.config.js` extends with the tokens so classes like `bg-bg-base`, `text-fg-primary`, `p-lg`, `text-xl` exist.
 - `useColorTokens()` hook returns the active theme's tokens (light or dark) based on system preference and user override.
-- Inter and GT Sectra (or licensed alternative — check budget) loaded via `expo-font`.
+- **Fonts confirmed from design handoff (April 2026):** Inter (body/UI), Source Serif 4 (display/headlines), JetBrains Mono (identifiers + char counters only). All three are open-source via Google Fonts — no licence cost. GT Sectra is NOT used. Load all three via `expo-font` in the root layout.
 
 **Tests to write first:**
 
