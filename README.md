@@ -88,6 +88,16 @@ pnpm test:e2e:android
 
 See [`e2e/README.md`](./e2e/README.md) for full setup instructions including how to build the dev binary.
 
+### CI
+
+Every PR runs `typecheck`, `lint`, `format:check`, and `test` in parallel via [GitHub Actions](./.github/workflows/ci.yml). All four must pass before merge.
+
+Branch protection on `main` requires:
+- All CI status checks to pass.
+- At least one approving review.
+
+To enable: GitHub → Settings → Branches → Add rule → `main` → check "Require status checks" and select `TypeScript`, `ESLint`, `Prettier`, `Jest`.
+
 ---
 
 ## Environment variables
