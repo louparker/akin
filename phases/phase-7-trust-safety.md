@@ -52,6 +52,7 @@
 
 - The report mutation does NOT do optimistic updates — there's nothing visible to update for the reporter.
 - After submit, the action sheet should NOT mark the content as "reported" persistently. Reduces report-bombing.
+- **Design spec — Report sheet (from handoff):** Bottom sheet with scrim. Serif "Report this comment" (or "this post") 22pt. Explainer: "A real person reads every report. We don't auto-action. Pick the closest reason." Inter 13.5pt `fg.tertiary`. 6 reason rows (Inter 15pt `fg.primary`) with hairline separators + radio circle (18×18pt, ink border when selected). CTA "Send report" (primary, lg, full). Reason categories match the handoff exactly: "Harassment or targeting", "Identifying someone", "Hate or slurs", "Sexual content involving minors", "Spam or off-topic", "Something else".
 
 **Self-review (security lens):**
 

@@ -104,6 +104,31 @@ Worse, the workaround actively broke runtime: `lib/commonjs/fabric/*.js` files d
 `metro.config.js` removed. ADR-007 (`.npmrc` with `node-linker=hoisted`) is the actual fix — once the right `babel-preset-expo` resolves, the codegen plugin inlines view configs correctly and there's nothing left to work around. Bundles still work on iOS / Android / web, and runtime now works because view configs are present at first render.
 
 Lesson kept here for history: when an Expo / Metro / codegen error looks like a third-party-library bug, first verify which copy of `babel-preset-expo` Babel is actually loading. A stray top-level `~/node_modules/` will silently win Node's walk-up resolution under any pnpm project that doesn't use `node-linker=hoisted`.
+## ADR-006 — Design system: colour palette, typography, and visual identity
+
+Date: 2026-04-30
+Status: Accepted
+Decided by: Founder (via design handoff — akin-handoff.zip)
+
+### Context
+
+Phase 3 Task 3.2 required colour and typography tokens. The UI skill originally contained placeholder values (aubergine brand primary, GT Sectra display font) pending a design decision. The founder delivered a Claude.ai Design handoff in April 2026 that specifies the final visual language.
+
+### Options considered
+
+1. **Placeholder tokens from UI skill v1** — `brand.primary: #5B2A4D` (aubergine), `brand.accent: #C2664A` (terracotta), `displayFamily: 'GT Sectra'` (paid licence). Used in skill file before handoff.
+2. **Tokens from design handoff** — `brand.primary: #2C4D55` (Dark Slate Grey / teal), no terracotta accent, `displayFamily: 'Source Serif 4'` (open-source). Confirmed via screens-ds.jsx and tokens.jsx in the handoff.
+
+### Decision
+
+Use the design-handoff tokens. The brand primary is **teal (#2C4D55)** — not aubergine. No terracotta accent colour; rust (#B54C26) exists only for the spice-flame system. Display font is **Source Serif 4** (Google Fonts, free). Body font is **Inter**. Mono font is **JetBrains Mono**, used exclusively for anonymous identifiers and character counters.
+
+### Consequences
+
+- GT Sectra is not needed. No font licence cost at v1.
+- The aubergine/terracotta palette from the old UI skill placeholder is retired. Any agent session that recalls "aubergine primary" should disregard it.
+- The colour token structure in `src/theme/colors.ts` follows the handoff exactly (see `.claude/skills/ui/SKILL.md` §2).
+- Rust colour must never appear outside the spice-vote UI. Blue (#788BFF) must never appear outside the "you" identifier chip. Teal is the only interactive accent.
 
 ---
 
