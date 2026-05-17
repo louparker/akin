@@ -1,0 +1,252 @@
+import { useState } from 'react';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Text } from '@/components/primitives/Text';
+import { Button } from '@/components/primitives/Button';
+import { Input } from '@/components/primitives/Input';
+import { TopBar } from '@/components/composed/TopBar';
+import { colors } from '@/theme/colors';
+import { t } from '@/lib/i18n';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
+
+function validateEmail(email: string): string | null {
+  if (!email.trim()) return t('auth.signup.error.generic');
+  // Simple RFC-ish check: must have @ and a dot after it
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('auth.signup.error.generic');
+  return null;
+}
+
+export default function SignupScreen() {
+  const router = useRouter();
+  // Select state (triggers re-render on change)
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const error = useAuthStore((s) => s.error);
+  // Access actions directly from store state — Zustand actions are stable references.
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound methods
+  const { signUp, clearError } = useAuthStore.getState();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [ageError, setAgeError] = useState<string | null>(null);
+
+  function handleEmailChange(text: string) {
+    setEmail(text);
+    setEmailError(null);
+    clearError();
+  }
+
+  function handlePasswordChange(text: string) {
+    setPassword(text);
+    setPasswordError(null);
+    clearError();
+  }
+
+  function toggleAge() {
+    setAgeConfirmed((prev) => !prev);
+    setAgeError(null);
+    clearError();
+  }
+
+  async function handleSubmit() {
+    let valid = true;
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setEmailError(emailErr);
+      valid = false;
+    }
+
+    if (password.length < 8) {
+      setPasswordError(t('auth.signup.error.weak_password'));
+      valid = false;
+    }
+
+    if (!ageConfirmed) {
+      setAgeError(t('auth.signup.error.age_required'));
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    await signUp(email.trim(), password);
+  }
+
+  return (
+    <View style={styles.screen}>
+      <TopBar
+        bordered
+        left={
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+            style={styles.backButton}
+          >
+            <Text style={styles.backArrow}>{'←'}</Text>
+          </Pressable>
+        }
+      />
+
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>{t('auth.signup.title')}</Text>
+        <Text style={styles.subtitle}>{t('auth.signup.subtitle')}</Text>
+
+        <View style={styles.fields}>
+          <View>
+            <Input
+              label={t('auth.signup.email.label')}
+              value={email}
+              onChangeText={handleEmailChange}
+              placeholder={t('auth.signup.email.placeholder')}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              accessibilityLabel={t('auth.signup.email.label')}
+            />
+            {emailError ? <Text style={styles.fieldError}>{emailError}</Text> : null}
+          </View>
+
+          <View>
+            <Input
+              label={t('auth.signup.password.label')}
+              value={password}
+              onChangeText={handlePasswordChange}
+              placeholder={t('auth.signup.password.placeholder')}
+              hint={t('auth.signup.password.hint')}
+              secureTextEntry
+              accessibilityLabel={t('auth.signup.password.label')}
+            />
+            {passwordError ? <Text style={styles.fieldError}>{passwordError}</Text> : null}
+          </View>
+        </View>
+
+        {/* Age confirmation checkbox card */}
+        <Pressable
+          style={styles.ageCard}
+          onPress={toggleAge}
+          accessibilityRole="checkbox"
+          accessibilityLabel={t('auth.signup.age.label')}
+          accessibilityState={{ checked: ageConfirmed }}
+        >
+          <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
+            {ageConfirmed ? <Text style={styles.checkmark}>{'✓'}</Text> : null}
+          </View>
+          <View style={styles.ageTextCol}>
+            <Text style={styles.ageLabel}>{t('auth.signup.age.label')}</Text>
+            <Text style={styles.ageDesc}>{t('auth.signup.age.description')}</Text>
+          </View>
+        </Pressable>
+        {ageError ? <Text style={styles.fieldError}>{ageError}</Text> : null}
+
+        {/* Store-level error */}
+        {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+
+        <Button
+          full
+          kind="primary"
+          onPress={() => void handleSubmit()}
+          disabled={isLoading}
+          accessibilityLabel={t('auth.signup.cta')}
+          style={styles.cta}
+        >
+          {t('auth.signup.cta')}
+        </Button>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.bg.base,
+  },
+  backButton: {
+    padding: 8,
+  },
+  backArrow: {
+    fontSize: 20,
+    color: colors.fg.primary,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 28,
+  },
+  title: {
+    fontFamily: 'Source Serif 4',
+    fontSize: 30,
+    letterSpacing: -0.5,
+    color: colors.fg.primary,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Inter',
+    fontSize: 14,
+    lineHeight: 14 * 1.5,
+    color: colors.fg.secondary,
+    marginBottom: 32,
+  },
+  fields: {
+    gap: 20,
+  },
+  fieldError: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: colors.semantic.danger,
+    marginTop: 4,
+  },
+  ageCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+    marginTop: 28,
+    padding: 16,
+    paddingHorizontal: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.divider,
+    borderRadius: 4,
+    backgroundColor: colors.bg.raised,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderColor: colors.fg.tertiary,
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.brand.primary,
+    borderColor: colors.brand.primary,
+  },
+  checkmark: {
+    color: colors.fg.inverse,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  ageTextCol: {
+    flex: 1,
+    gap: 4,
+  },
+  ageLabel: {
+    fontFamily: 'Inter Medium',
+    fontWeight: '500',
+    fontSize: 14,
+    color: colors.fg.primary,
+  },
+  ageDesc: {
+    fontFamily: 'Inter',
+    fontSize: 12.5,
+    color: colors.fg.secondary,
+    lineHeight: 12.5 * 1.45,
+  },
+  cta: {
+    marginTop: 32,
+  },
+});

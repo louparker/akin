@@ -1,9 +1,10 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    // nativewind/babel returns { plugins: [...] } — it is a preset factory, not a plugin.
+    // Using it in `presets` prevents "[BABEL] .plugins is not a valid Plugin property" errors.
+    presets: ['babel-preset-expo', 'nativewind/babel'],
     plugins: [
-      'nativewind/babel',
       'react-native-reanimated/plugin',
       [
         'module-resolver',
