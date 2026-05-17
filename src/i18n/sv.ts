@@ -9,6 +9,11 @@ export const sv: TranslationDict = {
   'app.name': 'Akin',
   'app.tagline': 'En lugnare plats att prata om dejting.',
 
+  // ── Navigation ───────────────────────────────────────────────────────────────
+  'nav.tab.read': 'Läs',
+  'nav.tab.write': 'Skriv',
+  'nav.tab.you': 'Du',
+
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'En lugnare plats\natt prata om\ndejting.',
   'auth.welcome.body':

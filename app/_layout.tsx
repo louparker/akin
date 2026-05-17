@@ -9,7 +9,9 @@ import { Slot, SplashScreen } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 // Prevent auto-hide until fonts are loaded.
 void SplashScreen.preventAutoHideAsync();
@@ -49,6 +51,13 @@ const FONTS = {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound methods
+  const { initialize } = useAuthStore.getState();
+
+  useEffect(() => {
+    // Hydrate session from SecureStore and subscribe to auth state changes.
+    void initialize();
+  }, [initialize]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -62,9 +71,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <QueryClientProvider client={queryClient}>
-        <Slot />
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <Slot />
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

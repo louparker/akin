@@ -7,6 +7,11 @@ export const en = {
   'app.name': 'Akin',
   'app.tagline': 'A quieter place to talk about dating.',
 
+  // ── Navigation ───────────────────────────────────────────────────────────────
+  'nav.tab.read': 'Read',
+  'nav.tab.write': 'Write',
+  'nav.tab.you': 'You',
+
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'A quieter place\nto talk about\ndating.',
   'auth.welcome.body':
