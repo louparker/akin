@@ -118,6 +118,13 @@ export default function MainLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="post"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }

@@ -225,6 +225,16 @@ export const sv: TranslationDict = {
   'blocked.empty': 'Du har inte blockerat någon.',
   'blocked.date': 'Blockerades {{date}}',
 
+  // ── Post / Comment menus ─────────────────────────────────────────────────────
+  'post.menu.report': 'Rapportera inlägg',
+  'post.menu.block': 'Blockera användaren',
+  'comment.menu.report': 'Rapportera kommentar',
+  'block.confirm.title': 'Blockera den här personen?',
+  'block.confirm.body': 'Du kommer inte se deras inlägg eller kommentarer. De får inte veta det.',
+  'block.confirm.cta': 'Blockera',
+  'block.confirm.cancel': 'Avbryt',
+  'post.send.label': 'Skicka svar',
+
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Rapportera den här kommentaren',
   'report.title.post': 'Rapportera det här inlägget',

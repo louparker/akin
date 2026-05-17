@@ -222,6 +222,16 @@ export const en = {
   'blocked.empty': "You haven't blocked anyone.",
   'blocked.date': 'Blocked {{date}}',
 
+  // ── Post / Comment menus ─────────────────────────────────────────────────────
+  'post.menu.report': 'Report post',
+  'post.menu.block': 'Block user',
+  'comment.menu.report': 'Report comment',
+  'block.confirm.title': 'Block this person?',
+  'block.confirm.body': "You won't see their posts or comments. They won't know.",
+  'block.confirm.cta': 'Block',
+  'block.confirm.cancel': 'Cancel',
+  'post.send.label': 'Send reply',
+
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Report this comment',
   'report.title.post': 'Report this post',
