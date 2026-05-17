@@ -71,6 +71,25 @@ pnpm format:check   # Prettier
 pnpm test           # Jest + RTL
 ```
 
+### Pre-commit hooks
+
+Husky hooks run automatically on `git commit` and `git push`:
+
+| Hook         | What it checks                                   |
+| ------------ | ------------------------------------------------ |
+| `pre-commit` | ESLint + Prettier on **staged** `.ts/.tsx` files |
+| `pre-push`   | `pnpm typecheck` on the whole project            |
+
+If a hook fires unexpectedly:
+
+1. **ESLint errors** — run `pnpm lint:fix` to auto-fix, then re-stage.
+2. **Prettier errors** — run `pnpm format`, then re-stage.
+3. **TypeScript errors** — fix the type errors, then re-stage.
+
+In a genuine emergency you can bypass with `git commit --no-verify` (CI will still catch failures). Document why if you do.
+
+---
+
 ### E2E tests (Maestro)
 
 E2E flows are not run on every PR — they run as part of the release pipeline. To run locally:
@@ -93,6 +112,7 @@ See [`e2e/README.md`](./e2e/README.md) for full setup instructions including how
 Every PR runs `typecheck`, `lint`, `format:check`, and `test` in parallel via [GitHub Actions](./.github/workflows/ci.yml). All four must pass before merge.
 
 Branch protection on `main` requires:
+
 - All CI status checks to pass.
 - At least one approving review.
 
@@ -100,8 +120,8 @@ To enable: GitHub → Settings → Branches → Add rule → `main` → check "R
 
 The CI workflow injects placeholder values for the `EXPO_PUBLIC_*` env vars (so `app.config.ts` doesn't throw during typecheck/lint/test). When Supabase is wired up, add real values as GitHub Actions repository secrets:
 
-| Secret                          | Where to find it                              |
-| ------------------------------- | --------------------------------------------- |
+| Secret                          | Where to find it                             |
+| ------------------------------- | -------------------------------------------- |
 | `EXPO_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API            |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API            |
 | `EXPO_PUBLIC_SENTRY_DSN`        | Sentry → Project → Settings → Client Keys    |
