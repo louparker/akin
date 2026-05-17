@@ -29,6 +29,55 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-010 — Phase 1 completion: logger, pre-commit hooks, MSW ESM fix
+
+Date: 2026-05-17
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Tasks 1.10 and 1.11 complete Phase 1. Three decisions are recorded here.
+
+**Logger design (Task 1.10).** A project-wide structured logger was needed from day one so that no call site ever reaches for `console.*` directly. The logger also needed to scrub PII before any output.
+
+**Pre-commit hooks (Task 1.11).** Commits that would fail CI must be caught locally to keep the feedback loop short.
+
+**MSW 2.x + pnpm hoisted ESM resolution fix.** After pulling Tasks 1.4–1.9, all three test suites failed with "Cannot use import statement outside a module" originating from MSW transitive deps.
+
+### Options considered — logger
+
+1. **Export `scrub` + `logger.*`** — testable independently; Sentry swap-in is mechanical. ✓
+2. **Logger only, scrub internal** — harder to unit-test the scrub logic directly.
+3. **Use a third-party structured-logging library** — overkill for current needs; adds a dep.
+
+### Options considered — hooks
+
+1. **Husky 9 + lint-staged (staged files only)** — fast (< 5s), catches ESLint + Prettier, typecheck on push. ✓
+2. **Run full Jest in pre-commit** — too slow; CI handles it.
+3. **lefthook** — not widely known; Husky is the ecosystem standard.
+
+### Options considered — MSW ESM fix
+
+1. **moduleNameMapper to pin MSW to `lib/` CJS output** — already in place but not sufficient alone.
+2. **Add ESM-only transitive deps to `transformIgnorePatterns` allowlist** — works for top-level packages (`rettime`, `until-async`).
+3. **Pin nested ESM-only package via moduleNameMapper** — required for `@open-draft/deferred-promise@3` (nested in `msw/node_modules/`); pinned to the hoisted v2 CJS build which exports the same API.
+
+### Decision
+
+- **Logger**: exports `scrub()` (named, testable) + `logger.{info,warn,error}`. All three methods call `scrub(context)` before output. `console.*` ESLint rule remains `error` everywhere in `src/`; the three `console.*` calls inside `logger.ts` have justified `eslint-disable-next-line` comments. PII key list: `email`, `password`, `token`, `authorization`, `ip`, `body`, `title`, `notes` (case-insensitive). Sentry integration deferred to Phase 3 — `PHASE 3` comments mark the exact lines.
+- **Hooks**: Husky 9 + lint-staged. `pre-commit` → `lint-staged` (ESLint + Prettier on staged files). `pre-push` → `pnpm typecheck`. Config in `package.json`.
+- **MSW ESM fix**: added `rettime` and `until-async` to `transformIgnorePatterns` allowlist; pinned `@open-draft/deferred-promise` to hoisted CJS via `moduleNameMapper`.
+
+### Consequences
+
+- Every future log call goes through `logger.*` — PII cannot accidentally leak to Sentry/console.
+- Pre-commit catches lint/format regressions before they hit CI.
+- MSW test infrastructure is stable; future MSW upgrades may require re-checking the ESM dep chain.
+- If `@open-draft/deferred-promise` v2 and v3 diverge in API, the pin may need revisiting.
+
+---
+
 ## ADR-009 — Jest + RTL setup and react-native 0.83 Flow workaround (Task 1.5)
 
 Date: 2026-05-01
@@ -42,14 +91,17 @@ Task 1.5 sets up Jest, React Native Testing Library, MSW, and the `renderWithPro
 ### Options considered
 
 **MSW version:**
+
 1. **MSW 2** — modern ESM-first API (`http`, `HttpResponse`). Incompatible with Jest's CommonJS transform: MSW 2 and all its transitive dependencies are ESM-only. Trying to transform them via Babel causes cascading failures.
 2. **MSW 1** — CJS-first (`rest`, `ctx`). Works with `jest-expo` and Babel without any extra config. Matches the API shown in the testing skill.
 
 **RTL matchers:**
+
 1. **`@testing-library/jest-native`** — deprecated as of RTL 12.4. Shows a deprecation warning on install.
 2. **`@testing-library/react-native` built-ins** — RTL 13 auto-loads `extend-expect` when the main package is imported. No separate package needed.
 
 **react-native 0.83 Flow compatibility:**
+
 - `react-native@0.83.6` introduced `const T:` in Flow generic type parameters in `ViewConfigIgnore.js`. `@babel/parser@7.28` does not support this syntax.
 - jest-expo transforms react-native source files via Babel, so the parse fails.
 - Workaround: a custom Jest transformer (`src/__mocks__/ViewConfigIgnoreTransformer.js`) is registered for `ViewConfigIgnore\\.js$` files, bypassing Babel and returning a simple stub. Remove when `@babel/parser` adds support.
@@ -85,6 +137,7 @@ Task 1.4 establishes the canonical directory structure and path aliases before a
 ### Decision
 
 Use all three in concert:
+
 - `tsconfig.json` `paths` for TypeScript type resolution.
 - `babel.config.js` with `babel-plugin-module-resolver` for Metro runtime resolution.
 - `jest.config.ts` `moduleNameMapper` for Jest.
