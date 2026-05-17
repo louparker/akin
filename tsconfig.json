@@ -25,5 +25,11 @@
     ".expo/types/**/*.d.ts",
     "expo-env.d.ts",
     ".expo/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    // Deno Edge Functions — use Deno URL imports and the Deno global; not compatible
+    // with the Node/Expo TypeScript toolchain. Deno lint runs separately via Supabase CLI.
+    "supabase/functions"
   ]
 }
