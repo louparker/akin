@@ -12,8 +12,7 @@ const config: Config = {
   // `.mjs` extension added so ESM-only transitive deps (e.g. rettime via MSW)
   // are downleveled to CJS for the Jest runtime.
   transform: {
-    'ViewConfigIgnore\\.js$':
-      '<rootDir>/src/__mocks__/ViewConfigIgnoreTransformer.js',
+    'ViewConfigIgnore\\.js$': '<rootDir>/src/__mocks__/ViewConfigIgnoreTransformer.js',
     '\\.m?[jt]sx?$': [
       'babel-jest',
       { caller: { name: 'metro', bundler: 'metro', platform: 'ios' } },

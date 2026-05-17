@@ -29,46 +29,46 @@ These tokens come directly from the design handoff (`akin-handoff.zip`, April 20
 export const colors = {
   // Surfaces — warm bone, not pure white
   bg: {
-    base:    '#EFEAE2', // bone — primary app surface
-    raised:  '#F6F2EB', // cards, elevated surfaces
-    sunken:  '#FBF8F3', // input fields, modals
+    base: '#EFEAE2', // bone — primary app surface
+    raised: '#F6F2EB', // cards, elevated surfaces
+    sunken: '#FBF8F3', // input fields, modals
     inverse: '#231F21', // shadow grey — dark surfaces
   },
   // Ink
   fg: {
-    primary:   '#231F21', // shadow grey
+    primary: '#231F21', // shadow grey
     secondary: '#3F3A3B', // inkSoft
-    tertiary:  '#6A6464', // inkMute
-    faint:     '#9C9692', // inkFaint — timestamps, placeholders
-    inverse:   '#EFEAE2', // on dark surfaces
-    onAccent:  '#FFFFFF',
+    tertiary: '#6A6464', // inkMute
+    faint: '#9C9692', // inkFaint — timestamps, placeholders
+    inverse: '#EFEAE2', // on dark surfaces
+    onAccent: '#FFFFFF',
   },
   // Brand — teal (Dark Slate Grey), NOT aubergine
   brand: {
-    primary:     '#2C4D55', // teal — links, active tabs, interactive accents
+    primary: '#2C4D55', // teal — links, active tabs, interactive accents
     primarySoft: '#5C7C84', // tealSoft — secondary teal text
     primaryTint: 'rgba(44,77,85,0.08)', // tealTint — subtle backgrounds
   },
   // Spice — rust/flame. Used ONLY on the 1–5 flame icons and spice-vote UI.
   spice: {
     color: '#B54C26', // rust
-    soft:  'rgba(181,76,38,0.12)',
+    soft: 'rgba(181,76,38,0.12)',
   },
   // "You" marker — blue. Used ONLY on the current-user identifier chip.
   you: {
     color: '#788BFF',
-    soft:  'rgba(120,139,255,0.10)',
+    soft: 'rgba(120,139,255,0.10)',
   },
   // Borders + dividers
   border: {
-    divider:  'rgba(35,31,33,0.10)',
+    divider: 'rgba(35,31,33,0.10)',
     hairline: 'rgba(35,31,33,0.06)',
   },
   // Semantic
   semantic: {
-    danger:    '#A23B2C',
-    dangerSoft:'rgba(162,59,44,0.12)',
-    success:   '#3F7A5B',
+    danger: '#A23B2C',
+    dangerSoft: 'rgba(162,59,44,0.12)',
+    success: '#3F7A5B',
   },
 } as const;
 ```
@@ -86,14 +86,14 @@ export const colors = {
 // 4px scale. Don't use other spacing values.
 export const spacing = {
   none: 0,
-  xs:   4,
-  sm:   8,
-  md:   12,
-  lg:   16,
-  xl:   24,
-  xxl:  32,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
   xxxl: 48,
-  xxxxl:64,
+  xxxxl: 64,
 } as const;
 ```
 
@@ -108,25 +108,25 @@ export const typography = {
   // Mono: JetBrains Mono (open-source) — used ONLY for anonymous identifiers
   monoFamily: 'JetBrains Mono',
   sizes: {
-    xs:      12,
-    sm:      14,
-    base:    16,
-    lg:      18,
-    xl:      20,
-    xxl:     24,
-    xxxl:    30,
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    xxl: 24,
+    xxxl: 30,
     display: 36,
   },
   weights: {
-    regular:  '400',
-    medium:   '500',
+    regular: '400',
+    medium: '500',
     semibold: '600',
-    bold:     '700',
+    bold: '700',
   },
   lineHeight: {
-    tight:   1.2,
-    snug:    1.35,
-    normal:  1.5,
+    tight: 1.2,
+    snug: 1.35,
+    normal: 1.5,
     relaxed: 1.65,
   },
 } as const;
@@ -394,6 +394,7 @@ Before committing a new component:
 ### Auth screens
 
 **Welcome** (`(auth)/welcome`)
+
 - Top 2/3: flex content area with `pt: 120`, padding `32`.
 - Mono label "Akin" in `fg.tertiary`, 11pt, 2pt letter-spacing, uppercase — above headline.
 - Headline: "A quieter place\nto talk about\ndating." — Source Serif 4, 44pt, `-0.8` letter-spacing, `fg.primary`.
@@ -402,6 +403,7 @@ Before committing a new component:
 - Buttons: "Make an account" (primary, lg, full) → signup. "I already have one" (ghost, md, full) → login.
 
 **Sign Up** (`(auth)/signup`)
+
 - TopBar with back. Serif headline "Make an account" 30pt.
 - Subtitle: "Email is private. Used only for sign-in and account recovery."
 - Fields: EMAIL, PASSWORD (with "At least 8 characters." hint).
@@ -409,6 +411,7 @@ Before committing a new component:
 - CTA: "Continue" (primary, lg, full).
 
 **Identifier Reveal** (`(auth)/identifier-reveal`)
+
 - No TopBar. Full-screen centred layout with `pt: 100`.
 - Mono label "This is who you'll be here" above the identifier.
 - Identifier displayed as Source Serif 4 52pt: adjective+noun in `fg.primary`, digits in `brand.primary` (teal).
@@ -416,6 +419,7 @@ Before committing a new component:
 - Buttons: "This is me" (primary, lg, full) + "Try another one" (ghost, sm, full).
 
 **Login** (`(auth)/login`)
+
 - TopBar with back. Serif headline "Welcome back" 30pt.
 - Fields: EMAIL, PASSWORD. Forgot password link right-aligned in `brand.primary`.
 - CTA: "Sign in" (primary, lg, full).
@@ -423,6 +427,7 @@ Before committing a new component:
 ### Feed screens
 
 **Main Feed** (`(main)/feed` — Read tab)
+
 - Header: serif "akin" wordmark 30pt, letter-spacing -0.5.
 - Segment row below wordmark: "All" | "Categories" tabs + sort icon right. Active tab uses `fg.primary` 500-weight with 1.5pt underline; inactive `fg.tertiary`.
 - PostCard list (FlashList). Each card: 20/22pt padding, hairline bottom border.
@@ -432,26 +437,31 @@ Before committing a new component:
   - Footer row: Ident chip (left) + Capacity dots + "n/4" + optional Spice flames (right).
 
 **Categories Index** (`(main)/feed` — Categories tab)
+
 - Same header structure, "Categories" tab active.
 - Each category row: 20/22pt padding, serif name 19pt + sans description 13pt + mono count right + chevron.
 
 **Category Detail** (drill-in from Categories)
+
 - TopBar back. Mono "Category" label + Serif title 32pt + Sans description 14pt.
 - Filter pills below: "3+ flames", "Most comments".
 - PostCard list.
 
 **Filter Sheet** (bottom sheet)
+
 - "Sort & filter" heading (serif 22pt).
 - Sort section: 3 items, checkmark on active.
 - Minimum spice section: 6 cells (Any, 1+…5+), `bg.raised` + ink border on selected.
 - CTA: "Apply" (primary, lg, full).
 
 **Empty State**
+
 - Header with wordmark only. Centred content: serif italic category name in message + sans CTA copy. One "Start one" secondary button.
 
 ### Post screens
 
 **Post Detail** (`(main)/post/[id]`)
+
 - TopBar back + `···` right.
 - Post header section (padded, hairline bottom): CategoryTag + timestamp → Serif title 24pt → body copy Inter 15pt `lineHeight: 1.6` → Ident + Capacity.
 - Spice section (padded, hairline bottom): "Spice level" mono label + flames (large, 16pt) + average + vote count right.
@@ -460,30 +470,36 @@ Before committing a new component:
 - Bottom reply bar: pill input (rounded-full, `bg.sunken`, `border.divider`) + circular send button (`bg.inverse`, `fg.inverse` icon).
 
 **Conversation Full** (read-only state)
+
 - Same post header. Comments replaced by skeleton placeholder rows (40%/100%/85% width rectangles in `border.divider`).
 - Bottom area: `bg.raised` surface, lock icon + "This conversation is full." (500-weight) + explanation copy.
 
 **Already In 3 Sheet** (bottom sheet)
+
 - Serif headline "You're in three conversations already." 24pt.
 - List of 3 active conversations: category label + serif truncated title + Capacity dots.
 - "Got it" secondary button.
 
 **Spice Vote Sheet** (bottom sheet)
+
 - Serif "How spicy was this?" 22pt + explainer.
 - 5 rows: flames + bold label + description. Selected row has `bg.raised` + ink border + checkmark.
 
 ### Create screens
 
 **Category Picker** (modal, full-screen)
+
 - TopBar: back + "Pick a category" title.
 - Each category row: serif name 17pt + sans description 13pt. Selected row has `bg.raised` + checkmark.
 
 **Guidelines Sheet** (bottom sheet — first post only)
+
 - Serif "Before you post." 24pt.
 - 3 rules: bold label + description.
 - "Continue" primary button + "Read the full guidelines" ghost text link below.
 
 **Composer** (`(main)/create`)
+
 - TopBar: "Cancel" ghost text left + "Post" ink text right.
 - Category row (padded, hairline bottom): mono label "Category" + serif selected name 18pt + chevron.
 - Editable title: serif 26pt, `fg.primary`.
@@ -493,21 +509,25 @@ Before committing a new component:
 ### Profile screens
 
 **Profile** (`(main)/you` — You tab)
+
 - TopBar: `···` right only.
 - Header section: mono "You are" label + serif identifier 36pt (digits in teal) + join date + post/reply counts.
 - Active conversations section (mono "Active conversations" + "n / 3" right): hint copy + list of up to 3 conversations.
 - Your posts list.
 
 **Settings** (`(main)/settings`)
+
 - TopBar: back + "Settings".
 - Grouped list items: mono group header + rows with chevrons. Danger items (`fg.danger` = rust) have no chevron.
 
 **Report Sheet** (bottom sheet)
+
 - Serif "Report this comment" 22pt + explainer.
 - Radio list of 6 reasons. Radio circle is 18×18pt.
 - "Send report" primary button.
 
 **Blocked People** (`(main)/settings/blocked`)
+
 - Explanation copy (hairline bottom). List: Ident + block date + "Unblock" ghost button.
 
 ### Shared UI components
@@ -521,6 +541,7 @@ Before committing a new component:
 **CategoryTag** — Inter 11.5pt, weight 500, uppercase, 0.3 letter-spacing, `brand.primary` (teal). No background pill — just the text.
 
 **Buttons** — 4px border-radius, 200ms ease-out transitions. Heights: sm=36, md=48, lg=54.
+
 - `primary`: `bg.inverse` background, `fg.inverse` text.
 - `secondary`: transparent bg, `fg.primary` text + `fg.primary` 1px border.
 - `ghost`: transparent bg, `fg.secondary` text, no border.

@@ -53,3 +53,10 @@ secrets/
 
 expo-env.d.ts
 # @end expo-cli
+.gitnexus
+
+# Claude Code worktree scratch directories
+.claire/
+
+# Design handoff binaries (content extracted into .claude/skills/ui/SKILL.md)
+akin-handoff.zip

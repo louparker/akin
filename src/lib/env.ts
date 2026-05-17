@@ -15,8 +15,7 @@ export function getEnv(source: Partial<Record<string, string>> = process.env): E
     throw new Error('Missing required environment variable: EXPO_PUBLIC_SUPABASE_URL');
   if (!supabaseAnonKey)
     throw new Error('Missing required environment variable: EXPO_PUBLIC_SUPABASE_ANON_KEY');
-  if (!sentryDsn)
-    throw new Error('Missing required environment variable: EXPO_PUBLIC_SENTRY_DSN');
+  if (!sentryDsn) throw new Error('Missing required environment variable: EXPO_PUBLIC_SENTRY_DSN');
   if (!posthogKey)
     throw new Error('Missing required environment variable: EXPO_PUBLIC_POSTHOG_KEY');
 
