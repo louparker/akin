@@ -82,3 +82,17 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test
         run: pnpm test --ci
+
+  # ── Database tests (pgTAP) ───────────────────────────────────────────────────
+  db-tests:
+    name: pgTAP
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: supabase/setup-cli@v1 # TODO: pin to SHA after confirming latest stable
+        with:
+          version: latest
+      - name: Start Supabase local stack
+        run: supabase start
+      - name: Run pgTAP test suite
+        run: supabase test db

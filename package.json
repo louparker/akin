@@ -16,6 +16,12 @@
     "test:watch": "jest --watch",
     "test:e2e:ios": "maestro test --device 'iPhone 15' e2e/",
     "test:e2e:android": "maestro test --device emulator-5554 e2e/",
+    "db:up": "supabase start",
+    "db:down": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:gen-types": "supabase gen types typescript --local > src/types/database.ts",
+    "db:push": "supabase db push",
     "prepare": "husky"
   },
   "dependencies": {
@@ -55,15 +61,6 @@
   },
   "packageManager": "pnpm@8.15.9",
   "private": true,
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --max-warnings 0",
-      "prettier --write"
-    ],
-    "*.{js,jsx,json,md,yaml,yml}": [
-      "prettier --write"
-    ]
-  },
   "pnpm": {
     "overrides": {
       "hermes-parser": "0.35.0"

@@ -29,6 +29,61 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-011 — Phase 2: database schema, triggers, and pgTAP suite
+
+Date: 2026-05-17
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 2 delivers the full Postgres backend: 12 migrations (profiles → participation limits → spice votes → content filter → audit log → blocks → feature flags → user roles → reports → identifier words → Edge Function plumbing → seed data), 13 pgTAP test files (76 assertions), and generated TypeScript types. Four non-obvious decisions are recorded below.
+
+### Decision 1 — SECURITY DEFINER + current_user guard for internal triggers
+
+**Problem.** Several triggers update server-managed columns (e.g. `active_post_count`, `comment_count`, `participant_count`). Guard triggers block `authenticated` clients from writing those columns directly. But when an internal trigger fires (e.g. `add_op_as_participant` increments `active_post_count`), it runs in the same session and would be blocked by the guard — causing a recursive failure.
+
+**Options considered.**
+
+1. GUC flag (`set_config('akin.internal', 'true', true)`) — clients could set the same flag and bypass guards. ✗
+2. SECURITY DEFINER on internal triggers + `current_user NOT IN ('authenticated', 'anon')` guard — internal triggers run as `postgres` and pass the guard; client writes fail. ✓
+3. Separate `BEFORE UPDATE` trigger with column allow-list — requires maintaining an explicit list; more brittle. ✗
+
+**Decision.** All internal trigger functions (`add_op_as_participant`, `decrement_active_on_full`, `enforce_participation_limits`, `enforce_post_creation_limit`, `maintain_comment_count`, `maintain_spice_averages`) are marked `SECURITY DEFINER SET search_path = public`. Guard functions (`enforce_profile_update_columns`, `enforce_post_update_columns`) bypass with `IF current_user NOT IN ('authenticated', 'anon') THEN RETURN NEW; END IF;` at the top.
+
+### Decision 2 — Participation limit ordering: increment before updating participant_count
+
+**Problem.** `enforce_participation_limits` must: (a) insert the new participant into `post_participants`, (b) increment `profiles.active_post_count` for the new commenter, (c) increment `posts.participant_count`. Step (c) fires `decrement_active_on_full` (AFTER UPDATE) when `participant_count` reaches 4. If (c) runs before (b), the 4th commenter is decremented from 0 → −1, violating the `active_post_count >= 0` CHECK constraint.
+
+**Decision.** The order inside `enforce_participation_limits` is strictly: INSERT into `post_participants` → UPDATE `profiles` (increment) → UPDATE `posts` (increment). A comment in the migration documents this dependency.
+
+### Decision 3 — Content filter: word-boundary regex instead of LIKE
+
+**Problem.** `LIKE '%slur%'` causes false positives (e.g. `spic` in `spice`). A word-boundary check is required.
+
+**Options considered.**
+
+1. `LIKE '%word%'` — false positives on substrings. ✗
+2. PostgreSQL `\mword\M` regex — true word-boundary anchors, works natively in Postgres. ✓
+3. Full-text dictionary approach — overkill at this stage; harder to maintain custom slur list. ✗
+
+**Decision.** Filter uses `v_lower ~ ('\m' || lower(v_word) || '\M')`. The slur/contact-info word lists are in `identifier_words` table (kind = `blocked_slur` / `blocked_contact`), editable without a migration.
+
+### Decision 4 — Seed data: all bulk posts pre-seeded as full (participant_count = 4)
+
+**Problem.** Seeding 50 realistic posts (10 per user) is incompatible with the `active_post_count <= 3` CHECK constraint. The constraint correctly limits live activity; the seed just needs plausible historical data.
+
+**Decision.** All 50 bulk posts are inserted with `participant_count = 4` (is_full = true) and `active_post_count` manually set to 0 after insert. Only Iris's 3 test-fixture posts (deterministic UUIDs `000…f02/f03/f04`) are active. Five triggers that would reject bulk inserts are disabled for the seed and re-enabled at the end.
+
+### Consequences
+
+- The `current_user` guard is now the canonical Akin pattern for distinguishing internal trigger calls from client calls. All new tables that need server-managed columns should follow this pattern.
+- The participation limit trigger ordering is fragile: a developer who reorders the three UPDATE/INSERT statements will reintroduce the −1 bug. The comment in 0005 is load-bearing.
+- The word-boundary regex requires PostgreSQL's `~` operator; SQLite-based offline tests are not possible for content filtering.
+- Seed data must be maintained alongside schema changes — if `posts` or `post_participants` columns change, `seed.sql` needs updating.
+
+---
+
 ## ADR-010 — Phase 1 completion: logger, pre-commit hooks, MSW ESM fix
 
 Date: 2026-05-17
