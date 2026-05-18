@@ -1,15 +1,11 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
+  Animated,
+  AccessibilityInfo,
   Pressable as RNPressable,
   type PressableProps,
   type GestureResponderEvent,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  useReducedMotion,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 type AkinPressableProps = PressableProps & {
@@ -25,23 +21,25 @@ export function Pressable({
   children,
   ...props
 }: AkinPressableProps) {
-  const scale = useSharedValue(1);
-  const reducedMotion = useReducedMotion();
+  const scale = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useRef(false);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      reducedMotion.current = v;
+    });
+  }, []);
 
   const handlePressIn = (e: GestureResponderEvent) => {
-    if (!reducedMotion) {
-      scale.value = withTiming(0.98, { duration: 100 });
+    if (!reducedMotion.current) {
+      Animated.timing(scale, { toValue: 0.98, duration: 100, useNativeDriver: true }).start();
     }
     onPressIn?.(e);
   };
 
   const handlePressOut = (e: GestureResponderEvent) => {
-    if (!reducedMotion) {
-      scale.value = withTiming(1, { duration: 200 });
+    if (!reducedMotion.current) {
+      Animated.timing(scale, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     }
     onPressOut?.(e);
   };
@@ -52,7 +50,7 @@ export function Pressable({
   };
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={{ transform: [{ scale }] }}>
       <RNPressable
         accessibilityRole={accessibilityRole}
         disabled={disabled}

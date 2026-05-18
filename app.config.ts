@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       package: 'com.ourakin.app',
     },
-    plugins: ['expo-router'],
+    plugins: ['expo-router', '@sentry/react-native'],
     experiments: {
       typedRoutes: true,
     },

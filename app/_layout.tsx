@@ -7,13 +7,7 @@ import '../global.css';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import { Slot, SplashScreen } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import { Animated, StyleSheet, View, AccessibilityInfo } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -80,24 +74,27 @@ interface InAppSplashProps {
 }
 
 function InAppSplash({ visible }: InAppSplashProps) {
-  const reducedMotion = useReducedMotion();
-  const opacity = useSharedValue(1);
+  const opacity = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useRef(false);
+
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      reducedMotion.current = v;
+    });
+  }, []);
 
   useEffect(() => {
     if (!visible) {
-      opacity.value = reducedMotion ? 0 : withTiming(0, { duration: 300 });
+      if (reducedMotion.current) {
+        opacity.setValue(0);
+      } else {
+        Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      }
     }
-  }, [visible, opacity, reducedMotion]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  // Once fully faded out, don't render at all (pointer-events passthrough)
-  if (!visible && reducedMotion) return null;
+  }, [visible, opacity]);
 
   return (
-    <Animated.View style={[styles.splash, animatedStyle]} pointerEvents="none">
+    <Animated.View style={[styles.splash, { opacity }]} pointerEvents="none">
       <View style={styles.splashInner}>
         <Text variant="display" style={styles.wordmark}>
           Akin
