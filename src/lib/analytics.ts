@@ -120,12 +120,16 @@ export function _resetClientForTesting(): void {
  *
  * Exported for testing.  App code should use track() directly.
  */
-export function getPostHogClient(): PostHog {
+export function getPostHogClient(): PostHog | null {
   if (_client !== null) {
     return _client;
   }
 
   const env = getEnv();
+  if (!env.posthogKey) {
+    return null;
+  }
+
   _client = new PostHog(env.posthogKey, {
     host: POSTHOG_HOST,
     enableSessionReplay: false,
@@ -142,9 +146,8 @@ export function getPostHogClient(): PostHog {
  */
 export async function initAnalytics(): Promise<void> {
   const client = getPostHogClient();
+  if (!client) return;
   const distinctId = await getDistinctId();
-  // Identify the session with the anonymous UUID.  No traits are sent.
-  // This wires the distinct ID to all subsequent captures.
   client.identify(distinctId);
 }
 
@@ -168,6 +171,7 @@ export async function track<N extends AnalyticsEvent['name']>(
 ): Promise<void> {
   const [props] = rest;
   const client = getPostHogClient();
+  if (!client) return;
   const distinctId = await getDistinctId();
 
   // Scrub PII from props before sending.  scrub() returns a new object —
