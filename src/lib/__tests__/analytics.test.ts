@@ -74,11 +74,11 @@ describe('track()', () => {
   });
 
   it('strips PII key "email" from props before sending', async () => {
-    // Type assertion needed because email is not a valid key for post_created;
-    // we test the scrubbing behaviour directly via the cast.
-    await track('post_created', { category: 'general', email: 'user@example.com' } as Parameters<
-      typeof track
-    >[1] & { email: string });
+    // Cast to { category: string } to satisfy the track() signature while
+    // deliberately injecting an extra PII key to test the scrubber.
+    await track('post_created', { category: 'general', email: 'user@example.com' } as {
+      category: string;
+    });
 
     expect(mockCapture).toHaveBeenCalledTimes(1);
     const [, props] = mockCapture.mock.calls[0] as [string, Record<string, unknown>];
@@ -88,27 +88,25 @@ describe('track()', () => {
   });
 
   it('strips PII key "password" from props before sending', async () => {
-    await track('post_created', { category: 'general', password: 'secret' } as Parameters<
-      typeof track
-    >[1] & { password: string });
+    await track('post_created', { category: 'general', password: 'secret' } as {
+      category: string;
+    });
 
     const [, props] = mockCapture.mock.calls[0] as [string, Record<string, unknown>];
     expect(props).not.toHaveProperty('password');
   });
 
   it('strips PII key "token" from props before sending', async () => {
-    await track('post_created', { category: 'general', token: 'abc123' } as Parameters<
-      typeof track
-    >[1] & { token: string });
+    await track('post_created', { category: 'general', token: 'abc123' } as { category: string });
 
     const [, props] = mockCapture.mock.calls[0] as [string, Record<string, unknown>];
     expect(props).not.toHaveProperty('token');
   });
 
   it('strips PII key "authorization" from props before sending', async () => {
-    await track('post_created', { category: 'general', authorization: 'Bearer x' } as Parameters<
-      typeof track
-    >[1] & { authorization: string });
+    await track('post_created', { category: 'general', authorization: 'Bearer x' } as {
+      category: string;
+    });
 
     const [, props] = mockCapture.mock.calls[0] as [string, Record<string, unknown>];
     expect(props).not.toHaveProperty('authorization');
