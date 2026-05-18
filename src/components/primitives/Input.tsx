@@ -6,6 +6,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   value: string;
   onChangeText: (text: string) => void;
   hint?: string;
+  error?: string;
   placeholder?: string;
   secureTextEntry?: boolean;
   accessibilityLabel?: string;
@@ -16,6 +17,7 @@ export function Input({
   value,
   onChangeText,
   hint,
+  error,
   placeholder,
   secureTextEntry,
   accessibilityLabel,
@@ -23,13 +25,15 @@ export function Input({
   autoCapitalize,
   ...props
 }: InputProps) {
+  const hasError = Boolean(error);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label} accessibilityRole="text">
         {label.toUpperCase()}
       </Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, hasError && styles.inputError]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -39,9 +43,16 @@ export function Input({
         autoCapitalize={autoCapitalize}
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityRole="text"
+        aria-invalid={hasError || undefined}
         {...props}
       />
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {error ? (
+        <Text style={styles.errorText} testID="input-error" accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : hint ? (
+        <Text style={styles.hint}>{hint}</Text>
+      ) : null}
     </View>
   );
 }
@@ -73,6 +84,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 12,
     color: colors.fg.faint,
+    lineHeight: 12 * 1.4,
+  },
+  inputError: {
+    borderColor: colors.semantic.danger,
+  },
+  errorText: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: colors.semantic.danger,
     lineHeight: 12 * 1.4,
   },
 });
