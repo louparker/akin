@@ -20,7 +20,9 @@ export const sv: TranslationDict = {
     'Anonyma samtal med max fyra deltagare. Inga swipes, inga profiler, inga namn.',
   'auth.welcome.cta.signup': 'Skapa konto',
   'auth.welcome.cta.login': 'Jag har redan ett',
-  'auth.welcome.tos': 'Genom att fortsätta godkänner du våra {{termsLink}} och {{privacyLink}}.',
+  'auth.welcome.tos.prefix': 'Genom att fortsätta godkänner du våra ',
+  'auth.welcome.tos.conjunction': ' och ',
+  'auth.welcome.tos.suffix': '.',
   'auth.welcome.tos.terms': 'Villkor',
   'auth.welcome.tos.privacy': 'Integritetspolicy',
 
