@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useEffect } from 'react';
 
@@ -20,8 +20,8 @@ export default function RootIndex() {
   }
 
   if (session) {
-    return <Redirect href={'/(main)' as Href} />;
+    return <Redirect href={'/(main)'} />;
   }
 
-  return <Redirect href={'/(auth)' as Href} />;
+  return <Redirect href={'/(auth)'} />;
 }

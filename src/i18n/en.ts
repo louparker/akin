@@ -245,6 +245,17 @@ export const en = {
   'report.cta': 'Send report',
   'report.success': 'Report sent.',
 
+  // ── Banned screen ────────────────────────────────────────────────────────────
+  'banned.title': 'Your account has been suspended.',
+  'banned.body': 'If you believe this is a mistake, contact hi@akin.app',
+  'banned.logout': 'Log out',
+
+  // ── Error Boundary ────────────────────────────────────────────────────────────
+  'error.boundary.title': 'Something went wrong.',
+  'error.boundary.body': 'Tap to try again. If it keeps happening, send us feedback.',
+  'error.boundary.retry': 'Try again',
+  'error.boundary.feedback': 'Send feedback',
+
   // ── Common ────────────────────────────────────────────────────────────────────
   'common.you': 'you',
   'common.ago': '{{time}} ago',

@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import type { SortOrder } from '../store/useFeedStore';
@@ -25,7 +25,7 @@ export function FeedHeader({ tab, sort, onSortPress }: FeedHeaderProps) {
       <Text style={styles.wordmark}>{title}</Text>
       <View style={styles.row}>
         <Pressable
-          onPress={() => router.navigate('/(main)/feed' as Href)}
+          onPress={() => router.navigate('/(main)/feed')}
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'all' }}
           accessibilityLabel={t('feed.tab.all')}
@@ -33,7 +33,7 @@ export function FeedHeader({ tab, sort, onSortPress }: FeedHeaderProps) {
           <Text style={[styles.tab, tab === 'all' && styles.tabActive]}>{t('feed.tab.all')}</Text>
         </Pressable>
         <Pressable
-          onPress={() => router.navigate('/(main)/feed/categories' as Href)}
+          onPress={() => router.navigate('/(main)/feed/categories')}
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === 'categories' }}
           accessibilityLabel={t('feed.tab.categories')}

@@ -1,6 +1,6 @@
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { colors } from '@/theme/colors';
@@ -24,7 +24,7 @@ export default function WelcomeScreen() {
           full
           kind="primary"
           accessibilityLabel={t('auth.welcome.cta.signup')}
-          onPress={() => router.push('/(auth)/signup' as Href)}
+          onPress={() => router.push('/(auth)/signup')}
         >
           {t('auth.welcome.cta.signup')}
         </Button>
@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
           full
           kind="ghost"
           accessibilityLabel={t('auth.welcome.cta.login')}
-          onPress={() => router.push('/(auth)/login' as Href)}
+          onPress={() => router.push('/(auth)/login')}
         >
           {t('auth.welcome.cta.login')}
         </Button>

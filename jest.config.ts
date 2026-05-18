@@ -19,6 +19,13 @@ const config: Config = {
     ],
   },
   moduleNameMapper: {
+    // NativeWind global CSS import — no-op in Jest (styles applied via className at runtime)
+    '\\.css$': '<rootDir>/src/__mocks__/fileMock.js',
+    // react-native-reanimated: the official /mock entry transitively initialises
+    // native Worklets which crashes in Jest. Use our hand-rolled stub instead.
+    '^react-native-reanimated$': '<rootDir>/src/__mocks__/react-native-reanimated.ts',
+    // Font and static asset files — return a stub module ID
+    '\\.(ttf|otf|woff|woff2|png|jpg|jpeg|gif|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
     // Pin MSW to its compiled CJS output, bypassing exports-map resolution.
     // MSW 2.x ships TS source in src/ which gets picked up by the resolver
     // under certain export-condition combinations.
@@ -29,6 +36,10 @@ const config: Config = {
     // DeferredPromise + createDeferredExecutor symbols).
     '^@open-draft/deferred-promise$':
       '<rootDir>/node_modules/@open-draft/deferred-promise/build/index.js',
+    // posthog-react-native is a native module that cannot run in Jest/Node.
+    // Map it to the manual stub so jest.mock() factories in test files can
+    // override the implementation without the resolver failing.
+    '^posthog-react-native$': '<rootDir>/src/__mocks__/posthog-react-native.ts',
     // Path aliases
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^@/features/(.*)$': '<rootDir>/src/features/$1',
