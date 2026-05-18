@@ -126,9 +126,7 @@ export function getPostHogClient(): PostHog | null {
   }
 
   const env = getEnv();
-  if (!env.posthogKey) {
-    return null;
-  }
+  if (!env.posthogKey) return null;
 
   _client = new PostHog(env.posthogKey, {
     host: POSTHOG_HOST,

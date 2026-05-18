@@ -18,7 +18,9 @@ export const en = {
     'Small, anonymous conversations capped at four people. No swiping, no profiles, no names attached.',
   'auth.welcome.cta.signup': 'Make an account',
   'auth.welcome.cta.login': 'I already have one',
-  'auth.welcome.tos': 'By continuing you agree to our {{termsLink}} and {{privacyLink}}.',
+  'auth.welcome.tos.prefix': 'By continuing you agree to our ',
+  'auth.welcome.tos.conjunction': ' and ',
+  'auth.welcome.tos.suffix': '.',
   'auth.welcome.tos.terms': 'Terms',
   'auth.welcome.tos.privacy': 'Privacy Policy',
 

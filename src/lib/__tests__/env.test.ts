@@ -10,7 +10,7 @@ const validEnv: Record<string, string> = {
 };
 
 describe('getEnv', () => {
-  it('returns all values when every key is present', () => {
+  it('returns all values when every required key is present', () => {
     const env = getEnv(validEnv);
     expect(env.supabaseUrl).toBe('https://abc.supabase.co');
     expect(env.supabaseAnonKey).toBe('anon-key');
@@ -28,13 +28,12 @@ describe('getEnv', () => {
     expect(() => getEnv(rest)).toThrow('EXPO_PUBLIC_SUPABASE_URL');
   });
 
-  it('returns undefined for sentryDsn when key is absent', () => {
-    const env = getEnv({ ...validEnv, EXPO_PUBLIC_SENTRY_DSN: '' });
-    expect(env.sentryDsn).toBeUndefined();
-  });
-
-  it('returns undefined for posthogKey when key is absent', () => {
-    const env = getEnv({ ...validEnv, EXPO_PUBLIC_POSTHOG_KEY: '' });
-    expect(env.posthogKey).toBeUndefined();
+  it('allows EXPO_PUBLIC_SENTRY_DSN and EXPO_PUBLIC_POSTHOG_KEY to be missing (dev)', () => {
+    const env = getEnv({
+      EXPO_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: 'anon-key',
+    });
+    expect(env.sentryDsn).toBe('');
+    expect(env.posthogKey).toBe('');
   });
 });

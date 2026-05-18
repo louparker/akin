@@ -1,4 +1,4 @@
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, Text as RNText, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@/components/primitives/Text';
@@ -11,23 +11,23 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Top section */}
       <View style={styles.top}>
         <Text style={styles.wordmark}>Akin</Text>
         <Text style={styles.headline}>{t('auth.welcome.headline')}</Text>
         <Text style={styles.body}>{t('auth.welcome.body')}</Text>
       </View>
 
-      {/* Bottom CTA section */}
       <View style={styles.bottom}>
         <Button
           full
           kind="primary"
+          size="lg"
           accessibilityLabel={t('auth.welcome.cta.signup')}
           onPress={() => router.push('/(auth)/signup')}
         >
           {t('auth.welcome.cta.signup')}
         </Button>
+
         <Button
           full
           kind="ghost"
@@ -37,24 +37,29 @@ export default function WelcomeScreen() {
           {t('auth.welcome.cta.login')}
         </Button>
 
-        <View style={styles.tosRow}>
-          <Text style={styles.tosText}>
-            {t('auth.welcome.tos', {
-              termsLink: t('auth.welcome.tos.terms'),
-              privacyLink: t('auth.welcome.tos.privacy'),
-            })}
-          </Text>
-          {/* Underlined term links rendered as separate pressable spans */}
-          <View style={styles.tosLinks}>
-            <Pressable accessibilityRole="link" accessibilityLabel={t('auth.welcome.tos.terms')}>
-              <Text style={styles.tosLink}>{t('auth.welcome.tos.terms')}</Text>
-            </Pressable>
-            <Text style={styles.tosText}>{' · '}</Text>
-            <Pressable accessibilityRole="link" accessibilityLabel={t('auth.welcome.tos.privacy')}>
-              <Text style={styles.tosLink}>{t('auth.welcome.tos.privacy')}</Text>
-            </Pressable>
-          </View>
-        </View>
+        {/* Inline ToS — spaces are embedded in prefix/conjunction strings to avoid
+            bare whitespace nodes, which react-native/no-raw-text flags. */}
+        <RNText style={styles.tosText} textBreakStrategy="simple">
+          {t('auth.welcome.tos.prefix')}
+          <RNText
+            style={styles.tosLink}
+            accessibilityRole="link"
+            accessibilityLabel={t('auth.welcome.tos.terms')}
+            suppressHighlighting
+          >
+            {t('auth.welcome.tos.terms')}
+          </RNText>
+          {t('auth.welcome.tos.conjunction')}
+          <RNText
+            style={styles.tosLink}
+            accessibilityRole="link"
+            accessibilityLabel={t('auth.welcome.tos.privacy')}
+            suppressHighlighting
+          >
+            {t('auth.welcome.tos.privacy')}
+          </RNText>
+          {t('auth.welcome.tos.suffix')}
+        </RNText>
       </View>
     </View>
   );
@@ -98,24 +103,14 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     gap: 12,
   },
-  tosRow: {
-    alignItems: 'center',
-    gap: 4,
-  },
   tosText: {
     fontFamily: 'Inter',
     fontSize: 11.5,
+    lineHeight: 16,
     color: colors.fg.faint,
     textAlign: 'center',
   },
-  tosLinks: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   tosLink: {
-    fontFamily: 'Inter',
-    fontSize: 11.5,
     color: colors.fg.tertiary,
     textDecorationLine: 'underline',
   },
