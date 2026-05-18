@@ -20,7 +20,7 @@ export default function RootIndex() {
   }
 
   if (session) {
-    return <Redirect href={'/(main)'} />;
+    return <Redirect href={'/(main)/feed'} />;
   }
 
   return <Redirect href={'/(auth)'} />;
