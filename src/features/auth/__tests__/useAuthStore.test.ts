@@ -350,12 +350,10 @@ describe('useAuthStore', () => {
       mockedFrom.mockReturnValueOnce({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest
-          .fn()
-          .mockResolvedValueOnce({
-            data: mockProfile({ onboarded_at: '2026-01-01' }),
-            error: null,
-          }),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ onboarded_at: '2026-01-01' }),
+          error: null,
+        }),
         update: jest.fn().mockReturnThis(),
       } as ReturnType<typeof supabase.from>);
 
