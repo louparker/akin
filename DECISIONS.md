@@ -29,6 +29,86 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-015 — Account deletion: 30-day soft-delete with pg_cron purge
+
+Date: 2026-05-18
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+GDPR Article 17 (right to erasure) requires the ability to delete a user account and associated personal data. We need a deletion flow that is genuinely irreversible but also allows for a brief grace period (error recovery, App Store requirement to show the path is real).
+
+### Options considered
+
+1. **Immediate hard delete** — call `supabase.auth.admin.deleteUser()` at the moment the user confirms. Simple, but no grace period; App Store guidelines for 4.2 require the deletion to actually happen.
+2. **Soft delete only** — mark `status = 'deleted'`, never actually purge. Violates GDPR erasure.
+3. **30-day soft delete + nightly purge** — mark `status = 'deleted'` and `deleted_at = now()` immediately; a pg_cron job purges (calling `auth.admin.deleteUser()`) after 30 days. GDPR compliant, App Store compliant, provides an accidental-deletion safety net.
+
+### Decision
+
+Option 3. A Supabase Edge Function (`scheduled-purge`) is invoked nightly by pg_cron, fetches profiles with `status = 'deleted' AND deleted_at < now() - interval '30 days'`, and calls `auth.admin.deleteUser()` for each. The function is protected by a shared secret (`SCHEDULED_PURGE_SECRET`). The 30-day window is clearly disclosed in the in-app deletion flow.
+
+### Consequences
+
+- Easier: meets GDPR + App Store requirements without a complex undo flow.
+- Harder: the pg_cron extension must be enabled in Supabase (it is in Pro plan). The secret must be rotated as part of security hygiene.
+- Revisit: if we ever need real-time erasure (unlikely for a social app), we'd switch to immediate hard-delete or a webhook trigger.
+
+---
+
+## ADR-014 — Password reset: generic response regardless of email existence
+
+Date: 2026-05-18
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+When a user requests a password reset, naive implementations confirm whether the submitted email exists in the system. This is an account enumeration vulnerability: an attacker can discover which emails are registered.
+
+### Options considered
+
+1. **Expose the error** — show "No account found for that email." Leaks registration state.
+2. **Generic response always** — always say "If that email is registered, you'll receive a link." Never confirm or deny existence.
+
+### Decision
+
+Option 2. `requestPasswordReset()` in the auth store ignores the Supabase error when the email isn't found and returns without setting `error` state. The UI always shows the same generic success message. This matches how Supabase's own auth dashboard behaves.
+
+### Consequences
+
+- Easier: no account enumeration.
+- Harder: users with a typo in their email get no feedback. Acceptable trade-off for an anonymous app where the email is private anyway.
+
+---
+
+## ADR-013 — Onboarding: onboarded_at column instead of deriving from anonymous_identifier
+
+Date: 2026-05-18
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 3 implied onboarding completion by checking whether `anonymous_identifier` was set and non-pending. This is fragile: it ties two concerns together (identifier generation and onboarding completion) and makes the routing logic hard to reason about.
+
+### Options considered
+
+1. **Derive from anonymous_identifier** — `onboarding_complete = identifier is set and not pending`. Fragile; breaks if identifier generation is retried.
+2. **Explicit `onboarded_at` column** — a nullable `timestamptz` that is set when the user taps "This is me" and completes the 3-screen onboarding pager. Null means not yet onboarded.
+
+### Decision
+
+Option 2. Migration `0013_add_onboarded_at.sql` adds `onboarded_at timestamptz` to `profiles`. `completeOnboarding()` in the auth store writes `onboarded_at = now()`. `routeAfterSignIn()` checks this column first, then falls back to identifier state for the identifier reveal screen.
+
+### Consequences
+
+- Easier: routing logic is explicit and readable. Onboarding can be reset for A/B tests by nulling the column.
+- Harder: one more column to carry in the Profile type and seed data.
+
+---
+
 ## ADR-012 — PostHog analytics: anonymous distinct ID, EU host, no identity linkage
 
 Date: 2026-05-18

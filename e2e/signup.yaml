@@ -1,0 +1,46 @@
+appId: com.ourakin.app
+# Phase 4 smoke flow: signup → email verify (auto-confirmed in dev) → identifier reveal → skip onboarding → feed.
+# Prerequisite: SUPABASE_AUTH_AUTO_CONFIRM=true in the local .env.local (dev/staging only, NEVER production).
+# Run: maestro test e2e/signup.yaml
+---
+# 1. Launch fresh —————————————————————————————————
+- launchApp:
+    clearState: true
+
+# 2. Welcome screen
+- assertVisible: 'Make an account'
+- tapOn: 'Make an account'
+
+# 3. Signup form
+- assertVisible: 'Make an account'
+- tapOn:
+    id: 'Email'
+- inputText: 'test+e2e@ourakin.app'
+- tapOn:
+    id: 'Password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'Confirm password'
+- inputText: 'TestPass123!'
+# Tap the 18+ checkbox card
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+
+# 4. Email verify (auto-confirmed in dev → polls quickly)
+- assertVisible: 'Check your email'
+# In dev, Supabase auto-confirms — the polling should redirect within ~5s.
+- waitForAnimationToEnd
+
+# 5. Identifier reveal
+- assertVisible:
+    text: "This is who you'll be here"
+- assertVisible: 'This is me'
+# Accept the identifier
+- tapOn: 'This is me'
+
+# 6. Onboarding screens
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+
+# 7. Feed — golden path landing
+- assertVisible: 'akin'

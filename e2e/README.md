@@ -38,6 +38,15 @@ pnpm test:e2e:android   # all flows on Android emulator
 pnpm exec maestro test e2e/smoke.yaml   # single flow
 ```
 
+## Current flows
+
+| File          | Covers                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `smoke.yaml`  | App launches and shows the welcome screen.                                              |
+| `signup.yaml` | Full signup → email verify (auto-confirm) → identifier reveal → skip onboarding → feed. |
+
+> **signup.yaml prerequisite:** Set `SUPABASE_AUTH_AUTO_CONFIRM=true` in your local Supabase config so email verification is instant. **Never enable this in production.**
+
 ## Writing flows
 
 - One YAML file per critical journey (`signup.yaml`, `create-post.yaml`, etc.) — not per screen.

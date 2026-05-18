@@ -20,6 +20,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { ErrorBoundary } from '@/components/composed/ErrorBoundary';
 import { BannedScreen } from '@/components/composed/BannedScreen';
+import SuspendedScreen from '@/components/composed/SuspendedScreen';
 import { track } from '@/lib/analytics';
 import { initSentry } from '@/lib/sentry';
 import { Text } from '@/components/primitives/Text';
@@ -151,13 +152,29 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError, isLoading, dismissSplash]);
 
   const isBanned = profile?.status === 'banned';
+  const isSuspended =
+    profile?.status === 'suspended' &&
+    profile?.suspended_until != null &&
+    new Date(profile.suspended_until) > new Date();
+
+  function renderContent() {
+    if (isBanned) return <BannedScreen />;
+    if (isSuspended)
+      return (
+        <SuspendedScreen
+          suspendedUntil={profile.suspended_until ?? ''}
+          locale={profile.language === 'sv' ? 'sv' : 'en'}
+        />
+      );
+    return <Slot />;
+  }
 
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
-            {isBanned ? <BannedScreen /> : <Slot />}
+            {renderContent()}
             <InAppSplash visible={showSplash} />
           </QueryClientProvider>
         </SafeAreaProvider>

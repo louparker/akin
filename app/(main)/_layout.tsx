@@ -125,6 +125,12 @@ export default function MainLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+      <Tabs.Screen name="banned" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="suspended" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen
+        name="delete-account"
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
+      />
     </Tabs>
   );
 }

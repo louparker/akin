@@ -1,6 +1,11 @@
-import { useState } from 'react';
+// CRITICAL-PATH: auth — pending expert review
+
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { getLocales } from 'expo-localization';
+
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { Input } from '@/components/primitives/Input';
@@ -8,71 +13,34 @@ import { TopBar } from '@/components/composed/TopBar';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { signupSchema, type SignupFormValues } from '@/features/auth/schemas/signup';
 
-function validateEmail(email: string): string | null {
-  if (!email.trim()) return t('auth.signup.error.generic');
-  // Simple RFC-ish check: must have @ and a dot after it
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('auth.signup.error.generic');
-  return null;
+function deviceLanguage(): 'sv' | 'en' {
+  const tag = getLocales()[0]?.languageTag ?? 'en';
+  return tag.startsWith('sv') ? 'sv' : 'en';
 }
 
 export default function SignupScreen() {
   const router = useRouter();
-  // Select state (triggers re-render on change)
   const isLoading = useAuthStore((s) => s.isLoading);
-  const error = useAuthStore((s) => s.error);
-  // Access actions directly from store state — Zustand actions are stable references.
-  // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound methods
-  const { signUp, clearError } = useAuthStore.getState();
+  const storeError = useAuthStore((s) => s.error);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      ageConfirmed: undefined as unknown as true,
+    },
+  });
 
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [ageError, setAgeError] = useState<string | null>(null);
-
-  function handleEmailChange(text: string) {
-    setEmail(text);
-    setEmailError(null);
-    clearError();
-  }
-
-  function handlePasswordChange(text: string) {
-    setPassword(text);
-    setPasswordError(null);
-    clearError();
-  }
-
-  function toggleAge() {
-    setAgeConfirmed((prev) => !prev);
-    setAgeError(null);
-    clearError();
-  }
-
-  async function handleSubmit() {
-    let valid = true;
-
-    const emailErr = validateEmail(email);
-    if (emailErr) {
-      setEmailError(emailErr);
-      valid = false;
-    }
-
-    if (password.length < 8) {
-      setPasswordError(t('auth.signup.error.weak_password'));
-      valid = false;
-    }
-
-    if (!ageConfirmed) {
-      setAgeError(t('auth.signup.error.age_required'));
-      valid = false;
-    }
-
-    if (!valid) return;
-
-    await signUp(email.trim(), password);
+  async function onSubmit(values: SignupFormValues) {
+    await useAuthStore.getState().signUp(values.email.trim(), values.password, deviceLanguage());
   }
 
   return (
@@ -96,58 +64,125 @@ export default function SignupScreen() {
         <Text style={styles.subtitle}>{t('auth.signup.subtitle')}</Text>
 
         <View style={styles.fields}>
+          {/* Email */}
           <View>
-            <Input
-              label={t('auth.signup.email.label')}
-              value={email}
-              onChangeText={handleEmailChange}
-              placeholder={t('auth.signup.email.placeholder')}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              accessibilityLabel={t('auth.signup.email.label')}
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label={t('auth.signup.email.label')}
+                  value={value}
+                  onChangeText={(text) => {
+                    onChange(text);
+                    useAuthStore.getState().clearError();
+                  }}
+                  onBlur={onBlur}
+                  placeholder={t('auth.signup.email.placeholder')}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  accessibilityLabel={t('auth.signup.email.label')}
+                />
+              )}
             />
-            {emailError ? <Text style={styles.fieldError}>{emailError}</Text> : null}
+            {errors.email ? (
+              <Text style={styles.fieldError} accessibilityRole="alert">
+                {t('auth.signup.error.generic')}
+              </Text>
+            ) : null}
           </View>
 
+          {/* Password */}
           <View>
-            <Input
-              label={t('auth.signup.password.label')}
-              value={password}
-              onChangeText={handlePasswordChange}
-              placeholder={t('auth.signup.password.placeholder')}
-              hint={t('auth.signup.password.hint')}
-              secureTextEntry
-              accessibilityLabel={t('auth.signup.password.label')}
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label={t('auth.signup.password.label')}
+                  value={value}
+                  onChangeText={(text) => {
+                    onChange(text);
+                    useAuthStore.getState().clearError();
+                  }}
+                  onBlur={onBlur}
+                  placeholder={t('auth.signup.password.placeholder')}
+                  hint={t('auth.signup.password.hint')}
+                  secureTextEntry
+                  accessibilityLabel={t('auth.signup.password.label')}
+                />
+              )}
             />
-            {passwordError ? <Text style={styles.fieldError}>{passwordError}</Text> : null}
+            {errors.password ? (
+              <Text style={styles.fieldError} accessibilityRole="alert">
+                {t('auth.signup.error.weak_password')}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Confirm password */}
+          <View>
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { value, onChange, onBlur } }) => (
+                <Input
+                  label={t('auth.signup.confirmPassword.label')}
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  placeholder={t('auth.signup.confirmPassword.placeholder')}
+                  secureTextEntry
+                  accessibilityLabel={t('auth.signup.confirmPassword.label')}
+                />
+              )}
+            />
+            {errors.confirmPassword ? (
+              <Text style={styles.fieldError} accessibilityRole="alert">
+                {t('auth.signup.error.password_mismatch')}
+              </Text>
+            ) : null}
           </View>
         </View>
 
-        {/* Age confirmation checkbox card */}
-        <Pressable
-          style={styles.ageCard}
-          onPress={toggleAge}
-          accessibilityRole="checkbox"
-          accessibilityLabel={t('auth.signup.age.label')}
-          accessibilityState={{ checked: ageConfirmed }}
-        >
-          <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
-            {ageConfirmed ? <Text style={styles.checkmark}>{'✓'}</Text> : null}
-          </View>
-          <View style={styles.ageTextCol}>
-            <Text style={styles.ageLabel}>{t('auth.signup.age.label')}</Text>
-            <Text style={styles.ageDesc}>{t('auth.signup.age.description')}</Text>
-          </View>
-        </Pressable>
-        {ageError ? <Text style={styles.fieldError}>{ageError}</Text> : null}
+        {/* 18+ checkbox card */}
+        <Controller
+          control={control}
+          name="ageConfirmed"
+          render={({ field: { value, onChange } }) => (
+            <Pressable
+              style={styles.ageCard}
+              onPress={() => onChange(value ? undefined : true)}
+              accessibilityRole="checkbox"
+              accessibilityLabel={t('auth.signup.age.label')}
+              accessibilityState={{ checked: value === true }}
+            >
+              <View style={[styles.checkbox, value === true && styles.checkboxChecked]}>
+                {value === true ? <Text style={styles.checkmark}>{'✓'}</Text> : null}
+              </View>
+              <View style={styles.ageTextCol}>
+                <Text style={styles.ageLabel}>{t('auth.signup.age.label')}</Text>
+                <Text style={styles.ageDesc}>{t('auth.signup.age.description')}</Text>
+              </View>
+            </Pressable>
+          )}
+        />
+        {errors.ageConfirmed ? (
+          <Text style={styles.fieldError} accessibilityRole="alert">
+            {t('auth.signup.error.age_required')}
+          </Text>
+        ) : null}
 
-        {/* Store-level error */}
-        {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+        {storeError ? (
+          <Text style={styles.fieldError} accessibilityRole="alert">
+            {storeError}
+          </Text>
+        ) : null}
 
         <Button
           full
           kind="primary"
-          onPress={() => void handleSubmit()}
+          onPress={() => void handleSubmit(onSubmit)()}
           disabled={isLoading}
           accessibilityLabel={t('auth.signup.cta')}
           style={styles.cta}
@@ -173,7 +208,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
     paddingHorizontal: 28,
   },
   title: {

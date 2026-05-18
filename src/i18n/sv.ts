@@ -48,8 +48,32 @@ export const sv: TranslationDict = {
   'auth.login.password.label': 'Lösenord',
   'auth.login.forgot': 'Glömt lösenord',
   'auth.login.cta': 'Logga in',
+  'auth.login.signup': 'Har du inget konto?',
   'auth.login.error.invalid': 'Fel e-post eller lösenord.',
+  'auth.login.error.rateLimit': 'För många försök. Försök igen om {{n}} minuter.',
   'auth.login.error.generic': 'Något gick fel. Försök igen.',
+
+  // ── Auth — Password Reset ────────────────────────────────────────────────────
+  'auth.reset.title': 'Glömt lösenordet?',
+  'auth.reset.subtitle': 'Ange din e-post så skickar vi en återställningslänk.',
+  'auth.reset.email.label': 'E-post',
+  'auth.reset.cta': 'Skicka återställningslänk',
+  'auth.reset.sent.title': 'Kolla din e-post',
+  'auth.reset.sent.body':
+    'Om vi har ett konto för den e-postadressen skickar vi en återställningslänk inom kort.',
+  'auth.resetConfirm.title': 'Välj ett nytt lösenord',
+  'auth.resetConfirm.password.label': 'Nytt lösenord',
+  'auth.resetConfirm.confirm.label': 'Bekräfta nytt lösenord',
+  'auth.resetConfirm.cta': 'Spara nytt lösenord',
+  'auth.resetConfirm.error.mismatch': 'Lösenorden matchar inte.',
+  'auth.resetConfirm.error.weak': 'Lösenordet måste vara minst 8 tecken.',
+  'auth.resetConfirm.error.generic': 'Något gick fel. Försök igen.',
+  'auth.resetConfirm.success': 'Lösenord uppdaterat. Du är nu inloggad.',
+
+  // ── Auth — Signup: confirm password (added by Task 4.2) ──────────────────────
+  'auth.signup.confirmPassword.label': 'Bekräfta lösenord',
+  'auth.signup.confirmPassword.placeholder': '••••••••',
+  'auth.signup.error.password_mismatch': 'Lösenorden matchar inte.',
 
   // ── Auth — Verify Email ──────────────────────────────────────────────────────
   'auth.verify.title': 'Kolla din e-post',
@@ -57,7 +81,10 @@ export const sv: TranslationDict = {
     'Vi har skickat en bekräftelselänk till {{email}}. Öppna den för att aktivera ditt konto.',
   'auth.verify.resend': 'Skicka igen',
   'auth.verify.resend.sent': 'Skickat.',
+  'auth.verify.resend.countdown': 'Skicka igen om {{n}}s',
   'auth.verify.spam': 'Kolla skräpposten om den inte dyker upp.',
+  'auth.verify.wrongEmail': 'Fel e-post?',
+  'auth.verify.signOut': 'Använd en annan e-post',
 
   // ── Auth — Identifier Reveal ─────────────────────────────────────────────────
   'auth.identifier.eyebrow': 'Det här är du här inne',
@@ -66,6 +93,22 @@ export const sv: TranslationDict = {
   'auth.identifier.examples.label': 'Andra du kommer att möta här:',
   'auth.identifier.cta.confirm': 'Det är jag',
   'auth.identifier.cta.retry': 'Prova ett annat',
+  'auth.identifier.loading': 'Förbereder ditt namn…',
+  'auth.identifier.error': 'Kunde inte förbereda ditt namn.',
+
+  // ── Auth — Onboarding ────────────────────────────────────────────────────────
+  'auth.onboarding.skip': 'Hoppa över',
+  'auth.onboarding.next': 'Nästa',
+  'auth.onboarding.getStarted': 'Kom igång',
+  'auth.onboarding.screen1.title': 'Anonymt, av design',
+  'auth.onboarding.screen1.body':
+    'Din identifierare är hur folk känner igen dig här. Ingen profilbild, inget riktigt namn, inga DM. Alla är på samma nivå.',
+  'auth.onboarding.screen2.title': 'Små konversationer',
+  'auth.onboarding.screen2.body':
+    'Varje inlägg har plats för 1 skribent och 3 svar. Fyra personer max. Du kan vara aktiv i 3 konversationer samtidigt.',
+  'auth.onboarding.screen3.title': '9 kategorier, ingen algoritm',
+  'auth.onboarding.screen3.body':
+    'Bläddra efter vad du känner för att prata om. Flödet visar de senaste inläggen – inget lyfts fram eller begravs.',
 
   // ── Feed ─────────────────────────────────────────────────────────────────────
   'feed.tab.all': 'Alla',
@@ -250,9 +293,37 @@ export const sv: TranslationDict = {
   'report.success': 'Rapport skickad.',
 
   // ── Banned screen ────────────────────────────────────────────────────────────
-  'banned.title': 'Ditt konto har stängts av.',
-  'banned.body': 'Om du tror att det är ett misstag, kontakta hi@akin.app',
+  'banned.title': 'Ditt konto har stängts av permanent.',
+  'banned.body':
+    'Om du tror att det är ett misstag, kontakta hi@akin.app. Du kan exportera dina uppgifter eller radera ditt konto nedan.',
   'banned.logout': 'Logga ut',
+  'banned.deleteAccount': 'Radera mitt konto',
+
+  // ── Suspended screen ─────────────────────────────────────────────────────────
+  'suspended.title': 'Ditt konto är tillfälligt avstängt.',
+  'suspended.body':
+    'Du kan läsa inlägg men inte posta eller kommentera förrän avstängningen upphör.',
+  'suspended.countdown': 'Avstängt i {{time}} till.',
+  'suspended.lifted': 'Din avstängning har hävts.',
+  'suspended.logout': 'Logga ut',
+
+  // ── Account deletion ─────────────────────────────────────────────────────────
+  'auth.delete.title': 'Radera ditt konto',
+  'auth.delete.step1.title': 'Är du säker?',
+  'auth.delete.step1.body':
+    'Det här tar bort allt – dina inlägg, konversationer och identifierare. Data raderas helt inom 30 dagar. Det går inte att ångra.',
+  'auth.delete.step2.label': 'Skriv "radera mitt konto" för att fortsätta',
+  'auth.delete.step2.placeholder': 'radera mitt konto',
+  'auth.delete.step2.phrase': 'radera mitt konto',
+  'auth.delete.step2.error': 'Ange frasen exakt.',
+  'auth.delete.step3.label': 'Ange ditt lösenord för att bekräfta',
+  'auth.delete.step3.error': 'Felaktigt lösenord.',
+  'auth.delete.cta': 'Radera permanent',
+  'auth.delete.cancel': 'Behåll mitt konto',
+  'auth.delete.deleted.title': 'Konto raderat.',
+  'auth.delete.deleted.body':
+    'Ditt konto och dina uppgifter tas bort helt inom 30 dagar. Tack för att du prövade Akin.',
+  'auth.delete.error.generic': 'Något gick fel. Försök igen.',
 
   // ── Error Boundary ────────────────────────────────────────────────────────────
   'error.boundary.title': 'Något gick fel.',
