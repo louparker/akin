@@ -1,11 +1,8 @@
 import type { ExpoConfig, ConfigContext } from 'expo/config';
-import { getEnv } from './src/lib/env';
 
+// app.config.ts is loaded by Expo's own TypeScript runner, which does not
+// resolve imports from src/ — keep this file self-contained.
 export default ({ config }: ConfigContext): ExpoConfig => {
-  // Fails the build immediately if any required env var is missing.
-  // In CI, placeholder values are injected via workflow env: block.
-  const env = getEnv(process.env);
-
   return {
     ...config,
     name: 'Akin',
@@ -31,10 +28,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       typedRoutes: true,
     },
     extra: {
-      supabaseUrl: env.supabaseUrl,
-      supabaseAnonKey: env.supabaseAnonKey,
-      sentryDsn: env.sentryDsn,
-      posthogKey: env.posthogKey,
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+      sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+      posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
     },
   };
 };
