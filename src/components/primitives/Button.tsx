@@ -2,6 +2,8 @@ import {
   Pressable,
   Text,
   StyleSheet,
+  ActivityIndicator,
+  View,
   type PressableProps,
   type StyleProp,
   type ViewStyle,
@@ -18,6 +20,7 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   full?: boolean;
   children: React.ReactNode;
   disabled?: boolean;
+  loading?: boolean;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 }
@@ -69,10 +72,12 @@ export function Button({
   full = false,
   children,
   disabled = false,
+  loading = false,
   accessibilityLabel,
   style,
   ...props
 }: ButtonProps) {
+  const isInert = disabled || loading;
   // eslint-disable-next-line security/detect-object-injection -- kind and size are union literals; no user input
   const containerKindStyle = containerByKind[kind];
   // eslint-disable-next-line security/detect-object-injection -- kind and size are union literals; no user input
@@ -86,22 +91,28 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
+      accessibilityState={{ disabled: isInert }}
+      disabled={isInert}
       style={({ pressed }) => [
         styles.base,
         containerKindStyle,
         containerSizeStyle,
         full && styles.full,
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
+        isInert && styles.disabled,
+        pressed && !isInert && styles.pressed,
         style,
       ]}
       {...props}
     >
-      <Text style={[styles.text, textKindStyle, textSizeStyle, disabled && styles.textDisabled]}>
-        {children}
-      </Text>
+      {loading ? (
+        <View style={styles.spinnerContainer}>
+          <ActivityIndicator testID="button-spinner" color={textKindStyle.color} size="small" />
+        </View>
+      ) : (
+        <Text style={[styles.text, textKindStyle, textSizeStyle, disabled && styles.textDisabled]}>
+          {children}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -109,6 +120,10 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },

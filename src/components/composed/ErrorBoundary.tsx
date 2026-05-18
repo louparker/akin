@@ -19,6 +19,7 @@ import { ErrorBoundary as RebErrorBoundary, type FallbackProps } from 'react-err
 import { Button } from '@/components/primitives/Button';
 import { Text } from '@/components/primitives/Text';
 import { logger } from '@/lib/logger';
+import { Sentry } from '@/lib/sentry';
 import { t } from '@/lib/i18n';
 import { colors } from '@/theme/colors';
 
@@ -96,6 +97,7 @@ export function ErrorBoundary({
 }: ErrorBoundaryProps): React.JSX.Element {
   function handleError(error: Error): void {
     const errorCode = shortErrorCode(error);
+    Sentry.captureException(error, { extra: { errorCode } });
     logger.error('error_boundary_caught', { errorCode });
   }
 

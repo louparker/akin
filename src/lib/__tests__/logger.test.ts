@@ -1,3 +1,4 @@
+import * as SentryMock from '@sentry/react-native';
 import { logger, scrub } from '@/lib/logger';
 
 // ─── scrub ───────────────────────────────────────────────────────────────────
@@ -153,5 +154,48 @@ describe('logger', () => {
   it('logger.info works without a context argument', () => {
     logger.info('app started');
     expect(infoSpy).toHaveBeenCalledWith('app started', undefined);
+  });
+});
+
+// ─── logger → Sentry forwarding ──────────────────────────────────────────────
+
+describe('logger → Sentry', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('logger.info adds a Sentry breadcrumb with scrubbed context', () => {
+    logger.info('feed_loaded', { count: 5, email: 'x@y.com' });
+    expect(SentryMock.addBreadcrumb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'feed_loaded',
+        data: expect.objectContaining({ count: 5, email: '[redacted]' }),
+      }),
+    );
+  });
+
+  it('logger.warn sends a Sentry warning message with scrubbed context', () => {
+    logger.warn('rate_limit_near', { token: 'secret', source: 'auth' });
+    expect(SentryMock.captureMessage).toHaveBeenCalledWith(
+      'rate_limit_near',
+      expect.objectContaining({
+        level: 'warning',
+        extra: expect.objectContaining({ token: '[redacted]', source: 'auth' }),
+      }),
+    );
+  });
+
+  it('logger.error with a string sends a Sentry error message', () => {
+    logger.error('post_create_failed', { reason: 'DB error' });
+    expect(SentryMock.captureMessage).toHaveBeenCalledWith(
+      'post_create_failed',
+      expect.objectContaining({ level: 'error' }),
+    );
+  });
+
+  it('logger.error with an Error calls Sentry.captureException', () => {
+    const err = new Error('something broke');
+    logger.error(err);
+    expect(SentryMock.captureException).toHaveBeenCalledWith(err, expect.anything());
   });
 });

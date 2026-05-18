@@ -21,8 +21,15 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { ErrorBoundary } from '@/components/composed/ErrorBoundary';
 import { BannedScreen } from '@/components/composed/BannedScreen';
 import { track } from '@/lib/analytics';
+import { initSentry } from '@/lib/sentry';
 import { Text } from '@/components/primitives/Text';
 import { colors } from '@/theme/colors';
+
+// Initialise Sentry as early as possible — before the first component render.
+initSentry({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+  appEnv: process.env.EXPO_PUBLIC_APP_ENV ?? 'development',
+});
 
 // ── Native splash: hold until boot sequence completes ───────────────────────
 void SplashScreen.preventAutoHideAsync();

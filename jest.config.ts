@@ -40,6 +40,9 @@ const config: Config = {
     // Map it to the manual stub so jest.mock() factories in test files can
     // override the implementation without the resolver failing.
     '^posthog-react-native$': '<rootDir>/src/__mocks__/posthog-react-native.ts',
+    // @sentry/react-native initialises native code on import — replace with the
+    // hand-rolled stub for all Jest tests.
+    '^@sentry/react-native$': '<rootDir>/src/__mocks__/@sentry/react-native.ts',
     // Path aliases
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^@/features/(.*)$': '<rootDir>/src/features/$1',
