@@ -29,6 +29,43 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-012 — PostHog analytics: anonymous distinct ID, EU host, no identity linkage
+
+Date: 2026-05-18
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Task 3.8 wires PostHog EU as the behavioural analytics backend. PostHog requires a stable `distinct_id` per device/user to group events into sessions. The choice of how to generate and store that ID carries privacy and anonymity implications that are central to Akin's product identity.
+
+### Options considered
+
+1. **Use `auth.uid()` as the distinct ID** — trivial to implement; allows cross-referencing analytics events with database records. Violates Akin's anonymity guarantee (Rule 8): auth.uid() is an internal identity anchor. PostHog support engineers with project access could, in theory, correlate user behaviour with account data. ✗
+
+2. **Generate a random UUID per device, persisted in `expo-secure-store`** — distinct from auth.uid(); survives app restarts; lost on uninstall (acceptable — analytics sessions do not need to span reinstalls). Cannot be correlated with auth.uid() at rest. ✓
+
+3. **Use a per-session UUID (in-memory only)** — simpler but sessions split every app restart, making funnel analysis impossible. ✗
+
+### Decision
+
+Option 2. `getDistinctId()` in `src/lib/analytics.ts` generates a RFC 4122 v4 UUID on first call, persists it under the key `posthog_distinct_id` in `expo-secure-store`, and returns the stored value on all subsequent calls. The function accepts no argument — there is no code path that could pass an external user ID. This is enforced structurally, not by convention.
+
+Additional constraints applied:
+
+- EU data residency: `host: 'https://eu.posthog.com'`
+- Session replay: `enableSessionReplay: false` (no screen recordings)
+- PII scrubbing: all event props pass through `scrub()` from `src/lib/logger.ts` before capture
+
+### Consequences
+
+- Analytics sessions survive app restarts but not reinstalls — acceptable for behavioural analytics.
+- PostHog data cannot be joined to Supabase user records without manual cross-referencing, which requires access to both systems and is therefore an auditable action.
+- The anonymity guarantee (CLAUDE.md Rule 8) is preserved in the analytics layer.
+- If we ever need to persist analytics identity across reinstalls we would need a server-generated opaque token — revisit this ADR at that point.
+
+---
+
 ## ADR-011 — Phase 2: database schema, triggers, and pgTAP suite
 
 Date: 2026-05-17

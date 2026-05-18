@@ -249,6 +249,17 @@ export const sv: TranslationDict = {
   'report.cta': 'Skicka rapport',
   'report.success': 'Rapport skickad.',
 
+  // ── Banned screen ────────────────────────────────────────────────────────────
+  'banned.title': 'Ditt konto har stängts av.',
+  'banned.body': 'Om du tror att det är ett misstag, kontakta hi@akin.app',
+  'banned.logout': 'Logga ut',
+
+  // ── Error Boundary ────────────────────────────────────────────────────────────
+  'error.boundary.title': 'Något gick fel.',
+  'error.boundary.body': 'Tryck för att försöka igen. Om det fortsätter, skicka feedback.',
+  'error.boundary.retry': 'Försök igen',
+  'error.boundary.feedback': 'Skicka feedback',
+
   // ── Common ────────────────────────────────────────────────────────────────────
   'common.you': 'du',
   'common.ago': '{{time}} sedan',
