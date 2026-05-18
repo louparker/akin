@@ -1,11 +1,6 @@
 import { getEnv } from '@/lib/env';
 
-const REQUIRED_KEYS = [
-  'EXPO_PUBLIC_SUPABASE_URL',
-  'EXPO_PUBLIC_SUPABASE_ANON_KEY',
-  'EXPO_PUBLIC_SENTRY_DSN',
-  'EXPO_PUBLIC_POSTHOG_KEY',
-] as const;
+const REQUIRED_KEYS = ['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_ANON_KEY'] as const;
 
 const validEnv: Record<string, string> = {
   EXPO_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
@@ -15,7 +10,7 @@ const validEnv: Record<string, string> = {
 };
 
 describe('getEnv', () => {
-  it('returns all values when every required key is present', () => {
+  it('returns all values when every key is present', () => {
     const env = getEnv(validEnv);
     expect(env.supabaseUrl).toBe('https://abc.supabase.co');
     expect(env.supabaseAnonKey).toBe('anon-key');
@@ -31,5 +26,15 @@ describe('getEnv', () => {
   it('throws when a required key is undefined', () => {
     const { EXPO_PUBLIC_SUPABASE_URL: _omit, ...rest } = validEnv;
     expect(() => getEnv(rest)).toThrow('EXPO_PUBLIC_SUPABASE_URL');
+  });
+
+  it('returns undefined for sentryDsn when key is absent', () => {
+    const env = getEnv({ ...validEnv, EXPO_PUBLIC_SENTRY_DSN: '' });
+    expect(env.sentryDsn).toBeUndefined();
+  });
+
+  it('returns undefined for posthogKey when key is absent', () => {
+    const env = getEnv({ ...validEnv, EXPO_PUBLIC_POSTHOG_KEY: '' });
+    expect(env.posthogKey).toBeUndefined();
   });
 });
