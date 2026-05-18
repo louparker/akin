@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
@@ -57,7 +57,7 @@ export default function CategoriesScreen() {
           <Pressable
             key={cat.id}
             style={[styles.row, index < CATEGORIES.length - 1 && styles.rowDivider]}
-            onPress={() => router.push(`/(main)/feed/category/${cat.id}` as Href)}
+            onPress={() => router.push(`/(main)/feed/category/${cat.id}`)}
             accessibilityRole="button"
             accessibilityLabel={t(cat.nameKey)}
           >

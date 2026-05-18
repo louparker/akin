@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 import { router } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 
@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
       set({ isLoading: false });
-      router.replace('/(auth)/verify' as Href);
+      router.replace('/(auth)/verify');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({ error: message, isLoading: false });
@@ -88,9 +88,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const profile = data.session ? await fetchProfile(data.session.user.id) : null;
       set({ session: data.session, profile, isLoading: false });
       if (profile?.onboarding_complete) {
-        router.replace('/(main)' as Href);
+        router.replace('/(main)');
       } else {
-        router.replace('/(auth)/identifier' as Href);
+        router.replace('/(auth)/identifier');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await supabase.auth.signOut();
       set({ session: null, profile: null, isLoading: false });
-      router.replace('/(auth)' as Href);
+      router.replace('/(auth)');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({ error: message, isLoading: false });
@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         profile: profile ? { ...profile, onboarding_complete: true } : null,
         isLoading: false,
       });
-      router.replace('/(main)' as Href);
+      router.replace('/(main)');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       set({ error: message, isLoading: false });
@@ -169,12 +169,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         if (event === 'SIGNED_IN' && newSession) {
           if (currentProfile?.onboarding_complete) {
-            router.replace('/(main)' as Href);
+            router.replace('/(main)');
           } else {
-            router.replace('/(auth)/identifier' as Href);
+            router.replace('/(auth)/identifier');
           }
         } else if (event === 'SIGNED_OUT') {
-          router.replace('/(auth)' as Href);
+          router.replace('/(auth)');
         }
       });
     } catch (err) {

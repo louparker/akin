@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, router } from 'expo-router';
-import type { Href } from 'expo-router';
+
 import { useCallback, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
@@ -106,7 +106,7 @@ export default function CategoryDetailScreen() {
           isFull={item.is_full}
           spiceLevel={item.average_spice_level ?? undefined}
           isLast={isLast}
-          onPress={() => router.push(`/(main)/post/${item.id}` as Href)}
+          onPress={() => router.push(`/(main)/post/${item.id}`)}
         />
       );
     },
@@ -198,7 +198,7 @@ export default function CategoryDetailScreen() {
           <Text style={styles.stateTitle}>{t('feed.empty.title', { category: categoryName })}</Text>
           <Text style={styles.stateBody}>{t('feed.empty.body')}</Text>
           <Pressable
-            onPress={() => router.push('/(main)/create' as Href)}
+            onPress={() => router.push('/(main)/create')}
             accessibilityRole="button"
             accessibilityLabel={t('feed.empty.cta')}
             style={styles.ctaButton}
