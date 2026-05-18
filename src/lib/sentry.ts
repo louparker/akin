@@ -9,7 +9,6 @@
  * `sentry.properties` with the org + project slugs before the first production build.
  */
 
-import * as Sentry from '@sentry/react-native';
 import { scrub } from '@/lib/logger';
 
 interface SentryOptions {
@@ -17,10 +16,23 @@ interface SentryOptions {
   appEnv: string;
 }
 
-export function initSentry({ dsn, appEnv }: SentryOptions): void {
-  if (!dsn) return;
+type SentryModule = typeof import('@sentry/react-native');
 
-  Sentry.init({
+// Lazy-load to avoid crashing in Expo Go where NativeJSLogger (Sentry's native
+// bridge) is absent. The require() throws during module init in that environment.
+const _sentry = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@sentry/react-native') as SentryModule;
+  } catch {
+    return null;
+  }
+})();
+
+export function initSentry({ dsn, appEnv }: SentryOptions): void {
+  if (!dsn || _sentry === null) return;
+
+  _sentry.init({
     dsn,
     environment: appEnv,
     // 10% sampling in production keeps costs low; 100% in dev/preview for full visibility.
@@ -34,4 +46,4 @@ export function initSentry({ dsn, appEnv }: SentryOptions): void {
   });
 }
 
-export { Sentry };
+export const Sentry = _sentry;

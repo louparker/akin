@@ -14,7 +14,17 @@
  * The scrubber redacts them, but it is better not to collect them at all.
  */
 
-import * as Sentry from '@sentry/react-native';
+type SentryModule = typeof import('@sentry/react-native');
+
+// Lazy-load to avoid crashing in Expo Go where NativeJSLogger is absent.
+const _sentry = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@sentry/react-native') as SentryModule;
+  } catch {
+    return null;
+  }
+})();
 
 /** Keys whose values are replaced with '[redacted]' (case-insensitive). */
 const PII_KEYS = new Set([
@@ -54,7 +64,7 @@ export const logger = {
   info(message: string, context?: Record<string, unknown>): void {
     const scrubbed =
       context !== undefined ? (scrub(context) as Record<string, unknown>) : undefined;
-    Sentry.addBreadcrumb({ message, data: scrubbed });
+    _sentry?.addBreadcrumb({ message, data: scrubbed });
     // eslint-disable-next-line no-console -- logger.ts is the approved console wrapper
     console.info(message, scrubbed);
   },
@@ -62,7 +72,7 @@ export const logger = {
   warn(message: string, context?: Record<string, unknown>): void {
     const scrubbed =
       context !== undefined ? (scrub(context) as Record<string, unknown>) : undefined;
-    Sentry.captureMessage(message, { level: 'warning', extra: scrubbed });
+    _sentry?.captureMessage(message, { level: 'warning', extra: scrubbed });
     // eslint-disable-next-line no-console -- logger.ts is the approved console wrapper
     console.warn(message, scrubbed);
   },
@@ -77,11 +87,11 @@ export const logger = {
       context !== undefined ? (scrub(context) as Record<string, unknown>) : undefined;
 
     if (messageOrError instanceof Error) {
-      Sentry.captureException(messageOrError, { extra: scrubbed });
+      _sentry?.captureException(messageOrError, { extra: scrubbed });
       // eslint-disable-next-line no-console -- logger.ts is the approved console wrapper
       console.error(messageOrError, scrubbed);
     } else {
-      Sentry.captureMessage(messageOrError, { level: 'error', extra: scrubbed });
+      _sentry?.captureMessage(messageOrError, { level: 'error', extra: scrubbed });
       // eslint-disable-next-line no-console -- logger.ts is the approved console wrapper
       console.error(messageOrError, scrubbed);
     }

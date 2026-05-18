@@ -5,7 +5,12 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testEnvironment: '<rootDir>/jest.env.js',
   resolver: '<rootDir>/jest.resolver.js',
-  testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
+  testPathIgnorePatterns: ['/node_modules/', '/e2e/', '/.claude/'],
+  // Prevent jest-haste-map from scanning worktree directories inside .claude/.
+  // Without this, duplicate __mocks__ files from other worktrees are found and
+  // the wrong mock gets loaded, causing native-module crashes in the Jest runtime.
+  modulePathIgnorePatterns: ['/.claude/'],
+  watchPathIgnorePatterns: ['/.claude/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'json'],
   // Stub ViewConfigIgnore.js: uses Flow `const T:` generic syntax that
   // @babel/parser 7.28 doesn't support. Remove once Babel adds support.

@@ -97,7 +97,7 @@ export function ErrorBoundary({
 }: ErrorBoundaryProps): React.JSX.Element {
   function handleError(error: Error): void {
     const errorCode = shortErrorCode(error);
-    Sentry.captureException(error, { extra: { errorCode } });
+    Sentry?.captureException(error, { extra: { errorCode } });
     logger.error('error_boundary_caught', { errorCode });
   }
 
