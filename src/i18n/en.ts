@@ -45,8 +45,32 @@ export const en = {
   'auth.login.password.label': 'Password',
   'auth.login.forgot': 'Forgot password',
   'auth.login.cta': 'Sign in',
+  'auth.login.signup': "Don't have an account?",
   'auth.login.error.invalid': 'Incorrect email or password.',
+  'auth.login.error.rateLimit': 'Too many attempts. Try again in {{n}} minutes.',
   'auth.login.error.generic': 'Something went wrong. Please try again.',
+
+  // ── Auth — Password Reset ────────────────────────────────────────────────────
+  'auth.reset.title': 'Forgot your password?',
+  'auth.reset.subtitle': "Enter your email and we'll send you a reset link.",
+  'auth.reset.email.label': 'Email',
+  'auth.reset.cta': 'Send reset link',
+  'auth.reset.sent.title': 'Check your email',
+  'auth.reset.sent.body':
+    "If we have an account for that email, you'll receive a reset link shortly.",
+  'auth.resetConfirm.title': 'Set a new password',
+  'auth.resetConfirm.password.label': 'New password',
+  'auth.resetConfirm.confirm.label': 'Confirm new password',
+  'auth.resetConfirm.cta': 'Save new password',
+  'auth.resetConfirm.error.mismatch': 'Passwords do not match.',
+  'auth.resetConfirm.error.weak': 'Password must be at least 8 characters.',
+  'auth.resetConfirm.error.generic': 'Something went wrong. Please try again.',
+  'auth.resetConfirm.success': 'Password updated. You are now signed in.',
+
+  // ── Auth — Signup: confirm password (added by Task 4.2) ──────────────────────
+  'auth.signup.confirmPassword.label': 'Confirm password',
+  'auth.signup.confirmPassword.placeholder': '••••••••',
+  'auth.signup.error.password_mismatch': 'Passwords do not match.',
 
   // ── Auth — Verify Email ──────────────────────────────────────────────────────
   'auth.verify.title': 'Check your email',
@@ -54,7 +78,10 @@ export const en = {
     "We've sent a confirmation link to {{email}}. Open it to activate your account.",
   'auth.verify.resend': 'Resend email',
   'auth.verify.resend.sent': 'Sent.',
+  'auth.verify.resend.countdown': 'Resend in {{n}}s',
   'auth.verify.spam': "Check your spam folder if it doesn't arrive.",
+  'auth.verify.wrongEmail': 'Wrong email?',
+  'auth.verify.signOut': 'Use a different email',
 
   // ── Auth — Identifier Reveal ─────────────────────────────────────────────────
   'auth.identifier.eyebrow': "This is who you'll be here",
@@ -63,6 +90,22 @@ export const en = {
   'auth.identifier.examples.label': "Other people you'll meet here:",
   'auth.identifier.cta.confirm': 'This is me',
   'auth.identifier.cta.retry': 'Try another one',
+  'auth.identifier.loading': 'Preparing your name…',
+  'auth.identifier.error': "Couldn't prepare your name.",
+
+  // ── Auth — Onboarding ────────────────────────────────────────────────────────
+  'auth.onboarding.skip': 'Skip',
+  'auth.onboarding.next': 'Next',
+  'auth.onboarding.getStarted': 'Get started',
+  'auth.onboarding.screen1.title': 'Anonymous, by design',
+  'auth.onboarding.screen1.body':
+    'Your identifier is how people know you here. No profile photo, no real name, no DMs. Everyone is on equal footing.',
+  'auth.onboarding.screen2.title': 'Small conversations',
+  'auth.onboarding.screen2.body':
+    'Each post has room for 1 poster and 3 replies. Four people maximum. You can be active in 3 conversations at once.',
+  'auth.onboarding.screen3.title': '9 categories, no algorithm',
+  'auth.onboarding.screen3.body':
+    'Browse by what you feel like talking about. The feed shows the most recent posts — nothing is promoted or buried.',
 
   // ── Feed ─────────────────────────────────────────────────────────────────────
   'feed.tab.all': 'All',
@@ -246,9 +289,36 @@ export const en = {
   'report.success': 'Report sent.',
 
   // ── Banned screen ────────────────────────────────────────────────────────────
-  'banned.title': 'Your account has been suspended.',
-  'banned.body': 'If you believe this is a mistake, contact hi@akin.app',
+  'banned.title': 'Your account has been banned.',
+  'banned.body':
+    'If you believe this is a mistake, contact hi@akin.app. You can export your data or delete your account below.',
   'banned.logout': 'Log out',
+  'banned.deleteAccount': 'Delete my account',
+
+  // ── Suspended screen ─────────────────────────────────────────────────────────
+  'suspended.title': 'Your account is suspended.',
+  'suspended.body': "You can read posts but can't post or comment until the suspension ends.",
+  'suspended.countdown': 'Suspended for {{time}} more.',
+  'suspended.lifted': 'Your suspension has been lifted.',
+  'suspended.logout': 'Log out',
+
+  // ── Account deletion ─────────────────────────────────────────────────────────
+  'auth.delete.title': 'Delete your account',
+  'auth.delete.step1.title': 'Are you sure?',
+  'auth.delete.step1.body':
+    'This removes everything — your posts, your conversations, your identifier. Data is fully purged within 30 days. There is no undo.',
+  'auth.delete.step2.label': 'Type "delete my account" to continue',
+  'auth.delete.step2.placeholder': 'delete my account',
+  'auth.delete.step2.phrase': 'delete my account',
+  'auth.delete.step2.error': 'Please type the phrase exactly.',
+  'auth.delete.step3.label': 'Enter your password to confirm',
+  'auth.delete.step3.error': 'Incorrect password.',
+  'auth.delete.cta': 'Delete permanently',
+  'auth.delete.cancel': 'Keep my account',
+  'auth.delete.deleted.title': 'Account deleted.',
+  'auth.delete.deleted.body':
+    'Your account and data will be fully removed within 30 days. Thank you for trying Akin.',
+  'auth.delete.error.generic': 'Something went wrong. Please try again.',
 
   // ── Error Boundary ────────────────────────────────────────────────────────────
   'error.boundary.title': 'Something went wrong.',

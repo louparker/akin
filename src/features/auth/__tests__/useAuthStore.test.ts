@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react-native';
-import type { AuthError } from '@supabase/supabase-js';
+import type { AuthError, Session, User } from '@supabase/supabase-js';
+import { router } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
+import type { Profile } from '../store/useAuthStore';
 import { supabase } from '@/lib/supabase';
 
 jest.mock('@/lib/supabase', () => ({
@@ -9,6 +11,8 @@ jest.mock('@/lib/supabase', () => ({
       signUp: jest.fn(),
       signInWithPassword: jest.fn(),
       signOut: jest.fn(),
+      resetPasswordForEmail: jest.fn(),
+      updateUser: jest.fn(),
       getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: jest
         .fn()
@@ -24,7 +28,6 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
-// expo-router is not available in Jest — stub navigate/replace
 jest.mock('expo-router', () => ({
   router: {
     replace: jest.fn(),
@@ -32,7 +35,33 @@ jest.mock('expo-router', () => ({
   },
 }));
 
-// Reset store state between tests
+const mockSession = (userId = 'user-1'): Session =>
+  // Cast needed: Session has many required fields; we only provide the ones under test.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  ({
+    user: { id: userId } as User,
+    access_token: 'tok',
+    refresh_token: 'ref',
+    expires_in: 3600,
+    token_type: 'bearer',
+  }) as unknown as Session;
+
+const mockProfile = (overrides: Partial<Profile> = {}): Profile => ({
+  user_id: 'user-1',
+  anonymous_identifier: 'CrimsonFox42',
+  language: 'en',
+  age_verified_at: '2026-01-01T00:00:00Z',
+  active_post_count: 0,
+  strike_count: 0,
+  status: 'active',
+  suspended_until: null,
+  onboarded_at: '2026-01-01T00:00:00Z',
+  deleted_at: null,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  ...overrides,
+});
+
 beforeEach(() => {
   useAuthStore.setState({
     session: null,
@@ -43,23 +72,29 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// eslint-disable-next-line @typescript-eslint/unbound-method -- supabase mock methods are jest.fn() closures, not this-bound
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedSignUp = jest.mocked(supabase.auth.signUp);
-// eslint-disable-next-line @typescript-eslint/unbound-method -- supabase mock methods are jest.fn() closures, not this-bound
-const mockedSignInWithPassword = jest.mocked(supabase.auth.signInWithPassword);
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedSignIn = jest.mocked(supabase.auth.signInWithPassword);
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedResetPassword = jest.mocked(supabase.auth.resetPasswordForEmail);
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedUpdateUser = jest.mocked(supabase.auth.updateUser);
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedFrom = jest.mocked(supabase.from);
 
 describe('useAuthStore', () => {
   describe('signUp', () => {
     it('sets isLoading true then false around the call', async () => {
-      let resolveSignUp!: (value: { error: null }) => void;
+      let resolveSignUp!: (value: { error: null; data: { user: null; session: null } }) => void;
       mockedSignUp.mockReturnValueOnce(
-        new Promise<{ error: null }>((resolve) => {
+        new Promise<{ error: null; data: { user: null; session: null } }>((resolve) => {
           resolveSignUp = resolve;
-        }) as ReturnType<typeof supabase.auth.signUp>,
+        }),
       );
 
       const { result } = renderHook(() => useAuthStore());
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const { signUp } = result.current;
 
       let signUpPromise: Promise<void>;
@@ -70,7 +105,7 @@ describe('useAuthStore', () => {
       expect(result.current.isLoading).toBe(true);
 
       await act(async () => {
-        resolveSignUp({ error: null });
+        resolveSignUp({ error: null, data: { user: null, session: null } });
         await signUpPromise;
       });
 
@@ -84,7 +119,7 @@ describe('useAuthStore', () => {
       });
 
       const { result } = renderHook(() => useAuthStore());
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const { signUp } = result.current;
 
       await act(async () => {
@@ -94,17 +129,44 @@ describe('useAuthStore', () => {
       expect(result.current.error).toBe('Email already registered');
       expect(result.current.isLoading).toBe(false);
     });
+
+    it('passes age_verified_at and language in user metadata', async () => {
+      mockedSignUp.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signUp } = result.current;
+
+      await act(async () => {
+        await signUp('new@example.com', 'password123', 'en');
+      });
+
+      expect(mockedSignUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'new@example.com',
+          options: expect.objectContaining({
+            data: expect.objectContaining({
+              age_verified_at: expect.any(String),
+              language: 'en',
+            }),
+          }),
+        }),
+      );
+    });
   });
 
   describe('signIn', () => {
     it('sets error on invalid credentials', async () => {
-      mockedSignInWithPassword.mockResolvedValueOnce({
+      mockedSignIn.mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { message: 'Invalid login credentials', status: 400 } as AuthError,
       });
 
       const { result } = renderHook(() => useAuthStore());
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand actions are closures, not this-bound
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const { signIn } = result.current;
 
       await act(async () => {
@@ -113,6 +175,198 @@ describe('useAuthStore', () => {
 
       expect(result.current.error).toBe('Invalid login credentials');
       expect(result.current.isLoading).toBe(false);
+    });
+
+    it('routes to feed when onboarded and active', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({ data: mockProfile(), error: null }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('ok@example.com', 'password123');
+      });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(main)/feed');
+    });
+
+    it('routes to onboarding when identifier is resolved but onboarded_at is null', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest
+          .fn()
+          .mockResolvedValueOnce({ data: mockProfile({ onboarded_at: null }), error: null }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('new@example.com', 'password123');
+      });
+
+      // Identifier already resolved → skip identifier screen, go straight to onboarding.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(auth)/onboarding');
+    });
+
+    it('routes to identifier reveal when identifier is pending and onboarded_at is null', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ onboarded_at: null, anonymous_identifier: 'pending_001' }),
+          error: null,
+        }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('pending@example.com', 'password123');
+      });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(auth)/identifier');
+    });
+  });
+
+  describe('requestPasswordReset', () => {
+    it('calls resetPasswordForEmail with the given email', async () => {
+      mockedResetPassword.mockResolvedValueOnce({ data: {}, error: null });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.requestPasswordReset('user@example.com');
+      });
+
+      expect(mockedResetPassword).toHaveBeenCalledWith('user@example.com', expect.any(Object));
+      expect(result.current.error).toBeNull();
+    });
+
+    it('does not expose error on failure (generic response)', async () => {
+      mockedResetPassword.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'rate limited', status: 429 } as AuthError,
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.requestPasswordReset('noone@example.com');
+      });
+
+      // Deliberately no error exposed — we never confirm whether an email exists
+      expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('updatePassword', () => {
+    it('calls updateUser with the new password', async () => {
+      mockedUpdateUser.mockResolvedValueOnce({ data: { user: {} as User }, error: null });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.updatePassword('NewPass123!');
+      });
+
+      expect(mockedUpdateUser).toHaveBeenCalledWith({ password: 'NewPass123!' });
+      expect(result.current.error).toBeNull();
+    });
+
+    it('sets error when updateUser fails', async () => {
+      mockedUpdateUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: { message: 'Token expired', status: 401 } as AuthError,
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.updatePassword('NewPass123!');
+      });
+
+      expect(result.current.error).toBe('Token expired');
+    });
+  });
+
+  describe('completeOnboarding', () => {
+    it('writes onboarded_at to profiles and routes to feed', async () => {
+      const session = mockSession();
+
+      useAuthStore.setState({
+        session,
+        profile: mockProfile({ onboarded_at: null }),
+        isLoading: false,
+        error: null,
+      });
+
+      const updateMock = jest.fn().mockReturnThis();
+      const eqMock = jest.fn().mockResolvedValueOnce({ error: null });
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: eqMock,
+        single: jest.fn(),
+        update: updateMock,
+      } as ReturnType<typeof supabase.from>);
+
+      // Second call for fetchProfile after update
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest
+          .fn()
+          .mockResolvedValueOnce({
+            data: mockProfile({ onboarded_at: '2026-01-01' }),
+            error: null,
+          }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.completeOnboarding();
+      });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(main)/feed');
     });
   });
 });
