@@ -1,13 +1,223 @@
-// Create tab — placeholder until Task 3.8 (Create Post feature) is implemented.
-import { View, StyleSheet } from 'react-native';
-import { Text } from '@/components/primitives/Text';
+// CRITICAL-PATH: posts — composer for new posts. Server-side triggers enforce
+// content filter, contact-info filter, and the active-post limit.
+import { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
+import { TopBar } from '@/components/composed/TopBar';
+import { CategoryTag } from '@/components/composed/CategoryTag';
+import { LimitActiveSheet } from '@/features/post/components/LimitActiveSheet';
+import { CategoryPickerSheet } from '@/features/post/components/CategoryPickerSheet';
+import { GuidelinesSheet } from '@/features/post/components/GuidelinesSheet';
+import { createPostSchema, TITLE_MAX, BODY_MAX } from '@/features/post/schemas/createPost';
+import { useCreatePost, CreatePostError } from '@/features/post/api/useCreatePost';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useUiPrefsStore } from '@/lib/uiPrefs';
+import type { Enums } from '@/types/database';
+
+type Category = Enums<'post_category'>;
+const ACTIVE_LIMIT = 3;
 
 export default function CreateScreen() {
+  const profile = useAuthStore((s) => s.profile);
+  const activeCount = profile?.active_post_count ?? 0;
+  const identifier = profile?.anonymous_identifier ?? '';
+
+  const hasSeenGuidelines = useUiPrefsStore((s) => s.hasSeenCreateGuidelines);
+
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [category, setCategory] = useState<Category | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [guidelinesOpen, setGuidelinesOpen] = useState(false);
+
+  const atLimit = activeCount >= ACTIVE_LIMIT;
+  const [limitOpen, setLimitOpen] = useState(false);
+
+  // Show the active-limit sheet immediately when the tab is focused if user is at cap.
+  useFocusEffect(
+    useCallback(() => {
+      if (atLimit) setLimitOpen(true);
+      else if (!hasSeenGuidelines) setGuidelinesOpen(true);
+    }, [atLimit, hasSeenGuidelines]),
+  );
+
+  const createPost = useCreatePost();
+
+  const validation = useMemo(
+    () => createPostSchema.safeParse({ title, body, category }),
+    [title, body, category],
+  );
+  const canSubmit = validation.success && !atLimit && !createPost.isPending;
+
+  const onSubmit = async () => {
+    if (!validation.success || !category) return;
+    try {
+      const result = await createPost.mutateAsync({
+        title: title.trim(),
+        body: body.trim(),
+        category,
+      });
+      router.replace(`/(main)/post/${result.id}`);
+    } catch (err) {
+      const i18nKey = err instanceof CreatePostError ? err.i18nKey : 'error.generic';
+      if (err instanceof CreatePostError && err.kind === 'active_limit') {
+        setLimitOpen(true);
+        return;
+      }
+      Alert.alert(t('error.generic'), t(i18nKey));
+    }
+  };
+
+  const onCancel = () => {
+    if (title || body || category) {
+      Alert.alert(t('create.cancel'), t('create.discardConfirm'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('create.cancel'),
+          style: 'destructive',
+          onPress: () => router.back(),
+        },
+      ]);
+      return;
+    }
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
-      <Text variant="title">{t('nav.tab.write')}</Text>
+      <TopBar
+        left={
+          <Pressable
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel={t('create.cancel')}
+            hitSlop={8}
+          >
+            <Text style={styles.cancel}>{t('create.cancel')}</Text>
+          </Pressable>
+        }
+        right={
+          <Pressable
+            onPress={() => {
+              void onSubmit();
+            }}
+            disabled={!canSubmit}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSubmit }}
+            accessibilityLabel={t('create.submit')}
+            hitSlop={8}
+          >
+            <Text style={[styles.submit, !canSubmit && styles.submitDisabled]}>
+              {t('create.submit')}
+            </Text>
+          </Pressable>
+        }
+      />
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Category selector */}
+          <Pressable
+            onPress={() => setPickerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('create.category.label')}
+            style={({ pressed }) => [styles.categoryRow, pressed && styles.pressed]}
+          >
+            <Text style={styles.categoryLabel}>{t('create.category.label')}</Text>
+            {category ? (
+              <CategoryTag name={t(`category.${category}` as const)} />
+            ) : (
+              <Text style={styles.categoryPlaceholder}>{t('create.category.placeholder')}</Text>
+            )}
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
+
+          {/* Title */}
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder={t('create.title.placeholder')}
+            placeholderTextColor={colors.fg.faint}
+            style={styles.title}
+            multiline
+            maxLength={TITLE_MAX}
+            accessibilityLabel={t('create.title.placeholder')}
+            testID="create-title-input"
+          />
+
+          {/* Body */}
+          <TextInput
+            value={body}
+            onChangeText={setBody}
+            placeholder={t('create.body.placeholder')}
+            placeholderTextColor={colors.fg.faint}
+            style={styles.body}
+            multiline
+            maxLength={BODY_MAX}
+            accessibilityLabel={t('create.body.placeholder')}
+            testID="create-body-input"
+          />
+        </ScrollView>
+
+        {/* Bottom toolbar */}
+        <View style={styles.toolbar}>
+          <Text style={styles.postingAs} numberOfLines={1}>
+            {t('create.footer.postingAs')} <Text style={styles.identifier}>{identifier}</Text>
+          </Text>
+          <View style={styles.counters}>
+            <Text style={styles.counter}>
+              {t('create.charCount.title', { n: String(title.length) })}
+            </Text>
+            <Text style={styles.counter}>
+              {t('create.charCount.body', { n: String(body.length) })}
+            </Text>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+
+      <CategoryPickerSheet
+        visible={pickerOpen}
+        selected={category}
+        onSelect={setCategory}
+        onClose={() => setPickerOpen(false)}
+      />
+
+      <GuidelinesSheet
+        visible={guidelinesOpen}
+        onContinue={() => {
+          useUiPrefsStore.getState().markCreateGuidelinesSeen();
+          setGuidelinesOpen(false);
+        }}
+      />
+
+      <LimitActiveSheet
+        visible={limitOpen}
+        activeCount={activeCount}
+        onClose={() => {
+          setLimitOpen(false);
+          router.replace('/(main)/feed');
+        }}
+      />
     </View>
   );
 }
@@ -16,7 +226,111 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg.base,
+  },
+  flex: {
+    flex: 1,
+  },
+  scroll: {
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  cancel: {
+    fontFamily: 'Inter',
+    fontSize: 15,
+    color: colors.fg.tertiary,
+    paddingHorizontal: 8,
+  },
+  submit: {
+    fontFamily: 'Inter',
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.fg.primary,
+    paddingHorizontal: 8,
+  },
+  submitDisabled: {
+    color: colors.fg.faint,
+  },
+  categoryRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border.hairline,
+    gap: 12,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  categoryLabel: {
+    fontFamily: 'JetBrains Mono',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: colors.fg.tertiary,
+    flex: 0,
+  },
+  categoryPlaceholder: {
+    flex: 1,
+    fontFamily: 'Source Serif 4',
+    fontSize: 18,
+    color: colors.fg.faint,
+  },
+  chevron: {
+    fontFamily: 'Inter',
+    fontSize: 22,
+    color: colors.fg.tertiary,
+    marginLeft: 'auto',
+  },
+  title: {
+    fontFamily: 'Source Serif 4',
+    fontSize: 26,
+    lineHeight: 26 * 1.25,
+    letterSpacing: -0.3,
+    color: colors.fg.primary,
+    marginTop: 20,
+    minHeight: 60,
+    padding: 0,
+    textAlignVertical: 'top',
+  },
+  body: {
+    fontFamily: 'Inter',
+    fontSize: 15.5,
+    lineHeight: 15.5 * 1.6,
+    color: colors.fg.secondary,
+    marginTop: 12,
+    minHeight: 160,
+    padding: 0,
+    textAlignVertical: 'top',
+  },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.bg.raised,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border.hairline,
+  },
+  postingAs: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    color: colors.fg.tertiary,
+    flex: 1,
+    marginRight: 12,
+  },
+  identifier: {
+    fontFamily: 'JetBrains Mono',
+    color: colors.fg.primary,
+  },
+  counters: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  counter: {
+    fontFamily: 'JetBrains Mono',
+    fontSize: 11,
+    color: colors.fg.tertiary,
   },
 });

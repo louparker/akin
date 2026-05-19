@@ -29,6 +29,73 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-017 — Feed preference persistence: AsyncStorage via Zustand `persist`
+
+Date: 2026-05-19
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Task 5.8 requires the user's chosen feed sort and category filter to persist across app launches. The data is non-sensitive (no PII, just UI preference) so encrypted storage is overkill. Phase 5 introduced `useFeedStore` (Zustand) with `sort`, `minSpice`, `activeCategory` — previously in-memory only.
+
+### Options considered
+
+1. **`expo-secure-store`** — already a dependency. Encrypted; intended for tokens. Overkill for a sort dropdown; not designed for arbitrary JSON payloads. iOS keychain has a documented size limit (~4KB per entry) and slow access.
+2. **`@react-native-async-storage/async-storage`** — community-standard plaintext key/value store, Expo-supported, the recommended persistence backend for Zustand's `persist` middleware. New top-level dependency.
+3. **Server-side preference column on `profiles`** — needs a migration, a write on every sort change, and adds latency. Wrong fit for a screen-local UI knob.
+
+### Decision
+
+Install `@react-native-async-storage/async-storage` and wire it to `useFeedStore` via Zustand `persist` + `createJSONStorage`. The same backend powers a new `useUiPrefsStore` for the one-shot "has seen create-post guidelines" flag.
+
+Storage keys:
+
+- `akin.feedPrefs.v1` — sort, minSpice, activeCategory
+- `akin.uiPrefs.v1` — hasSeenCreateGuidelines
+
+The `v1` suffix lets us bump the key when the shape changes rather than writing JSON-migration code.
+
+### Consequences
+
+- ✅ Standard, well-supported persistence for non-sensitive prefs across both platforms.
+- ✅ `partialize` ensures only data fields persist, not action methods.
+- ⚠️ Adds one runtime dep. Sentry/PostHog and most RN apps already pull it transitively.
+- ⚠️ AsyncStorage is plaintext. We must never persist anything sensitive here — tokens stay in `expo-secure-store`. Code review must enforce that boundary.
+
+---
+
+## ADR-016 — Feed pagination: cursor over offset
+
+Date: 2026-05-19
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 5 Task 5.1 specified cursor-based pagination for the feed query, but the initial implementation used `.range(offset, offset+20)`. With offset pagination, any insert between page fetches shifts every subsequent row by one — the user sees the same post twice (or skips one) when scrolling. The feed is publicly writable, so inserts during a scroll session are routine, not an edge case.
+
+### Options considered
+
+1. **Offset pagination (`.range(start, end)`)** — trivial to implement; PostgREST built-in. Suffers from row shifting on concurrent inserts. Late inserts at the top push everything down and corrupt the cursor.
+2. **Cursor on `(sort_column, id)`** — stable under concurrent inserts: each page is defined by "the row immediately past `(value, id)`," not "rows N through N+20." Slightly more code; needs an `id` tiebreaker because `created_at` / `comment_count` / `average_spice_level` are not unique.
+3. **Realtime subscription + local merge** — overkill for a feed surface where the product model is pull-to-refresh, not push.
+
+### Decision
+
+Cursor pagination keyed on `(sort_column, id)` with strict-less-than tuple comparison via PostgREST `or=(col.lt.X,and(col.eq.X,id.lt.Y))`. The `id` tiebreaker guarantees a total order even when the primary sort column has duplicates.
+
+For `spice` (DESC NULLS LAST), the cursor's value can be `null`. When that happens, all remaining rows are also `null` (NULLS LAST), so we degrade to a simple `is(col, null).lt(id, cursor.id)` predicate for subsequent pages.
+
+### Consequences
+
+- ✅ Stable pagination — late inserts no longer corrupt the user's scroll.
+- ✅ Plays cleanly with the existing indexes on `(created_at, id)`, `(comment_count, id)`, `(average_spice_level, id)`.
+- ⚠️ `getNextPageParam` now returns a `{ value, id } | null` instead of a number — slightly more memory per page, but trivial.
+- ⚠️ Tests must mock `or` / `is` / `lt` / `limit` instead of `range`. Test helpers updated accordingly.
+
+---
+
 ## ADR-015 — Account deletion: 30-day soft-delete with pg_cron purge
 
 Date: 2026-05-18

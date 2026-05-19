@@ -341,4 +341,6 @@ export const sv: TranslationDict = {
   'common.back': 'Tillbaka',
   'common.close': 'Stäng',
   'common.loading': 'Laddar…',
+  'common.cancel': 'Avbryt',
+  'create.discardConfirm': 'Kasta utkastet? Din text försvinner.',
 } as const;

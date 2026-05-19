@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { colors } from '@/theme/colors';
 import { IdentChip } from './IdentChip';
@@ -19,7 +20,7 @@ interface PostCardProps {
   onPress: () => void;
 }
 
-export function PostCard({
+function PostCardImpl({
   category,
   timeAgo,
   title,
@@ -70,6 +71,22 @@ export function PostCard({
     </Pressable>
   );
 }
+
+export const PostCard = memo(PostCardImpl, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.category === next.category &&
+    prev.timeAgo === next.timeAgo &&
+    prev.title === next.title &&
+    prev.excerpt === next.excerpt &&
+    prev.authorIdentifier === next.authorIdentifier &&
+    prev.participantCount === next.participantCount &&
+    prev.isFull === next.isFull &&
+    prev.spiceLevel === next.spiceLevel &&
+    prev.isLast === next.isLast &&
+    prev.onPress === next.onPress
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
