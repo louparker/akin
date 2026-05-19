@@ -43,7 +43,7 @@ export default function SuspendedScreen({
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container} testID="suspended-screen">
         <Text variant="title" style={styles.title}>
           {t('suspended.title')}

@@ -9,7 +9,7 @@ import { useFonts } from 'expo-font';
 import { Slot, SplashScreen } from 'expo-router';
 import { Animated, StyleSheet, View, AccessibilityInfo } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { ErrorBoundary } from '@/components/composed/ErrorBoundary';
@@ -166,12 +166,18 @@ export default function RootLayout() {
     return <Slot />;
   }
 
+  // SAFE-AREA RULE — read .claude/skills/ui/SKILL.md before changing.
+  // The top safe-area inset is applied here ONCE for every screen in the app.
+  // Screens must NOT add their own paddingTop: insets.top — that double-pads.
+  // Bottom inset is handled per-screen (tab bar / sticky footers vary).
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
-            {renderContent()}
+            <SafeAreaView style={styles.safeRoot} edges={['top']}>
+              {renderContent()}
+            </SafeAreaView>
             <InAppSplash visible={showSplash} />
           </QueryClientProvider>
         </SafeAreaProvider>
@@ -182,6 +188,7 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  safeRoot: { flex: 1, backgroundColor: colors.bg.base },
   splash: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bg.base,

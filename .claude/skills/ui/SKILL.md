@@ -9,6 +9,32 @@ description: Read this skill before building any UI — components, screens, ani
 
 ---
 
+## 0. Safe-area handling — read this first
+
+**The top safe-area inset is applied ONCE, at the root layout** (`app/_layout.tsx` wraps the route slot in `SafeAreaView edges={['top']}`). Every screen is already pushed below the iOS status bar / notch / Dynamic Island.
+
+**Do NOT** in any screen, header, sheet, or component:
+
+- Add `paddingTop: insets.top` to a container.
+- Wrap content in another `SafeAreaView` that includes the `'top'` edge (default `<SafeAreaView>` includes all edges — be explicit).
+- Try to "fix" a cut-off header by adding magic numbers like `paddingTop: 44`.
+
+**Do** for top-of-screen headers: use plain `paddingTop` for visual spacing only (e.g. `paddingTop: 20` to give the content breathing room below the status-bar area the root already cleared).
+
+**Bottom inset** is per-screen because contexts vary:
+
+- Tab-bar screens (under `app/(main)/`) — tab bar handles its own bottom inset; don't add another.
+- Screens with sticky footers (e.g. welcome, full-screen messages) — wrap the footer with `SafeAreaView edges={['bottom']}` or use `Math.max(insets.bottom + N, M)` on its padding.
+- Scrolling lists — set `contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}`.
+
+**If you see content cut into the status bar, the bug is almost always one of:**
+
+1. A screen container with hardcoded `paddingTop: <small number>` and no root layout in scope (e.g. a Storybook or test harness) — fine to ignore in those contexts.
+2. A new component added a redundant top `SafeAreaView` or `paddingTop: insets.top`. Remove it.
+3. The root `SafeAreaView` in `app/_layout.tsx` was removed or had its `edges` changed. Put it back.
+
+---
+
 ## 1. The design language in one sentence
 
 Calm, warm, restrained. Akin should feel closer to Substack or Granta than to Tinder. White space is a feature.
