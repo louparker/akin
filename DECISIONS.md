@@ -29,6 +29,26 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-018 — Fix: age_verified_at not propagated from auth metadata to profile
+
+Date: 2026-05-19
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+The RLS INSERT policy on `public.posts` requires `profiles.age_verified_at IS NOT NULL`. The `signUp()` call correctly passes `age_verified_at` in `raw_user_meta_data`, but the `handle_new_user` trigger (migration 0001) created profiles with `age_verified_at = NULL`. Every post INSERT was silently rejected by RLS and surfaced as a generic "something went wrong" error.
+
+### Decision
+
+Migration 0016 replaces `handle_new_user` to read `age_verified_at` from `NEW.raw_user_meta_data` at profile creation time. It also backfills existing profiles where the column is still NULL but the metadata value is present (dev/staging accounts).
+
+### Consequences
+
+New signups will have `age_verified_at` set immediately. Existing dev accounts are backfilled. No client change needed — `signUp()` already sends the value.
+
+---
+
 ## ADR-017 — Feed preference persistence: AsyncStorage via Zustand `persist`
 
 Date: 2026-05-19
