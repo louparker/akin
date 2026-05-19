@@ -24,6 +24,9 @@ jest.mock('@/lib/supabase', () => ({
       single: jest.fn(),
       update: jest.fn().mockReturnThis(),
     })),
+    functions: {
+      invoke: jest.fn(),
+    },
     rpc: jest.fn(),
   },
 }));
@@ -72,6 +75,8 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedFunctionsInvoke = jest.mocked(supabase.functions.invoke);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedSignUp = jest.mocked(supabase.auth.signUp);
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -323,6 +328,78 @@ describe('useAuthStore', () => {
       });
 
       expect(result.current.error).toBe('Token expired');
+    });
+  });
+
+  describe('generateIdentifier', () => {
+    it('invokes the edge function with the session userId', async () => {
+      const session = mockSession('user-abc');
+      useAuthStore.setState({
+        session,
+        profile: mockProfile({ anonymous_identifier: 'pending_001' }),
+        isLoading: false,
+        error: null,
+      });
+
+      mockedFunctionsInvoke.mockResolvedValueOnce({
+        data: { identifier: 'CrimsonFox42' },
+        error: null,
+      });
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ anonymous_identifier: 'CrimsonFox42' }),
+          error: null,
+        }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      await act(async () => {
+        await result.current.generateIdentifier();
+      });
+
+      expect(mockedFunctionsInvoke).toHaveBeenCalledWith('generate-identifier', {
+        body: { userId: 'user-abc' },
+      });
+      expect(result.current.profile?.anonymous_identifier).toBe('CrimsonFox42');
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    it('sets error and leaves profile unchanged when edge function fails', async () => {
+      const session = mockSession();
+      useAuthStore.setState({
+        session,
+        profile: mockProfile({ anonymous_identifier: 'pending_001' }),
+        isLoading: false,
+        error: null,
+      });
+
+      mockedFunctionsInvoke.mockResolvedValueOnce({
+        data: null,
+        error: new Error('userId is required'),
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+      await act(async () => {
+        await result.current.generateIdentifier();
+      });
+
+      expect(result.current.error).toBe('userId is required');
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.profile?.anonymous_identifier).toBe('pending_001');
+    });
+
+    it('does nothing when there is no session', async () => {
+      useAuthStore.setState({ session: null, profile: null, isLoading: false, error: null });
+
+      const { result } = renderHook(() => useAuthStore());
+      await act(async () => {
+        await result.current.generateIdentifier();
+      });
+
+      expect(mockedFunctionsInvoke).not.toHaveBeenCalled();
     });
   });
 

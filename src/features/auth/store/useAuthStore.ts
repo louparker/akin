@@ -145,7 +145,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (!session) return;
     set({ isLoading: true, error: null });
     try {
-      const invokeResult = await supabase.functions.invoke<unknown>('generate-identifier');
+      const invokeResult = await supabase.functions.invoke<unknown>('generate-identifier', {
+        body: { userId: session.user.id },
+      });
       if (invokeResult.error) {
         const msg =
           invokeResult.error instanceof Error ? invokeResult.error.message : 'Unknown error';
