@@ -13,7 +13,7 @@ export function BannedScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container} accessibilityRole="none" testID="banned-screen">
         <Text variant="title" style={styles.title}>
           {t('banned.title')}

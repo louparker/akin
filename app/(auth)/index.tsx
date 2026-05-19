@@ -11,7 +11,7 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={styles.screen}>
       <View style={styles.top}>
         <Text style={styles.wordmark}>Akin</Text>
         <Text style={styles.headline}>{t('auth.welcome.headline')}</Text>

@@ -25,7 +25,8 @@ These rules apply to everything you produce. Violating them is a serious bug, no
 7. **No PII in logs.** No emails, no IPs, no message content, no anonymous identifiers in Sentry/PostHog. Scrub before sending.
 8. **Anonymity is structural, not cosmetic.** A user’s email and `auth.users.id` are never exposed via any API or RLS-readable column. Public reads only ever see the anonymous identifier.
 9. **No third-party trackers.** No advertising SDKs. No fingerprinting. No analytics that link to identity.
-10. **Critical paths get human review.** Auth flows, RLS policies, and (later) payments must be reviewed by a paid human expert before they ship to production. Mark these with the `// CRITICAL-PATH:` comment so the founder can find them.
+10. **Safe-area top inset is applied ONCE at the root.** `app/_layout.tsx` wraps every screen in `SafeAreaView edges={['top']}`. Screens, headers, sheets, and components must NEVER add their own `paddingTop: insets.top` or wrap themselves in another top-edge `SafeAreaView` — that double-pads and pushes content below the visible area. The bottom inset is handled per-screen (tab bar handles its own; sticky footers / full-screen messages may use `SafeAreaView edges={['bottom']}`). If you build a new top-of-screen header, just use plain padding — the root has already pushed you below the status bar.
+11. **Critical paths get human review.** Auth flows, RLS policies, and (later) payments must be reviewed by a paid human expert before they ship to production. Mark these with the `// CRITICAL-PATH:` comment so the founder can find them.
 
 ---
 
