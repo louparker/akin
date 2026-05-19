@@ -1,4 +1,4 @@
-import { View, Text as RNText, StyleSheet } from 'react-native';
+import { View, Text as RNText, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@/components/primitives/Text';
@@ -46,6 +46,7 @@ export default function WelcomeScreen() {
             accessibilityRole="link"
             accessibilityLabel={t('auth.welcome.tos.terms')}
             suppressHighlighting
+            onPress={() => void Linking.openURL('https://akin.app/terms')}
           >
             {t('auth.welcome.tos.terms')}
           </RNText>
@@ -55,6 +56,7 @@ export default function WelcomeScreen() {
             accessibilityRole="link"
             accessibilityLabel={t('auth.welcome.tos.privacy')}
             suppressHighlighting
+            onPress={() => void Linking.openURL('https://akin.app/privacy')}
           >
             {t('auth.welcome.tos.privacy')}
           </RNText>
