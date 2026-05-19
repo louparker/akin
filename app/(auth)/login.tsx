@@ -1,6 +1,6 @@
 // CRITICAL-PATH: auth — pending expert review
 
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,7 +63,11 @@ export default function LoginScreen() {
         }
       />
 
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>{t('auth.login.title')}</Text>
 
         <View style={styles.fields}>
@@ -130,6 +134,8 @@ export default function LoginScreen() {
         <Button
           full
           kind="primary"
+          size="lg"
+          loading={isLoading}
           onPress={() => void handleSubmit(onSubmit)()}
           disabled={isLoading}
           accessibilityLabel={t('auth.login.cta')}
@@ -149,7 +155,7 @@ export default function LoginScreen() {
             <Text style={styles.signupLink}>{t('auth.welcome.cta.signup')}</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -167,12 +173,14 @@ const styles = StyleSheet.create({
     color: colors.fg.primary,
   },
   content: {
-    paddingTop: 48,
+    paddingTop: 32,
+    paddingBottom: 40,
     paddingHorizontal: 28,
   },
   title: {
     fontFamily: 'Source Serif 4',
-    fontSize: 30,
+    fontSize: 36,
+    lineHeight: 36 * 1.15,
     letterSpacing: -0.5,
     color: colors.fg.primary,
     marginBottom: 32,
