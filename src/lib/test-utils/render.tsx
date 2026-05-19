@@ -1,9 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // ThemeProvider, I18nProvider, NavigationContainer added here as they land in
 // their respective phases. The QueryClientProvider is the only hard dependency now.
+
+const TEST_SAFE_AREA_METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 function makeTestQueryClient() {
   return new QueryClient({
@@ -23,7 +29,11 @@ export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptio
   const queryClient = makeTestQueryClient();
 
   function Wrapper({ children }: { children: ReactElement }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </SafeAreaProvider>
+    );
   }
 
   return {

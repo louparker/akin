@@ -11,7 +11,7 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.top}>
         <Text style={styles.wordmark}>Akin</Text>
         <Text style={styles.headline}>{t('auth.welcome.headline')}</Text>
@@ -23,26 +23,20 @@ export default function WelcomeScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('auth.welcome.cta.signup')}
           onPress={() => router.push('/(auth)/signup')}
-          style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.btnPressed]}
+          style={styles.btnPrimary}
         >
-          <RNText style={[styles.btnText, styles.btnTextPrimary]}>
-            {t('auth.welcome.cta.signup')}
-          </RNText>
+          <RNText style={styles.btnTextPrimary}>{t('auth.welcome.cta.signup')}</RNText>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('auth.welcome.cta.login')}
           onPress={() => router.push('/(auth)/login')}
-          style={({ pressed }) => [styles.btn, styles.btnGhost, pressed && styles.btnPressed]}
+          style={styles.btnGhost}
         >
-          <RNText style={[styles.btnText, styles.btnTextGhost]}>
-            {t('auth.welcome.cta.login')}
-          </RNText>
+          <RNText style={styles.btnTextGhost}>{t('auth.welcome.cta.login')}</RNText>
         </Pressable>
 
-        {/* Inline ToS — spaces are embedded in prefix/conjunction strings to avoid
-            bare whitespace nodes, which react-native/no-raw-text flags. */}
         <RNText style={styles.tosText} textBreakStrategy="simple">
           {t('auth.welcome.tos.prefix')}
           <RNText
@@ -78,7 +72,7 @@ const styles = StyleSheet.create({
   },
   top: {
     flex: 1,
-    paddingTop: 120,
+    paddingTop: 100,
     paddingHorizontal: 32,
   },
   wordmark: {
@@ -107,35 +101,36 @@ const styles = StyleSheet.create({
   bottom: {
     paddingHorizontal: 24,
   },
-  btn: {
+  btnPrimary: {
+    width: '100%',
     height: 54,
     borderRadius: 4,
-    alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.bg.inverse,
     marginBottom: 12,
   },
-  btnPrimary: {
-    backgroundColor: colors.bg.inverse,
-  },
   btnGhost: {
+    width: '100%',
     height: 48,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  btnPressed: {
-    opacity: 0.8,
-  },
-  btnText: {
+  btnTextPrimary: {
     fontFamily: 'Inter Medium',
     fontWeight: '500',
     fontSize: 16,
     letterSpacing: -0.1,
-  },
-  btnTextPrimary: {
     color: colors.fg.inverse,
   },
   btnTextGhost: {
-    color: colors.fg.secondary,
+    fontFamily: 'Inter Medium',
+    fontWeight: '500',
     fontSize: 15,
+    letterSpacing: -0.1,
+    color: colors.fg.secondary,
   },
   tosText: {
     fontFamily: 'Inter',
@@ -143,7 +138,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: colors.fg.faint,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 12,
   },
   tosLink: {
     color: colors.fg.tertiary,

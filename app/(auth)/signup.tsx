@@ -182,6 +182,8 @@ export default function SignupScreen() {
         <Button
           full
           kind="primary"
+          size="lg"
+          loading={isLoading}
           onPress={() => void handleSubmit(onSubmit)()}
           disabled={isLoading}
           accessibilityLabel={t('auth.signup.cta')}
@@ -213,7 +215,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Source Serif 4',
-    fontSize: 30,
+    fontSize: 36,
+    lineHeight: 36 * 1.15,
     letterSpacing: -0.5,
     color: colors.fg.primary,
     marginBottom: 8,

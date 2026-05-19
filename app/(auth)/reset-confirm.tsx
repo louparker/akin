@@ -104,6 +104,8 @@ export default function ResetConfirmScreen() {
         <Button
           full
           kind="primary"
+          size="lg"
+          loading={isLoading}
           onPress={() => void handleSubmit(onSubmit)()}
           disabled={isLoading}
           accessibilityLabel={t('auth.resetConfirm.cta')}
@@ -121,7 +123,8 @@ const styles = StyleSheet.create({
   content: { paddingTop: 100, paddingHorizontal: 28 },
   title: {
     fontFamily: 'Source Serif 4',
-    fontSize: 30,
+    fontSize: 36,
+    lineHeight: 36 * 1.15,
     letterSpacing: -0.5,
     color: colors.fg.primary,
     marginBottom: 32,
