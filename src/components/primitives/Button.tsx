@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Pressable,
   Text,
@@ -78,6 +79,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const isInert = disabled || loading;
+  const [pressed, setPressed] = useState(false);
   // eslint-disable-next-line security/detect-object-injection -- kind and size are union literals; no user input
   const containerKindStyle = containerByKind[kind];
   // eslint-disable-next-line security/detect-object-injection -- kind and size are union literals; no user input
@@ -93,7 +95,9 @@ export function Button({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: isInert }}
       disabled={isInert}
-      style={({ pressed }) => [
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
         styles.base,
         containerKindStyle,
         containerSizeStyle,

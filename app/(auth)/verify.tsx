@@ -157,7 +157,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Source Serif 4',
-    fontSize: 30,
+    fontSize: 36,
+    lineHeight: 36 * 1.15,
     letterSpacing: -0.5,
     color: colors.fg.primary,
     marginBottom: 16,

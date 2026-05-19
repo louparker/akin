@@ -121,6 +121,8 @@ export default function IdentifierScreen() {
           <Button
             full
             kind="primary"
+            size="lg"
+            loading={isLoading}
             onPress={() => void useAuthStore.getState().confirmIdentifier()}
             disabled={isLoading}
             accessibilityLabel={t('auth.identifier.cta.confirm')}
