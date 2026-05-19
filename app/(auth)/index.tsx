@@ -1,13 +1,14 @@
-import { View, Text as RNText, StyleSheet, Linking } from 'react-native';
+import { View, Pressable, Text as RNText, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/primitives/Text';
-import { Button } from '@/components/primitives/Button';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.screen}>
@@ -17,25 +18,28 @@ export default function WelcomeScreen() {
         <Text style={styles.body}>{t('auth.welcome.body')}</Text>
       </View>
 
-      <View style={styles.bottom}>
-        <Button
-          full
-          kind="primary"
-          size="lg"
+      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel={t('auth.welcome.cta.signup')}
           onPress={() => router.push('/(auth)/signup')}
+          style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && styles.btnPressed]}
         >
-          {t('auth.welcome.cta.signup')}
-        </Button>
+          <RNText style={[styles.btnText, styles.btnTextPrimary]}>
+            {t('auth.welcome.cta.signup')}
+          </RNText>
+        </Pressable>
 
-        <Button
-          full
-          kind="ghost"
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel={t('auth.welcome.cta.login')}
           onPress={() => router.push('/(auth)/login')}
+          style={({ pressed }) => [styles.btn, styles.btnGhost, pressed && styles.btnPressed]}
         >
-          {t('auth.welcome.cta.login')}
-        </Button>
+          <RNText style={[styles.btnText, styles.btnTextGhost]}>
+            {t('auth.welcome.cta.login')}
+          </RNText>
+        </Pressable>
 
         {/* Inline ToS — spaces are embedded in prefix/conjunction strings to avoid
             bare whitespace nodes, which react-native/no-raw-text flags. */}
@@ -102,8 +106,36 @@ const styles = StyleSheet.create({
   },
   bottom: {
     paddingHorizontal: 24,
-    paddingBottom: 48,
-    gap: 12,
+  },
+  btn: {
+    height: 54,
+    borderRadius: 4,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  btnPrimary: {
+    backgroundColor: colors.bg.inverse,
+  },
+  btnGhost: {
+    height: 48,
+  },
+  btnPressed: {
+    opacity: 0.8,
+  },
+  btnText: {
+    fontFamily: 'Inter Medium',
+    fontWeight: '500',
+    fontSize: 16,
+    letterSpacing: -0.1,
+  },
+  btnTextPrimary: {
+    color: colors.fg.inverse,
+  },
+  btnTextGhost: {
+    color: colors.fg.secondary,
+    fontSize: 15,
   },
   tosText: {
     fontFamily: 'Inter',
@@ -111,6 +143,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: colors.fg.faint,
     textAlign: 'center',
+    marginTop: 8,
   },
   tosLink: {
     color: colors.fg.tertiary,
