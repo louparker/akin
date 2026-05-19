@@ -336,6 +336,8 @@ export const en = {
   'common.back': 'Back',
   'common.close': 'Close',
   'common.loading': 'Loading…',
+  'common.cancel': 'Cancel',
+  'create.discardConfirm': 'Discard this draft? Your text will be lost.',
 } as const;
 
 // TranslationDict: all keys required, values are strings.

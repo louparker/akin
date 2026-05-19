@@ -1,0 +1,67 @@
+appId: com.ourakin.app
+# Phase 5 smoke flow: signup → onboarding → feed → write tab → fill composer → post → see it.
+# Prerequisite: SUPABASE_AUTH_AUTO_CONFIRM=true in the local .env.local (dev/staging only, NEVER production).
+# Run: maestro test e2e/create-post.yaml
+---
+# 1. Launch fresh —————————————————————————————————
+- launchApp:
+    clearState: true
+
+# 2. Sign up a fresh user (auto-confirmed in dev)
+- assertVisible: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'Email'
+- inputText: 'test+create+${maestroDate}@ourakin.app'
+- tapOn:
+    id: 'Password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'Confirm password'
+- inputText: 'TestPass123!'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+
+# 3. Email verify auto-confirms in dev
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+
+# 4. Identifier reveal → accept
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+
+# 5. Onboarding → skip to feed
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+
+# 6. Feed loaded — open Write tab
+- assertVisible: 'akin'
+- tapOn: 'Write'
+
+# 7. Guidelines sheet appears on first post — continue
+- assertVisible: 'Before you post.'
+- tapOn: 'Continue'
+
+# 8. Composer — pick a category
+- tapOn: 'Category'
+- assertVisible: 'Pick a category'
+- tapOn: 'Vent Space'
+
+# 9. Fill in title + body
+- tapOn:
+    id: 'create-title-input'
+- inputText: 'E2E test post title'
+- tapOn:
+    id: 'create-body-input'
+- inputText: 'This post was created by the create-post Maestro flow.'
+
+# 10. Submit
+- tapOn: 'Post'
+
+# 11. Lands on the post detail screen — title is visible there
+- assertVisible: 'E2E test post title'
+
+# 12. Back to feed — confirm the new post is in the list
+- back
+- assertVisible: 'E2E test post title'

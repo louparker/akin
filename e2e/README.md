@@ -40,10 +40,11 @@ pnpm exec maestro test e2e/smoke.yaml   # single flow
 
 ## Current flows
 
-| File          | Covers                                                                                  |
-| ------------- | --------------------------------------------------------------------------------------- |
-| `smoke.yaml`  | App launches and shows the welcome screen.                                              |
-| `signup.yaml` | Full signup → email verify (auto-confirm) → identifier reveal → skip onboarding → feed. |
+| File               | Covers                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `smoke.yaml`       | App launches and shows the welcome screen.                                              |
+| `signup.yaml`      | Full signup → email verify (auto-confirm) → identifier reveal → skip onboarding → feed. |
+| `create-post.yaml` | Signup → feed → Write tab → guidelines → pick category → submit → see post in feed.     |
 
 > **signup.yaml prerequisite:** Set `SUPABASE_AUTH_AUTO_CONFIRM=true` in your local Supabase config so email verification is instant. **Never enable this in production.**
 
