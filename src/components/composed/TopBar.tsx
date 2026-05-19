@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 
 interface TopBarProps {
@@ -11,8 +12,18 @@ interface TopBarProps {
 }
 
 export function TopBar({ left, title, right, bordered = true, serif = false, style }: TopBarProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={[styles.container, bordered && styles.bordered, style]} accessibilityRole="header">
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, height: 52 + insets.top },
+        bordered && styles.bordered,
+        style,
+      ]}
+      accessibilityRole="header"
+    >
       <View style={styles.slot}>{left ?? null}</View>
 
       {title ? (
@@ -34,7 +45,6 @@ export function TopBar({ left, title, right, bordered = true, serif = false, sty
 
 const styles = StyleSheet.create({
   container: {
-    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bg.base,
