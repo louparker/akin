@@ -45,7 +45,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .single();
 
   if (error ?? !data) return null;
-  return data as Profile;
+  return data;
 }
 
 function routeAfterSignIn(profile: Profile | null) {
@@ -189,7 +189,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('profiles')
-        .update({ onboarded_at: now } as never)
+        .update({ onboarded_at: now })
         .eq('user_id', session.user.id);
       if (error) {
         set({ error: error.message, isLoading: false });
@@ -290,6 +290,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       supabase.auth.onAuthStateChange(async (event, newSession) => {
         const currentProfile = newSession ? await fetchProfile(newSession.user.id) : null;
+
+        // Guard against stale-fetch race: if completeOnboarding() ran while fetchProfile
+        // was in-flight, the store already has the authoritative profile (with onboarded_at).
+        // Overwriting it with stale data would cause routeAfterSignIn to send the user back
+        // to onboarding even though they just reached the feed.
+        const storeProfile = get().profile;
+        if (storeProfile?.onboarded_at && currentProfile && !currentProfile.onboarded_at) {
+          set({ session: newSession });
+          return;
+        }
+
         set({ session: newSession, profile: currentProfile });
 
         if (event === 'SIGNED_IN' && newSession) {
