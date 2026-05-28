@@ -345,4 +345,79 @@ Sign-off ritual:
 2. ADR entry: pagination model (cursor not offset), sort persistence storage choice.
 3. New TestFlight + Play Internal build for self-testing.
 4. Tag `phase-5-complete`.
-5. Move to `phase-6-comments-limits.md`.
+5. Complete the Phase 5 carryover tasks below.
+6. Move to `phase-6-comments-limits.md`.
+
+---
+
+## Phase 5 carryover — risks surfaced by the post-phase audit
+
+These tasks were discovered during the end-of-Phase-5 status audit (2026-05-27). They are **not** Phase 5 deliverables — Phase 5 ships when the checklist above is green — but they are debts that must clear before Phase 6 can be considered safe. Each is TDD-shaped. Work them in order; they have no inter-dependencies but item 5.C.1 is the highest risk and should go first.
+
+### Task 5.C.1 — pgTAP coverage for migrations 0013–0016
+
+**Risk:** four merged migrations have no pgTAP suite. The most dangerous is 0015 (soft-delete + scheduled purge): a bug here either leaks deleted profiles or hard-deletes accounts early. 0016 fixed a silent RLS rejection (every post INSERT was failing) — without a regression test the same class of bug can return.
+
+**Acceptance criteria:**
+
+- `supabase/tests/onboarded_at.test.sql` — column exists; can be set by owner; allowed-columns guard does not block it.
+- `supabase/tests/profile_status_deleted.test.sql` — `'deleted'` enum value exists on `profile_status`.
+- `supabase/tests/deleted_at_purge.test.sql` — column exists; partial index exists; running the purge SQL deletes profiles where `status='deleted' AND deleted_at < now() - interval '30 days'`; does NOT delete profiles soft-deleted < 30 days ago; does NOT delete active profiles.
+- `supabase/tests/handle_new_user_age_verified.test.sql` — inserting into `auth.users` with `raw_user_meta_data->>'age_verified_at'` set produces a profile with `age_verified_at` populated; NULL metadata produces NULL.
+
+**Done when:** `pnpm test:db` green on all 16 migrations.
+
+### Task 5.C.2 — Component / integration tests for Phase 5 sheets
+
+**Risk:** `ReportSheet`, `SpiceVoteSheet`, `LimitActiveSheet`, `GuidelinesSheet`, `CategoryPickerSheet` are shipped in the post detail / create flows but have no component tests. Regression risk on every refactor; bilingual copy can drift.
+
+**Acceptance criteria:**
+
+- Component test per sheet: renders both languages; primary action fires the right mutation/handler; close action dismisses; a11y check passes.
+- For `SpiceVoteSheet`: tap each flame calls the mutation with the right score; disabled on own posts.
+- For `ReportSheet`: each reason maps to the right enum value sent to `useReport`.
+
+**Done when:** all five sheets have at least one passing component test under `src/features/post/__tests__/`.
+
+### Task 5.C.3 — Verify scheduled-purge edge function end-to-end
+
+**Risk:** [supabase/functions/scheduled-purge/](supabase/functions/scheduled-purge) exists alongside the pg_cron job in 0015 but there's no test confirming either fires. A silent failure means deleted accounts linger past 30 days — a GDPR exposure.
+
+**Acceptance criteria:**
+
+- Local integration test (script in `supabase/tests/` or a `pnpm` task) that: inserts a profile, soft-deletes it with `deleted_at = now() - interval '31 days'`, invokes the purge SQL (or the function locally), asserts the row is gone.
+- Document in `DECISIONS.md` whether canonical purge is pg_cron OR the edge function — not both. Remove the redundant one.
+
+**Done when:** test passes; ADR clarifies the single source of truth for purge.
+
+### Task 5.C.4 — Activate `useThemeStore` or remove it
+
+**Risk:** [src/features/theme/store/useThemeStore.ts](src/features/theme/store/useThemeStore.ts) is a placeholder. Phase 8 needs a working dark-mode toggle; shipping with a dead store is misleading and accumulates phantom-feature risk.
+
+**Acceptance criteria:** either (a) wire the store to `useColorScheme` + a persisted user override and use it from `useColorTokens`, with tests; or (b) delete the store and re-introduce in Phase 8.
+
+**Done when:** no dead placeholder code in `src/features/theme/`.
+
+### Task 5.C.5 — Remove orphan `__stub__.ts` scaffolding files
+
+**Risk:** six `__stub__.ts` files (`src/components`, `src/features`, `src/i18n`, `src/lib`, `src/theme`, `src/types`) are scaffolding leftovers. Harmless but they hide the real surface area and confuse the agent on future tasks.
+
+**Acceptance criteria:** delete the six files; confirm `pnpm typecheck` and `pnpm test` still pass.
+
+**Done when:** `git ls-files '**/__stub__.ts'` returns nothing.
+
+### Task 5.C.6 — Expand Maestro coverage
+
+**Risk:** only three Maestro flows. The five critical flows per `.claude/skills/testing/SKILL.md` §9 are signup, create-post, comment, block, delete-account. Three remain. Phase 6 needs the comment flow before sign-off.
+
+**Acceptance criteria:** add `e2e/comment.yaml` (4 commenters + 5th blocked) — but write the _skeleton_ now and complete it as Phase 6 Task 6.x fills in the UI. Add `e2e/delete-account.yaml` and `e2e/block.yaml` to the backlog list in `e2e/README.md`.
+
+**Done when:** `e2e/README.md` table lists all five critical flows with status (✓ green / ⏳ pending phase X).
+
+### Task 5.C.7 — PostHog event coverage
+
+**Risk:** PostHog is wired but only `app_opened` is tracked. Without behavioural events we can't measure activation funnel during the closed beta.
+
+**Acceptance criteria:** define a minimal event list in `DECISIONS.md` (e.g. `signup_started`, `signup_completed`, `onboarding_completed`, `post_created`, `feed_sort_changed`) and instrument them via the existing `track()` helper in [src/lib/analytics.ts](src/lib/analytics.ts). No PII — see scrubbing in `analytics.ts`.
+
+**Done when:** each defined event fires once in the happy path and is verified in PostHog EU dev project.

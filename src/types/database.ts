@@ -275,7 +275,9 @@ export type Database = {
           age_verified_at: string | null;
           anonymous_identifier: string;
           created_at: string;
+          deleted_at: string | null;
           language: string;
+          onboarded_at: string | null;
           status: Database['public']['Enums']['profile_status'];
           strike_count: number;
           suspended_until: string | null;
@@ -287,7 +289,9 @@ export type Database = {
           age_verified_at?: string | null;
           anonymous_identifier: string;
           created_at?: string;
+          deleted_at?: string | null;
           language?: string;
+          onboarded_at?: string | null;
           status?: Database['public']['Enums']['profile_status'];
           strike_count?: number;
           suspended_until?: string | null;
@@ -299,7 +303,9 @@ export type Database = {
           age_verified_at?: string | null;
           anonymous_identifier?: string;
           created_at?: string;
+          deleted_at?: string | null;
           language?: string;
+          onboarded_at?: string | null;
           status?: Database['public']['Enums']['profile_status'];
           strike_count?: number;
           suspended_until?: string | null;
@@ -429,7 +435,7 @@ export type Database = {
         | 'aitoo'
         | 'hypothetically'
         | 'good_vibes';
-      profile_status: 'active' | 'suspended' | 'banned';
+      profile_status: 'active' | 'suspended' | 'banned' | 'deleted';
       report_reason: 'harassment' | 'hate' | 'spam' | 'sexual' | 'threat' | 'off_topic' | 'other';
       report_status: 'open' | 'reviewed' | 'actioned' | 'dismissed';
       report_target: 'post' | 'comment' | 'user';
@@ -576,7 +582,7 @@ export const Constants = {
         'hypothetically',
         'good_vibes',
       ],
-      profile_status: ['active', 'suspended', 'banned'],
+      profile_status: ['active', 'suspended', 'banned', 'deleted'],
       report_reason: ['harassment', 'hate', 'spam', 'sexual', 'threat', 'off_topic', 'other'],
       report_status: ['open', 'reviewed', 'actioned', 'dismissed'],
       report_target: ['post', 'comment', 'user'],
