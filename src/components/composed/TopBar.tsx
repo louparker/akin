@@ -46,7 +46,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.hairline,
   },
   slot: {
-    width: 56,
+    minWidth: 56,
+    flexShrink: 0,
     paddingLeft: 8,
     justifyContent: 'center',
   },

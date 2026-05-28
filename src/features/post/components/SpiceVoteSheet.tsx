@@ -42,37 +42,34 @@ export function SpiceVoteSheet({ postId, visible, userVote, onClose }: SpiceVote
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityLabel={t('common.close')}>
-        <View style={styles.sheet}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} accessibilityRole="none" />
-            <Text style={styles.title}>{t('spice.sheet.title')}</Text>
-            <Text style={styles.body}>{t('spice.sheet.body')}</Text>
-            <ScrollView>
-              {SPICE_LEVELS.map(({ level, labelKey, descKey }) => {
-                const isSelected = userVote === level;
-                return (
-                  <Pressable
-                    key={level}
-                    style={[styles.row, isSelected ? styles.rowSelected : styles.rowUnselected]}
-                    onPress={() => handleSelect(level)}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: isSelected, disabled: readOnly && !isSelected }}
-                    accessibilityLabel={`${t(labelKey)}: ${t(descKey)}`}
-                  >
-                    <SpiceFlames level={level} size={14} />
-                    <View style={styles.rowText}>
-                      <Text style={styles.rowLabel}>{t(labelKey)}</Text>
-                      <Text style={styles.rowDesc}>{t(descKey)}</Text>
-                    </View>
-                    {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </View>
-      </Pressable>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false} />
+      <View style={styles.sheet}>
+        <View style={styles.handle} accessibilityRole="none" />
+        <Text style={styles.title}>{t('spice.sheet.title')}</Text>
+        <Text style={styles.body}>{t('spice.sheet.body')}</Text>
+        <ScrollView>
+          {SPICE_LEVELS.map(({ level, labelKey, descKey }) => {
+            const isSelected = userVote === level;
+            return (
+              <Pressable
+                key={level}
+                style={[styles.row, isSelected ? styles.rowSelected : styles.rowUnselected]}
+                onPress={() => handleSelect(level)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected, disabled: readOnly && !isSelected }}
+                accessibilityLabel={`${t(labelKey)}: ${t(descKey)}`}
+              >
+                <SpiceFlames level={level} size={14} />
+                <View style={styles.rowText}>
+                  <Text style={styles.rowLabel}>{t(labelKey)}</Text>
+                  <Text style={styles.rowDesc}>{t(descKey)}</Text>
+                </View>
+                {isSelected ? <Text style={styles.checkmark}>✓</Text> : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
     </Modal>
   );
 }
@@ -82,7 +79,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(35,31,33,0.55)',
-    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.bg.base,

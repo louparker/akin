@@ -92,25 +92,21 @@ export default function CategoryDetailScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderItem = useCallback(
-    ({ item, index }: { item: PostRow; index: number }) => {
-      const isLast = index === posts.length - 1;
-      return (
-        <PostCard
-          id={item.id}
-          category={item.category}
-          timeAgo={timeAgo(item.created_at)}
-          title={item.title}
-          excerpt={item.body}
-          authorIdentifier={item.author_identifier}
-          participantCount={item.participant_count}
-          isFull={item.is_full}
-          spiceLevel={item.average_spice_level ?? undefined}
-          isLast={isLast}
-          onPress={() => router.push(`/(main)/post/${item.id}`)}
-        />
-      );
-    },
-    [posts.length],
+    ({ item }: { item: PostRow }) => (
+      <PostCard
+        id={item.id}
+        category={item.category}
+        timeAgo={timeAgo(item.created_at)}
+        title={item.title}
+        excerpt={item.body}
+        authorIdentifier={item.author_identifier}
+        participantCount={item.participant_count}
+        isFull={item.is_full}
+        spiceLevel={item.average_spice_level ?? undefined}
+        onPress={() => router.push(`/(main)/post/${item.id}`)}
+      />
+    ),
+    [],
   );
 
   const keyExtractor = useCallback((item: PostRow) => item.id, []);
@@ -296,10 +292,11 @@ const styles = StyleSheet.create({
   },
   skeletonItem: {
     paddingHorizontal: 22,
-    paddingVertical: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-    gap: 8,
+    paddingTop: 28,
+    paddingBottom: 36,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.divider,
+    gap: 10,
   },
   skeletonMeta: {
     marginBottom: 2,

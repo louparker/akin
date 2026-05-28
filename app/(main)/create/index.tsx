@@ -84,9 +84,9 @@ export default function CreateScreen() {
   const onCancel = () => {
     if (title || body || category) {
       Alert.alert(t('create.cancel'), t('create.discardConfirm'), [
-        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('create.discard.keep'), style: 'cancel' },
         {
-          text: t('create.cancel'),
+          text: t('create.discard.confirm'),
           style: 'destructive',
           onPress: () => router.back(),
         },

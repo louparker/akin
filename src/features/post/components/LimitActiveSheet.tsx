@@ -17,26 +17,23 @@ export function LimitActiveSheet({ visible, activeCount, onClose }: LimitActiveS
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityLabel={t('common.close')}>
-        <View style={styles.sheet}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} accessibilityRole="none" />
-            <Text style={styles.title}>{t('limit.active.title')}</Text>
-            <Text style={styles.body}>{t('limit.active.body')}</Text>
-            <Text style={styles.countNote}>
-              {t('profile.active.count', { n: String(activeCount) })}
-            </Text>
-            <Pressable
-              style={styles.button}
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel={t('limit.active.cta')}
-            >
-              <Text style={styles.buttonText}>{t('limit.active.cta')}</Text>
-            </Pressable>
-          </Pressable>
-        </View>
-      </Pressable>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false} />
+      <View style={styles.sheet}>
+        <View style={styles.handle} accessibilityRole="none" />
+        <Text style={styles.title}>{t('limit.active.title')}</Text>
+        <Text style={styles.body}>{t('limit.active.body')}</Text>
+        <Text style={styles.countNote}>
+          {t('profile.active.count', { n: String(activeCount) })}
+        </Text>
+        <Pressable
+          style={styles.button}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('limit.active.cta')}
+        >
+          <Text style={styles.buttonText}>{t('limit.active.cta')}</Text>
+        </Pressable>
+      </View>
     </Modal>
   );
 }
@@ -46,7 +43,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(35,31,33,0.55)',
-    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.bg.base,

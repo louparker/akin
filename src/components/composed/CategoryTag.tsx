@@ -9,7 +9,7 @@ interface CategoryTagProps {
 export function CategoryTag({ name, muted = false }: CategoryTagProps) {
   return (
     <Text style={[styles.tag, muted && styles.muted]} accessibilityRole="text" numberOfLines={1}>
-      {name.toUpperCase()}
+      {name.replace(/_/g, ' ')}
     </Text>
   );
 }
@@ -17,10 +17,11 @@ export function CategoryTag({ name, muted = false }: CategoryTagProps) {
 const styles = StyleSheet.create({
   tag: {
     fontFamily: 'Inter Medium',
-    fontWeight: '500',
+    fontWeight: '700',
     fontSize: 11.5,
     letterSpacing: 0.3,
     textTransform: 'uppercase',
+    textDecorationLine: 'underline',
     color: colors.brand.primary,
   },
   muted: {

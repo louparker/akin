@@ -71,10 +71,13 @@ appId: com.ourakin.app
 
 # 8. Composer — pick a category
 - tapOn: 'Category'
-# CategoryPickerSheet uses animationType="slide" — wait for the modal to finish
-# sliding up before asserting its title is visible.
-- waitForAnimationToEnd
-- assertVisible: 'Pick a category'
+# CategoryPickerSheet uses a sibling-overlay pattern (overlay Pressable is self-closing,
+# accessible={false}; sheet View is a sibling). extendedWaitUntil polls until the title
+# testID is in the XCTest accessibility tree.
+- extendedWaitUntil:
+    visible:
+      id: 'category-picker-title'
+    timeout: 5000
 - tapOn: 'Vent Space'
 
 # 9. Fill in title + body
@@ -88,8 +91,12 @@ appId: com.ourakin.app
 # 10. Submit
 - tapOn: 'Post'
 
-# 11. Lands on the post detail screen — title is visible there
-- assertVisible: 'E2E test post title'
+# 11. Lands on the post detail screen — createPost.mutateAsync is a Supabase network call
+# followed by router.replace, so give it up to 15 s before declaring failure.
+- extendedWaitUntil:
+    visible:
+      text: 'E2E test post title'
+    timeout: 15000
 
 # 12. Back to feed — confirm the new post is in the list
 # Use the TopBar back button (accessibilityLabel="Back") rather than the hardware back
@@ -97,4 +104,7 @@ appId: com.ourakin.app
 # so the swipe-back gesture has nothing to attach to on iOS.
 - tapOn:
     label: 'Back'
-- assertVisible: 'E2E test post title'
+- extendedWaitUntil:
+    visible:
+      text: 'E2E test post title'
+    timeout: 5000

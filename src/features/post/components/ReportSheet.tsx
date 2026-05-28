@@ -69,55 +69,52 @@ export function ReportSheet({ visible, targetId, targetType, onClose }: ReportSh
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityLabel={t('common.close')}>
-        <View style={styles.sheet}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} accessibilityRole="none" />
-            <Text style={styles.title}>{t(titleKey)}</Text>
-            <Text style={styles.body}>{t('report.body')}</Text>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false} />
+      <View style={styles.sheet}>
+        <View style={styles.handle} accessibilityRole="none" />
+        <Text style={styles.title}>{t(titleKey)}</Text>
+        <Text style={styles.body}>{t('report.body')}</Text>
 
-            {showSuccess ? (
-              <Text style={styles.success}>{t('report.success')}</Text>
-            ) : (
-              <>
-                {REASON_OPTIONS.map((option, idx) => {
-                  const isLast = idx === REASON_OPTIONS.length - 1;
-                  const isSelected = selectedIdx === idx;
-                  return (
-                    <Pressable
-                      key={option.labelKey}
-                      style={[styles.reasonRow, isLast ? undefined : styles.reasonRowBordered]}
-                      onPress={() => setSelectedIdx(idx)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: isSelected }}
-                      accessibilityLabel={t(option.labelKey)}
-                    >
-                      <Text style={[styles.reasonText, isSelected && styles.reasonSelected]}>
-                        {t(option.labelKey)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-
+        {showSuccess ? (
+          <Text style={styles.success}>{t('report.success')}</Text>
+        ) : (
+          <>
+            {REASON_OPTIONS.map((option, idx) => {
+              const isLast = idx === REASON_OPTIONS.length - 1;
+              const isSelected = selectedIdx === idx;
+              return (
                 <Pressable
-                  style={[styles.submitButton, selectedIdx === null && styles.submitDisabled]}
-                  onPress={handleSubmit}
-                  disabled={selectedIdx === null || isPending}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('report.cta')}
-                  accessibilityState={{ disabled: selectedIdx === null || isPending }}
+                  key={option.labelKey}
+                  style={[styles.reasonRow, isLast ? undefined : styles.reasonRowBordered]}
+                  onPress={() => setSelectedIdx(idx)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={t(option.labelKey)}
                 >
-                  {isPending ? (
-                    <ActivityIndicator color={colors.fg.inverse} />
-                  ) : (
-                    <Text style={styles.submitText}>{t('report.cta')}</Text>
-                  )}
+                  <Text style={[styles.reasonText, isSelected && styles.reasonSelected]}>
+                    {t(option.labelKey)}
+                  </Text>
                 </Pressable>
-              </>
-            )}
-          </Pressable>
-        </View>
-      </Pressable>
+              );
+            })}
+
+            <Pressable
+              style={[styles.submitButton, selectedIdx === null && styles.submitDisabled]}
+              onPress={handleSubmit}
+              disabled={selectedIdx === null || isPending}
+              accessibilityRole="button"
+              accessibilityLabel={t('report.cta')}
+              accessibilityState={{ disabled: selectedIdx === null || isPending }}
+            >
+              {isPending ? (
+                <ActivityIndicator color={colors.fg.inverse} />
+              ) : (
+                <Text style={styles.submitText}>{t('report.cta')}</Text>
+              )}
+            </Pressable>
+          </>
+        )}
+      </View>
     </Modal>
   );
 }
@@ -127,7 +124,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(35,31,33,0.55)',
-    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.bg.base,

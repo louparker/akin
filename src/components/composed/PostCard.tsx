@@ -16,7 +16,6 @@ interface PostCardProps {
   participantCount: number;
   isFull: boolean;
   spiceLevel?: number;
-  isLast?: boolean;
   onPress: () => void;
 }
 
@@ -28,46 +27,52 @@ function PostCardImpl({
   authorIdentifier,
   participantCount,
   spiceLevel,
-  isLast = false,
   onPress,
 }: PostCardProps) {
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        !isLast && styles.border,
-        pressed && styles.pressed,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Post: ${title}`}
     >
-      {/* Row 1: Category + timestamp */}
-      <View style={styles.metaRow}>
-        <CategoryTag name={category} />
-        <Text style={styles.dot}>·</Text>
-        <Text style={styles.timestamp}>{timeAgo}</Text>
-      </View>
+      {/* Padding lives on a child View, not the Pressable root.
+          On Fabric (New Architecture), FlashList's CellContainer measures the
+          item's intrinsic size before JS styles are applied. Padding on the
+          Pressable root gets excluded from that measurement, so the container
+          is sized to content-only and the padding has nowhere to expand into.
+          A plain View child is not affected by this. */}
+      <View style={styles.container}>
+        {/* Row 1: Category + timestamp */}
+        <View style={styles.metaRow}>
+          <CategoryTag name={category} />
+          <Text style={styles.dot}>·</Text>
+          <Text style={styles.timestamp}>{timeAgo}</Text>
+        </View>
 
-      {/* Title */}
-      <Text style={styles.title}>{title}</Text>
+        {/* Title */}
+        <Text style={styles.title}>{title}</Text>
 
-      {/* Excerpt */}
-      <Text style={styles.excerpt} numberOfLines={2}>
-        {excerpt}
-      </Text>
+        {/* Excerpt */}
+        <Text style={styles.excerpt} numberOfLines={2}>
+          {excerpt}
+        </Text>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <IdentChip name={authorIdentifier} />
-        <View style={styles.footerRight}>
-          <CapacityDots filled={participantCount} total={4} />
-          <Text style={styles.capacityText}>{participantCount}/4</Text>
-          {spiceLevel !== undefined && spiceLevel > 0 ? (
-            <SpiceFlames level={spiceLevel} size={11} />
-          ) : null}
+        {/* Footer */}
+        <View style={styles.footer}>
+          <IdentChip name={authorIdentifier} />
+          <View style={styles.footerRight}>
+            <CapacityDots filled={participantCount} total={4} />
+            <Text style={styles.capacityText}>{participantCount}/4</Text>
+            {spiceLevel !== undefined && spiceLevel > 0 ? (
+              <SpiceFlames level={spiceLevel} size={11} />
+            ) : null}
+          </View>
         </View>
       </View>
+
+      {/* Divider on the Pressable (no padding) so left:0/right:0 = full width */}
+      <View style={styles.divider} />
     </Pressable>
   );
 }
@@ -83,29 +88,35 @@ export const PostCard = memo(PostCardImpl, (prev, next) => {
     prev.participantCount === next.participantCount &&
     prev.isFull === next.isFull &&
     prev.spiceLevel === next.spiceLevel &&
-    prev.isLast === next.isLast &&
     prev.onPress === next.onPress
   );
 });
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 22,
-    paddingVertical: 28,
+  card: {
     backgroundColor: colors.bg.base,
-  },
-  border: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.divider,
   },
   pressed: {
     opacity: 0.85,
+  },
+  container: {
+    paddingHorizontal: 22,
+    paddingTop: 28,
+    paddingBottom: 36,
+  },
+  divider: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: colors.border.divider,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   dot: {
     fontFamily: 'Inter',

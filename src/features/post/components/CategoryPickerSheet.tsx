@@ -27,40 +27,39 @@ export function CategoryPickerSheet({
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityLabel={t('common.close')}>
-        <View style={styles.sheet}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} accessibilityRole="none" />
-            <Text style={styles.title}>{t('create.picker.title')}</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {POST_CATEGORIES.map((cat) => {
-                const active = cat === selected;
-                return (
-                  <Pressable
-                    key={cat}
-                    onPress={() => {
-                      onSelect(cat);
-                      onClose();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={t(`category.${cat}` as const)}
-                    accessibilityState={{ selected: active }}
-                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                  >
-                    <View style={styles.rowMain}>
-                      <Text style={[styles.rowTitle, active && styles.rowTitleActive]}>
-                        {t(`category.${cat}` as const)}
-                      </Text>
-                      <Text style={styles.rowDesc}>{t(`category.${cat}.desc` as const)}</Text>
-                    </View>
-                    {active ? <Text style={styles.check}>·</Text> : null}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </View>
-      </Pressable>
+      <Pressable style={styles.overlay} onPress={onClose} accessible={false} />
+      <View style={styles.sheet}>
+        <View style={styles.handle} accessibilityRole="none" />
+        <Text style={styles.title} testID="category-picker-title">
+          {t('create.picker.title')}
+        </Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {POST_CATEGORIES.map((cat) => {
+            const active = cat === selected;
+            return (
+              <Pressable
+                key={cat}
+                onPress={() => {
+                  onSelect(cat);
+                  onClose();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={t(`category.${cat}` as const)}
+                accessibilityState={{ selected: active }}
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              >
+                <View style={styles.rowMain}>
+                  <Text style={[styles.rowTitle, active && styles.rowTitleActive]}>
+                    {t(`category.${cat}` as const)}
+                  </Text>
+                  <Text style={styles.rowDesc}>{t(`category.${cat}.desc` as const)}</Text>
+                </View>
+                {active ? <Text style={styles.check}>·</Text> : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
     </Modal>
   );
 }
@@ -70,7 +69,6 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(35,31,33,0.55)',
-    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.bg.base,

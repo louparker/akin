@@ -152,7 +152,7 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
-        name="create"
+        name="create/index"
         options={{
           title: t('nav.tab.write'),
           tabBarAccessibilityLabel: t('nav.tab.write'),
@@ -164,7 +164,7 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
-        name="you"
+        name="you/index"
         options={{
           title: t('nav.tab.you'),
           tabBarAccessibilityLabel: t('nav.tab.you'),
@@ -176,7 +176,7 @@ export default function MainLayout() {
         }}
       />
       <Tabs.Screen
-        name="post"
+        name="post/[id]"
         options={{
           href: null,
           tabBarStyle: { display: 'none' },
