@@ -22,85 +22,167 @@
 
 ---
 
-## Task 8.1 — Profile screen
+## Task 8.0 — Pull-forward roadmap (read first)
 
-**Context:** PRD §5.7; `.claude/skills/ui/SKILL.md`.
+The Phase 5 audit flagged that several Phase 8 surfaces are de-facto blockers for Phase 6 / 7 ergonomics:
 
-**Goal:** users see their own profile only. Identifier, join month, my posts list, my active conversations list.
+- **Settings shell** unblocks the language toggle (already i18n-ready), the appearance toggle (`useThemeStore` placeholder), and the Sign out button (already has hook `useLogout`).
+- **Blocked users list** is referenced by Phase 7 Task 7.2 (block flow) but lives in Settings.
+- **Profile-mine** is needed before Phase 8 marketing screenshots and before any "view my activity" affordance.
 
-**Acceptance criteria:**
+**Pull-forward order (work alongside Phase 6/7, do not block their sign-off):**
 
-- `app/(main)/profile.tsx`.
-- Header: identifier in display type, "Joined [month/year]" caption.
-- Tabs: "My Posts" / "My Active Conversations".
-- "My Posts" — list of all posts I've created, sorted by recent. Reuses PostCard.
-- "My Active Conversations" — posts I've commented on AND that are not yet full. Counts toward the 3-cap.
-- Pull to refresh on each tab.
-- Empty state per tab.
+1. **8.2a Settings shell + nav entry** (1 day) — empty sectioned list + route + i18n keys. Zero behaviour. Unblocks every later toggle.
+2. **8.2b Sign out + Account section** (½ day) — reuses `useLogout`, deep-links to delete-account flow.
+3. **8.2c Language toggle** (½ day) — Sweden default; writes to a `language` profile column (new migration) and refreshes the i18n locale. Requires migration `0017_add_language_to_profiles.sql`.
+4. **8.2d Appearance toggle** (½ day) — finishes Task 5.C.4. Wires `useThemeStore` to `useColorTokens`.
+5. **8.2e Blocked users list** (1 day) — depends on Phase 7 `blocks` queries.
+6. **8.1 Profile-mine** (1 day) — can ship before or after Settings; needs a new `useMyPosts` hook + `useMyActiveConversations` hook.
 
-**Tests to write first:**
-
-- Component test: header shows identifier and join month.
-- Component test: My Posts tab loads from the right query.
-- Component test: Active Conversations tab loads from the right query.
-- Component test: empty states render correctly.
-
-**Implementation notes:**
-
-- "Active Conversations" query joins `comments` to `posts` filtering by `is_full = false` and `comments.author_id = auth.uid()`.
-- v1 deliberately does not show optional stats (e.g. total posts created); add only if there's clear product value.
-- No avatar, no bio. By design.
-
-**Self-review (UX lens):**
-
-- [ ] Both languages.
-- [ ] Tap on a post → post detail.
-- [ ] No way to view another user's profile.
-
-**Done when:** all tests pass.
+Track these as separate PRs. Each is small and reviewable.
 
 ---
 
-## Task 8.2 — Settings screen
+## Task 8.1 — Profile-mine screen
 
-**Context:** PRD §5.8; `.claude/skills/moderation/SKILL.md` (blocked users list).
+**Context:** PRD §5.7; `.claude/skills/ui/SKILL.md`; `.claude/skills/database/SKILL.md` §7 (indexes).
 
-**Goal:** every required settings entry, organised clearly.
+**Goal:** users see their own profile only — never another user's. Identifier, join month, my posts, my active conversations.
 
 **Acceptance criteria:**
 
-- `app/(main)/settings.tsx`.
-- Sections:
-  - **Account**: masked email; change password (deep link to reset flow); delete account.
-  - **Language**: sv / en toggle (writes to `profiles.language`, refreshes the i18n locale).
-  - **Appearance**: light / dark / system.
-  - **Notifications**: deferred — placeholder section "Coming soon" with explanation.
-  - **Blocked users**: list with unblock action.
-  - **Legal**: Privacy Policy, Terms of Service (open in in-app webview).
-  - **Support**: app version, "Send feedback" mailto, FAQ (deferred placeholder for now).
-  - **Sign out** (full-width button at the bottom).
-  - **Moderator** (only visible if `is_moderator()`): link to `/moderator/queue`.
+- Route: `app/(main)/you/index.tsx` (already a placeholder — replace, do not duplicate).
+- Header: identifier in `font.serif` 26pt; "Joined [Month YYYY]" caption in `font.sans` 13pt `fg.tertiary`. Bilingual month name via `Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })`.
+- Tab row (Inter 13.5pt `fg.tertiary`, active state `fg.primary`): **My Posts** | **My Active**.
+- **My Posts** — list of posts where `author_id = auth.uid()`, sorted by `created_at DESC`. Reuses `PostCard`. Empty state: "Nothing posted yet." (sv: "Inget publicerat än.").
+- **My Active** — posts where I have a row in `comments` AND `posts.is_full = false`. Same `PostCard`. Empty state: "You're not in any open conversations." (sv: "Du är inte i några öppna samtal.").
+- Pull-to-refresh on both tabs.
+- No avatar, no bio (by design).
+- A11y: tab buttons have `accessibilityRole="tab"`, the active tab has `accessibilityState={{ selected: true }}`.
+
+**New hooks (TDD):**
+
+- `src/features/profile/api/useMyPosts.ts` — `useQuery(['profile', 'mine', 'posts'])` returning `PostRow[]`.
+- `src/features/profile/api/useMyActiveConversations.ts` — `useQuery(['profile', 'mine', 'active'])` returning `PostRow[]`.
 
 **Tests to write first:**
 
-- Component test: each section renders.
-- Component test: changing language updates i18n.
-- Component test: changing theme updates the app.
-- Component test: unblock from the blocked list invokes the right mutation.
-- Component test: moderator-only entry hidden for non-moderators.
-- Component test: sign-out invokes the logout flow.
+- Hook test: `useMyPosts` returns only posts whose `author_id` equals the current session user id (mock the client; assert the `.eq('author_id', uid)` filter chain).
+- Hook test: `useMyActiveConversations` filters by `is_full = false` and joins through `comments`.
+- Component test: header renders identifier and localised join month for both `sv` and `en`.
+- Component test: switching tabs swaps the list source.
+- Component test: empty state per tab renders the right bilingual copy.
+- a11y check: tab roles + selected state.
+- Snapshot: 5-card light / 5-card dark.
 
 **Implementation notes:**
 
-- Use the OS-style settings list pattern: grouped rows, separators, chevrons.
-- The version string comes from `expo-constants`.
+- The "Active Conversations" query should use a single round trip — prefer a Postgres view `my_active_conversations` or a PostgREST embedded select like `posts!comments(*)` filtered. If a view is added, write a pgTAP test for it (`supabase/tests/my_active_conversations.test.sql`).
+- v1 deliberately does not show stats like "total posts created."
+- Tap on a card → `(main)/post/[id]` (reuse existing route).
 
-**Self-review:**
+**Self-review (UX lens):**
 
-- [ ] All copy bilingual.
-- [ ] No PII in any entry.
+- [ ] Both languages render correctly.
+- [ ] Tap on a post navigates to post detail.
+- [ ] No code path exposes another user's profile.
+- [ ] Tab labels and join-month wording reviewed in both locales.
 
-**Done when:** all tests pass; manual review of every entry.
+**Self-review (security lens):**
+
+- [ ] RLS allows reading my own posts/comments through these queries.
+- [ ] No PII (email) leaks into any rendered field.
+
+**Done when:** all tests pass; manual smoke confirms both tabs.
+
+---
+
+## Task 8.2 — Settings screen (umbrella)
+
+The Settings screen has six sub-sections, each independently shippable. Split this work into 8.2a–8.2g so any single PR is small enough to review in one sitting.
+
+### Task 8.2a — Settings shell + nav entry
+
+**Goal:** the empty sectioned list and a route to it. No behaviour yet.
+
+**Acceptance criteria:**
+
+- Route: `app/(main)/settings/index.tsx`.
+- Nav entry: a gear icon in the You tab header (or a row at the top of the You screen — founder picks).
+- Sectioned `ScrollView` with these section headers (Inter 11pt 500-weight uppercase 0.5 letter-spacing `fg.tertiary`): Account, Language, Appearance, Notifications, Blocked users, Legal, Support, Moderator.
+- Every section renders one placeholder row "Coming next" until its sub-task ships, so the screen is navigable from day one.
+- All section titles in `src/i18n/{sv,en}.ts` under `settings.section.*`.
+
+**Tests:** component test renders 8 section headers in both locales; snapshot in light + dark.
+
+**Done when:** route reachable, all section headers visible, all bilingual.
+
+### Task 8.2b — Account section
+
+**Acceptance criteria:**
+
+- Row 1: "Email" + masked email (`u***@example.com`) — read from `session.user.email`. Not editable.
+- Row 2: "Change password" → navigates to existing `(auth)/reset-password` flow.
+- Row 3: "Delete account" → navigates to existing `(main)/delete-account.tsx`.
+- Row 4 (footer): "Sign out" — full-width destructive ghost button. Calls `useLogout()`.
+
+**Tests:** masked email regex; row taps invoke right navigation; sign out invokes `useLogout`.
+
+### Task 8.2c — Language toggle
+
+**Prereq:** migration `supabase/migrations/0017_add_language_to_profiles.sql` — adds `language text` column to `profiles` (CHECK `language IN ('sv','en')`), default NULL (NULL means "follow device locale"). pgTAP test for the column.
+
+**Acceptance criteria:**
+
+- Segmented control: System | Svenska | English.
+- Writes to `profiles.language`; on success, calls `i18n.changeLanguage()` and re-renders the app.
+- On app boot, [src/lib/i18n.ts](src/lib/i18n.ts) reads `profiles.language` (if set) and uses it; otherwise device locale.
+
+**Tests:** mutation hook + i18n change side effect; system option resets the column to NULL.
+
+### Task 8.2d — Appearance toggle
+
+**Prereq:** completes Task 5.C.4 (activate `useThemeStore`).
+
+**Acceptance criteria:**
+
+- Segmented control: System | Light | Dark.
+- Writes to `useThemeStore` (persisted via AsyncStorage — same backend as `useFeedStore`, key `akin.themePrefs.v1`).
+- `useColorTokens` reads from the store and falls back to `useColorScheme()` when System is selected.
+
+**Tests:** store update changes `useColorTokens` output; persistence key correct.
+
+### Task 8.2e — Blocked users section
+
+**Prereq:** Phase 7 `blocks` table + `useBlock` mutation exist.
+
+**Acceptance criteria:**
+
+- New hook `src/features/blocks/api/useMyBlocks.ts` — lists rows where `blocker_id = auth.uid()`, joining `target_identifier`.
+- New row component: identifier + "Unblock" button (calls `useUnblock` mutation).
+- Empty state: "You haven't blocked anyone." (sv: "Du har inte blockerat någon.").
+
+**Tests:** hook returns my blocks only; unblock invokes mutation + invalidates the list.
+
+### Task 8.2f — Legal + Support sections
+
+**Acceptance criteria:**
+
+- Legal: Privacy Policy + Terms of Service rows. Opens in `WebBrowser.openBrowserAsync()` (Expo) — never `Linking.openURL` (less safe handoff). URLs from `app.config.ts` extras (already pattern).
+- Support: app version row (`Constants.expoConfig?.version`); "Send feedback" mailto (`feedback@ourakin.app`).
+
+**Tests:** version string renders; mailto link has the right address.
+
+### Task 8.2g — Moderator entry
+
+**Acceptance criteria:**
+
+- Row visible only if `is_moderator()` RPC returns true (cache via TanStack Query, 5-minute stale time).
+- Tap → `(main)/moderator/queue` (Phase 7 deliverable).
+
+**Tests:** non-moderator does not see the row; moderator does.
+
+**Done when:** all 7 sub-tasks shipped, every section reviewed in both languages.
 
 ---
 

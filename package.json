@@ -50,7 +50,8 @@
     "react-hook-form": "^7.76.0",
     "react-native": "0.83.6",
     "react-native-gesture-handler": "^2.31.2",
-    "react-native-reanimated": "^4.3.1",
+    "react-native-reanimated": "4.3.1",
+    "react-native-worklets": "0.8.3",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "^15.15.5",
@@ -80,13 +81,23 @@
     "prettier": "^3.8.3",
     "react-test-renderer": "19.2.0",
     "ts-node": "^10.9.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "@react-native/metro-config": "0.83.6"
   },
   "packageManager": "pnpm@8.15.9",
   "private": true,
   "pnpm": {
     "overrides": {
-      "hermes-parser": "0.35.0"
+      "hermes-parser": "0.35.0",
+      "@react-native/metro-config": "0.83.6",
+      "metro": "0.83.6",
+      "metro-runtime": "0.83.6",
+      "metro-config": "0.83.6",
+      "metro-core": "0.83.6",
+      "metro-cache": "0.83.6",
+      "metro-transform-worker": "0.83.6",
+      "metro-babel-transformer": "0.83.6",
+      "metro-source-map": "0.83.6"
     }
   }
 }
