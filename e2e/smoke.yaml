@@ -2,4 +2,10 @@ appId: com.ourakin.app
 ---
 - launchApp:
     clearState: true
-- assertVisible: 'Akin'
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+- extendedWaitUntil:
+    visible:
+      text: 'Akin'
+    timeout: 60000

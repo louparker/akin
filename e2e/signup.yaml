@@ -6,23 +6,32 @@ appId: com.ourakin.app
 # 1. Launch fresh —————————————————————————————————
 - launchApp:
     clearState: true
-
-# 2. Welcome screen
-- assertVisible: 'Make an account'
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+# 2. Welcome screen — wait for Metro bundle + splash before asserting
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
 - tapOn: 'Make an account'
 
 # 3. Signup form
 - assertVisible: 'Make an account'
 - tapOn:
-    id: 'Email'
-- inputText: 'test+e2e@ourakin.app'
+    id: 'signup-email'
+- inputText: 'testsignup${js:Date.now()}@ourakin.app'
 - tapOn:
-    id: 'Password'
+    id: 'signup-password'
 - inputText: 'TestPass123!'
 - tapOn:
-    id: 'Confirm password'
+    id: 'signup-confirm-password'
 - inputText: 'TestPass123!'
-# Tap the 18+ checkbox card
+- tapOn:
+    text: 'Close'
+    optional: true
+- hideKeyboard
 - tapOn: 'I am 18 or older.'
 - tapOn: 'Continue'
 

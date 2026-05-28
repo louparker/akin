@@ -82,6 +82,7 @@ export default function SignupScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   accessibilityLabel={t('auth.signup.email.label')}
+                  testID="signup-email"
                 />
               )}
             />
@@ -110,6 +111,7 @@ export default function SignupScreen() {
                   hint={t('auth.signup.password.hint')}
                   secureTextEntry
                   accessibilityLabel={t('auth.signup.password.label')}
+                  testID="signup-password"
                 />
               )}
             />
@@ -134,6 +136,7 @@ export default function SignupScreen() {
                   placeholder={t('auth.signup.confirmPassword.placeholder')}
                   secureTextEntry
                   accessibilityLabel={t('auth.signup.confirmPassword.label')}
+                  testID="signup-confirm-password"
                 />
               )}
             />

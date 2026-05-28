@@ -10,6 +10,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   placeholder?: string;
   secureTextEntry?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 export function Input({

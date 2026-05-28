@@ -4,21 +4,40 @@ appId: com.ourakin.app
 # Run: maestro test e2e/create-post.yaml
 ---
 # 1. Launch fresh —————————————————————————————————
+# Force English locale so assertions match regardless of simulator language setting.
 - launchApp:
     clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+# Wait for Metro to finish bundling and the app to render its first screen.
+# clearState wipes the JS cache so every fresh launch re-downloads the full bundle from Metro.
+# extendedWaitUntil retries for up to 60 s — enough time for a cold bundle download.
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
 
 # 2. Sign up a fresh user (auto-confirmed in dev)
-- assertVisible: 'Make an account'
+- tapOn: 'Make an account'
 - tapOn: 'Make an account'
 - tapOn:
-    id: 'Email'
-- inputText: 'test+create+${maestroDate}@ourakin.app'
+    id: 'signup-email'
+- inputText: 'testcreate${js:Date.now()}@ourakin.app'
 - tapOn:
-    id: 'Password'
+    id: 'signup-password'
 - inputText: 'TestPass123!'
 - tapOn:
-    id: 'Confirm password'
+    id: 'signup-confirm-password'
 - inputText: 'TestPass123!'
+# Dismiss iOS "Use Strong Password?" system sheet if it appeared.
+# The sheet is a native UIKit overlay — hideKeyboard doesn't reach it.
+# optional: true means the step is skipped silently if the button isn't there.
+- tapOn:
+    text: 'Close'
+    optional: true
+- hideKeyboard
 - tapOn: 'I am 18 or older.'
 - tapOn: 'Continue'
 
@@ -37,7 +56,14 @@ appId: com.ourakin.app
 
 # 6. Feed loaded — open Write tab
 - assertVisible: 'akin'
-- tapOn: 'Write'
+- waitForAnimationToEnd
+# Extra guard: re-assert feed is visible right before tapping Write, so any
+# unexpected re-routing (e.g. stale SIGNED_IN handler) is caught here, not on tab-write.
+- assertVisible: 'akin'
+# tapOn by testID: TabButton (our custom tabBarButton) sets testID directly on
+# the Pressable, so Maestro finds it reliably without coordinate guessing.
+- tapOn:
+    id: 'tab-write'
 
 # 7. Guidelines sheet appears on first post — continue
 - assertVisible: 'Before you post.'
@@ -45,6 +71,9 @@ appId: com.ourakin.app
 
 # 8. Composer — pick a category
 - tapOn: 'Category'
+# CategoryPickerSheet uses animationType="slide" — wait for the modal to finish
+# sliding up before asserting its title is visible.
+- waitForAnimationToEnd
 - assertVisible: 'Pick a category'
 - tapOn: 'Vent Space'
 
@@ -63,5 +92,9 @@ appId: com.ourakin.app
 - assertVisible: 'E2E test post title'
 
 # 12. Back to feed — confirm the new post is in the list
-- back
+# Use the TopBar back button (accessibilityLabel="Back") rather than the hardware back
+# gesture — the post screen sits in a Tabs navigator, not a UINavigationController stack,
+# so the swipe-back gesture has nothing to attach to on iOS.
+- tapOn:
+    label: 'Back'
 - assertVisible: 'E2E test post title'

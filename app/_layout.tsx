@@ -7,11 +7,20 @@ import '../global.css';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import { Slot, SplashScreen } from 'expo-router';
-import { Animated, StyleSheet, View, AccessibilityInfo } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  View,
+  AccessibilityInfo,
+  Settings,
+  Platform,
+  LogBox,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { supabase } from '@/lib/supabase';
 import { ErrorBoundary } from '@/components/composed/ErrorBoundary';
 import { BannedScreen } from '@/components/composed/BannedScreen';
 import SuspendedScreen from '@/components/composed/SuspendedScreen';
@@ -114,7 +123,19 @@ export default function RootLayout() {
   // initialize() is idempotent — safe to call on every mount.
   // We need the action at mount time only, so we grab it once via an arrow wrapper
   // to avoid the unbound-method lint error (Zustand actions are closures, not class methods).
-  const initialize = useCallback(() => useAuthStore.getState().initialize(), []);
+  const initialize = useCallback(async () => {
+    // Maestro passes `E2E: "1"` as an iOS launch argument. iOS stores launch
+    // args in NSUserDefaults; RN's Settings API reads that on iOS.
+    // clearState:true wipes the JS bundle but not iOS Keychain, so we sign out
+    // here to ensure every E2E run starts unauthenticated.
+    if (Platform.OS === 'ios' && Settings.get('E2E')) {
+      // Silence the LogBox warning overlay in E2E — it sits over the tab bar and
+      // blocks Maestro's accessibility scanner from finding tab buttons.
+      LogBox.ignoreAllLogs();
+      await supabase.auth.signOut();
+    }
+    return useAuthStore.getState().initialize();
+  }, []);
 
   // showSplash: true while boot sequence is running (fonts + session restore)
   const [showSplash, setShowSplash] = React.useState(true);
