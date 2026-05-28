@@ -91,12 +91,12 @@ export const PostCard = memo(PostCardImpl, (prev, next) => {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 22,
-    paddingVertical: 20,
+    paddingVertical: 28,
     backgroundColor: colors.bg.base,
   },
   border: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.hairline,
+    borderBottomColor: colors.border.divider,
   },
   pressed: {
     opacity: 0.85,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   dot: {
     fontFamily: 'Inter',
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
     color: colors.fg.primary,
     lineHeight: 19 * 1.3,
     letterSpacing: -0.2,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   excerpt: {
     fontFamily: 'Inter',
     fontSize: 14,
     color: colors.fg.secondary,
     lineHeight: 14 * 1.5,
-    marginBottom: 14,
+    marginBottom: 18,
   },
   footer: {
     flexDirection: 'row',

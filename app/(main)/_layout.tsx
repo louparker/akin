@@ -5,41 +5,92 @@
 // Bottom padding accounts for home indicator on modern iPhones via useSafeAreaInsets.
 
 import { Tabs } from 'expo-router';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Pressable } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 
-// Icon components use StyleSheet.create throughout to satisfy react-native/no-inline-styles.
+// Custom tab button — replaces React Navigation's default PlatformPressable.
+//
+// Root cause of iOS 26 / RN 0.83 New Architecture regression:
+// BottomTabBar passes `href` (built from the route path) to PlatformPressable,
+// which spreads it onto Animated.createAnimatedComponent(Pressable). On New
+// Architecture, Pressable with `href` creates a native link element on iOS 26;
+// iOS intercepts the tap at the system level and the JS `onPress` never fires.
+// Stripping `href` here restores normal JS-side navigation.
+function TabButton({
+  onPress,
+  onLongPress,
+  testID,
+  'aria-label': ariaLabel,
+  style,
+  children,
+}: BottomTabBarButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      testID={testID}
+      accessibilityLabel={ariaLabel}
+      accessibilityRole="button"
+      style={style}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+// Stroked SVG icons — hairline (1.5px) with rounded caps per the design language.
+// Tint flips between fg.primary (active) and fg.faint (inactive).
+
+const ICON_SIZE = 24;
+const STROKE_WIDTH = 1.5;
 
 function IconFeed({ active }: { active: boolean }) {
-  const lineColor = active ? colors.fg.primary : colors.fg.faint;
+  const c = active ? colors.fg.primary : colors.fg.faint;
   return (
-    <View style={iconStyles.feedContainer}>
-      <View style={[iconStyles.feedLine, iconStyles.feedLong, { backgroundColor: lineColor }]} />
-      <View style={[iconStyles.feedLine, iconStyles.feedShort, { backgroundColor: lineColor }]} />
-      <View style={[iconStyles.feedLine, iconStyles.feedLong, { backgroundColor: lineColor }]} />
-    </View>
+    <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 6.5h16" stroke={c} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+      <Path d="M4 12h16" stroke={c} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+      <Path d="M4 17.5h10" stroke={c} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+    </Svg>
   );
 }
 
 function IconPencil({ active }: { active: boolean }) {
   const c = active ? colors.fg.primary : colors.fg.faint;
   return (
-    <View style={iconStyles.iconBox}>
-      <View style={[iconStyles.pencilBody, { backgroundColor: c }]} />
-      <View style={[iconStyles.pencilTip, { backgroundColor: c }]} />
-    </View>
+    <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
+      {/* Pencil outline: eraser end top-right, tip bottom-left */}
+      <Path
+        d="M15.5 4.5L19.5 8.5L8.5 19.5L4 20L4.5 15.5L15.5 4.5Z"
+        stroke={c}
+        strokeWidth={STROKE_WIDTH}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Crease between eraser block and body */}
+      <Path d="M13.5 6.5L17.5 10.5" stroke={c} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+    </Svg>
   );
 }
 
 function IconUser({ active }: { active: boolean }) {
   const c = active ? colors.fg.primary : colors.fg.faint;
   return (
-    <View style={iconStyles.iconBox}>
-      <View style={[iconStyles.userHead, { backgroundColor: c }]} />
-      <View style={[iconStyles.userBody, { backgroundColor: c }]} />
-    </View>
+    <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
+      {/* Head */}
+      <Circle cx="12" cy="8.5" r="3.75" stroke={c} strokeWidth={STROKE_WIDTH} />
+      {/* Shoulders arc */}
+      <Path
+        d="M4.5 20c0-3.59 3.36-6.5 7.5-6.5s7.5 2.91 7.5 6.5"
+        stroke={c}
+        strokeWidth={STROKE_WIDTH}
+        strokeLinecap="round"
+      />
+    </Svg>
   );
 }
 
@@ -93,6 +144,8 @@ export default function MainLayout() {
         options={{
           title: t('nav.tab.read'),
           tabBarAccessibilityLabel: t('nav.tab.read'),
+          tabBarButtonTestID: 'tab-read',
+          tabBarButton: TabButton,
           tabBarIcon: ({ focused }) => (
             <TabItem id="read" focused={focused} label={t('nav.tab.read')} />
           ),
@@ -103,6 +156,8 @@ export default function MainLayout() {
         options={{
           title: t('nav.tab.write'),
           tabBarAccessibilityLabel: t('nav.tab.write'),
+          tabBarButtonTestID: 'tab-write',
+          tabBarButton: TabButton,
           tabBarIcon: ({ focused }) => (
             <TabItem id="write" focused={focused} label={t('nav.tab.write')} />
           ),
@@ -113,6 +168,8 @@ export default function MainLayout() {
         options={{
           title: t('nav.tab.you'),
           tabBarAccessibilityLabel: t('nav.tab.you'),
+          tabBarButtonTestID: 'tab-you',
+          tabBarButton: TabButton,
           tabBarIcon: ({ focused }) => (
             <TabItem id="you" focused={focused} label={t('nav.tab.you')} />
           ),
@@ -136,57 +193,6 @@ export default function MainLayout() {
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-
-const iconStyles = StyleSheet.create({
-  feedContainer: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  feedLine: {
-    height: 2,
-    borderRadius: 1,
-  },
-  feedLong: {
-    width: 18,
-  },
-  feedShort: {
-    width: 14,
-  },
-  iconBox: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pencilBody: {
-    width: 14,
-    height: 3,
-    borderRadius: 1.5,
-    transform: [{ rotate: '-45deg' }],
-    marginBottom: 4,
-  },
-  pencilTip: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    transform: [{ rotate: '-45deg' }],
-  },
-  userHead: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    marginBottom: 3,
-  },
-  userBody: {
-    width: 16,
-    height: 7,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-});
 
 const tabStyles = StyleSheet.create({
   item: {

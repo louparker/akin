@@ -154,10 +154,10 @@ const styles = StyleSheet.create({
   },
   skeletonItem: {
     paddingHorizontal: 22,
-    paddingVertical: 20,
+    paddingVertical: 28,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-    gap: 8,
+    borderBottomColor: colors.border.divider,
+    gap: 10,
   },
   skeletonMeta: {
     marginBottom: 2,
