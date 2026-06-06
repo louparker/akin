@@ -279,8 +279,14 @@ const styles = StyleSheet.create({
   chevron: {
     fontFamily: 'Inter',
     fontSize: 22,
+    // lineHeight matches fontSize so the glyph's line box is tight rather than
+    // sitting inside default leading (which drags it visually low).
+    lineHeight: 22,
     color: colors.fg.tertiary,
     marginLeft: 'auto',
+    // The ›  glyph has its visual mass below baseline; nudge it up so it reads
+    // as vertically centered with the CATEGORY label and "Pick a category" text.
+    transform: [{ translateY: -25 }],
   },
   title: {
     fontFamily: 'Source Serif 4',

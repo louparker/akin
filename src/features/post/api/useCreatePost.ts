@@ -78,6 +78,14 @@ export function useCreatePost(): UseMutationResult<
 
       if (error) {
         const code = (error as { code?: string }).code;
+        // Temporary diagnostic — remove once post-create is stable after 0018.
+        // eslint-disable-next-line no-console
+        console.error('[useCreatePost] supabase error', {
+          code,
+          message: error.message,
+          details: (error as { details?: string }).details,
+          hint: (error as { hint?: string }).hint,
+        });
         if (code === ERR_ACTIVE_LIMIT) {
           throw new CreatePostError(
             'active_limit',

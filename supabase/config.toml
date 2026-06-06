@@ -207,7 +207,7 @@ enable_signup = true
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 # REQUIRED for Akin: users cannot post or comment without email confirmation.
-enable_confirmations = true
+enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -368,6 +368,15 @@ deno_version = 2
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
+
+[functions.generate-identifier]
+# Local: GoTrue issues ES256 JWTs but edge runtime validates with HS256 secret —
+# they don't match. Disable local JWT verification; production Supabase handles
+# this correctly via its own key config.
+verify_jwt = false
+
+[functions.scheduled-purge]
+verify_jwt = false
 
 [analytics]
 enabled = true

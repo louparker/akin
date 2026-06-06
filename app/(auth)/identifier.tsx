@@ -17,15 +17,34 @@ function isPending(id: string | null | undefined): boolean {
 }
 
 function IdentifierDisplay({ identifier }: { identifier: string }) {
+  // adjustsFontSizeToFit + numberOfLines:1 means long identifiers shrink to
+  // fit on one line instead of wrapping (which looked like a "smaller font"
+  // bug to users); short identifiers stay at the full 52pt spec.
+  // minimumFontScale caps the shrink so it doesn't go absurdly small.
+  const commonProps = {
+    numberOfLines: 1 as const,
+    adjustsFontSizeToFit: true,
+    minimumFontScale: 0.45,
+  };
+
   const match = /^([A-Za-z]+)(\d+)$/.exec(identifier);
   if (!match) {
-    return <Text style={styles.identifier}>{identifier}</Text>;
+    return (
+      <Text style={styles.identifier} {...commonProps}>
+        {identifier}
+      </Text>
+    );
   }
   const [, word, number] = match;
   return (
-    <Text style={styles.identifier}>
-      <Text style={styles.identifierWord}>{word}</Text>
-      <Text style={styles.identifierNumber}>{number}</Text>
+    // Apply styles.identifier to the inner Texts too rather than relying on
+    // <Text> style inheritance — Fabric has had edge cases where nested Text
+    // fontFamily inheritance silently drops on re-render. Style array merges
+    // both definitions; the colour from identifierWord / identifierNumber
+    // wins because it appears second.
+    <Text style={styles.identifier} {...commonProps}>
+      <Text style={[styles.identifier, styles.identifierWord]}>{word}</Text>
+      <Text style={[styles.identifier, styles.identifierNumber]}>{number}</Text>
     </Text>
   );
 }
@@ -132,7 +151,10 @@ export default function IdentifierScreen() {
           <Button
             full
             kind="ghost"
-            onPress={() => void useAuthStore.getState().generateIdentifier()}
+            // force: true bypasses the edge function's idempotency guard, which
+            // would otherwise return the existing identifier unchanged. The
+            // server enforces that this only works pre-onboarding.
+            onPress={() => void useAuthStore.getState().generateIdentifier({ force: true })}
             disabled={isLoading}
             accessibilityLabel={t('auth.identifier.cta.retry')}
           >

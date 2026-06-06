@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
@@ -34,28 +35,43 @@ export function CategoryPickerSheet({
           {t('create.picker.title')}
         </Text>
         <ScrollView showsVerticalScrollIndicator={false}>
-          {POST_CATEGORIES.map((cat) => {
+          {POST_CATEGORIES.map((cat, idx) => {
             const active = cat === selected;
+            const isLast = idx === POST_CATEGORIES.length - 1;
             return (
-              <Pressable
-                key={cat}
-                onPress={() => {
-                  onSelect(cat);
-                  onClose();
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={t(`category.${cat}` as const)}
-                accessibilityState={{ selected: active }}
-                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-              >
-                <View style={styles.rowMain}>
-                  <Text style={[styles.rowTitle, active && styles.rowTitleActive]}>
-                    {t(`category.${cat}` as const)}
-                  </Text>
-                  <Text style={styles.rowDesc}>{t(`category.${cat}.desc` as const)}</Text>
-                </View>
-                {active ? <Text style={styles.check}>·</Text> : null}
-              </Pressable>
+              <Fragment key={cat}>
+                <Pressable
+                  onPress={() => {
+                    onSelect(cat);
+                    onClose();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t(`category.${cat}` as const)}
+                  accessibilityState={{ selected: active }}
+                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                >
+                  <View style={styles.rowMain}>
+                    <Text style={[styles.rowTitle, active && styles.rowTitleActive]}>
+                      {t(`category.${cat}` as const)}
+                    </Text>
+                    <Text style={styles.rowDesc}>{t(`category.${cat}.desc` as const)}</Text>
+                  </View>
+                  {active ? (
+                    <View
+                      style={styles.checkAnchor}
+                      pointerEvents="none"
+                      accessibilityRole="image"
+                      accessibilityLabel={t('common.selected')}
+                    >
+                      <View style={styles.check} />
+                    </View>
+                  ) : null}
+                </Pressable>
+                {/* Divider sits between Pressables in flow (not absolute).
+                    The row's symmetric paddingVertical gives equal breathing room
+                    above and below the line, regardless of font metrics. */}
+                {!isLast ? <View style={styles.divider} /> : null}
+              </Fragment>
             );
           })}
         </ScrollView>
@@ -68,7 +84,7 @@ const styles = StyleSheet.create({
   // eslint-disable-next-line react-native/no-color-literals -- overlay alpha
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.55)',
+    backgroundColor: 'rgba(31,31,33,0.55)',
   },
   sheet: {
     backgroundColor: colors.bg.base,
@@ -97,9 +113,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
+    paddingVertical: 24,
+    // Reserve room on the right for the selected-indicator dot, so when it
+    // appears the title/description don't reflow.
+    paddingRight: 22,
+    // Anchor for the absolutely-positioned checkAnchor below.
+    position: 'relative',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border.divider,
+    marginTop: 12,
+    marginBottom: 12,
   },
   rowPressed: {
     opacity: 0.7,
@@ -111,7 +136,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Source Serif 4',
     fontSize: 19,
     color: colors.fg.primary,
-    marginBottom: 2,
+    marginBottom: 6,
   },
   rowTitleActive: {
     color: colors.brand.primary,
@@ -122,10 +147,22 @@ const styles = StyleSheet.create({
     color: colors.fg.tertiary,
     lineHeight: 13 * 1.5,
   },
+  // checkAnchor is a full-height column anchored to the right edge of the row.
+  // justifyContent: 'center' inside it centres the dot vertically against the
+  // row's full height — independent of rowMain's content layout, font metrics,
+  // or whether the description wraps.
+  checkAnchor: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingRight: 4,
+  },
   check: {
-    fontFamily: 'Inter',
-    fontSize: 24,
-    color: colors.brand.primary,
-    marginLeft: 12,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.brand.primary,
   },
 });

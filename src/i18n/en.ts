@@ -11,6 +11,7 @@ export const en = {
   'nav.tab.read': 'Read',
   'nav.tab.write': 'Write',
   'nav.tab.you': 'You',
+  'nav.tab.settings': 'Settings',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'A quieter place\nto talk about\ndating.',
@@ -270,12 +271,28 @@ export const en = {
   // ── Post / Comment menus ─────────────────────────────────────────────────────
   'post.menu.report': 'Report post',
   'post.menu.block': 'Block user',
+  'post.menu.removeParticipant': 'Remove someone from this conversation',
   'comment.menu.report': 'Report comment',
   'block.confirm.title': 'Block this person?',
   'block.confirm.body': "You won't see their posts or comments. They won't know.",
   'block.confirm.cta': 'Block',
   'block.confirm.cancel': 'Cancel',
   'post.send.label': 'Send reply',
+
+  // ── Remove participant (OP-only) ─────────────────────────────────────────────
+  'post.removeParticipant.sheet.title': 'Remove someone from this conversation',
+  'post.removeParticipant.sheet.warning':
+    "They won't be able to see this post or comment again. Their previous replies will show as removed for the rest of you.",
+  'post.removeParticipant.pick': 'Remove {{name}}',
+  'post.removeParticipant.pickCta': 'Remove',
+  'post.removeParticipant.empty': 'No one to remove yet.',
+  'post.removeParticipant.confirm.title': 'Remove {{name}}?',
+  'post.removeParticipant.confirm.body':
+    'This is irreversible. They lose access to the post and to any replies that come after.',
+  'post.removeParticipant.confirm.cta': 'Remove {{name}}',
+  'post.removeParticipant.error.forbidden': "Only the post's author can remove a participant.",
+  'post.comment.removedByOp': '[removed by OP]',
+  'post.comment.error.removedFromPost': 'You were removed from this conversation.',
 
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Report this comment',
@@ -330,13 +347,34 @@ export const en = {
 
   // ── Common ────────────────────────────────────────────────────────────────────
   'common.you': 'you',
+  'common.selected': 'Selected',
   'common.ago': '{{time}} ago',
   'common.justNow': 'just now',
   'common.retry': 'Try again',
   'common.back': 'Back',
   'common.close': 'Close',
+  'common.ok': 'OK',
   'common.loading': 'Loading…',
   'common.cancel': 'Cancel',
+
+  // ── Profile (You tab) ────────────────────────────────────────────────────────
+  'profile.title': 'You',
+  'profile.joinedOn': 'Joined {{month}}',
+  'profile.tab.myPosts': 'My Posts',
+  'profile.tab.myActive': 'My Active',
+  'profile.empty.myPosts': 'Nothing posted yet. Your future posts will live here.',
+  'profile.empty.myActive': "You're not in any open conversations right now.",
+
+  // ── Settings — additions for 8.2a Settings shell (sections + sign-out confirm) ──
+  'settings.section.language': 'Language',
+  'settings.section.appearance': 'Appearance',
+  'settings.section.notifications': 'Notifications',
+  'settings.section.blocked': 'Blocked users',
+  'settings.placeholder.comingNext': 'Coming next',
+  'settings.signOut.confirm.title': 'Sign out?',
+  'settings.signOut.confirm.body':
+    'You can sign back in any time with the same email. Your posts and identifier stay put.',
+  'settings.signOut.confirm.cta': 'Sign out',
   'create.discardConfirm': 'Discard this draft? Your text will be lost.',
   'create.discard.keep': 'Go Back',
   'create.discard.confirm': 'Yes',

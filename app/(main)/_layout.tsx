@@ -11,6 +11,7 @@ import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
+import { IconSettings } from '@/components/composed/icons/IconSettings';
 
 // Custom tab button — replaces React Navigation's default PlatformPressable.
 //
@@ -96,7 +97,17 @@ function IconUser({ active }: { active: boolean }) {
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
-    <Text style={[tabStyles.labelBase, focused ? tabStyles.labelActive : tabStyles.labelInactive]}>
+    <Text
+      // Keep every tab label on a single line. Without these, "Settings" (and
+      // the Swedish "Inställningar") wrap mid-word because each tab cell is
+      // only ~25% of the screen wide. adjustsFontSizeToFit lets the longer
+      // labels shrink the last 1–2pt rather than truncating with an ellipsis,
+      // so the visual rhythm stays consistent across tabs.
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.8}
+      style={[tabStyles.labelBase, focused ? tabStyles.labelActive : tabStyles.labelInactive]}
+    >
       {label}
     </Text>
   );
@@ -107,7 +118,7 @@ function TabItem({
   focused,
   label,
 }: {
-  id: 'read' | 'write' | 'you';
+  id: 'read' | 'write' | 'you' | 'settings';
   focused: boolean;
   label: string;
 }) {
@@ -116,6 +127,7 @@ function TabItem({
       {id === 'read' && <IconFeed active={focused} />}
       {id === 'write' && <IconPencil active={focused} />}
       {id === 'you' && <IconUser active={focused} />}
+      {id === 'settings' && <IconSettings active={focused} />}
       <TabLabel label={label} focused={focused} />
     </View>
   );
@@ -172,6 +184,18 @@ export default function MainLayout() {
           tabBarButton: TabButton,
           tabBarIcon: ({ focused }) => (
             <TabItem id="you" focused={focused} label={t('nav.tab.you')} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings/index"
+        options={{
+          title: t('nav.tab.settings'),
+          tabBarAccessibilityLabel: t('nav.tab.settings'),
+          tabBarButtonTestID: 'tab-settings',
+          tabBarButton: TabButton,
+          tabBarIcon: ({ focused }) => (
+            <TabItem id="settings" focused={focused} label={t('nav.tab.settings')} />
           ),
         }}
       />

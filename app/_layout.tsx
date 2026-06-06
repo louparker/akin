@@ -223,6 +223,9 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: 'Source Serif 4',
     fontSize: 44,
+    // lineHeight intentionally omitted: <Text variant="display"> auto-scales
+    // its lineHeight from the variant's 1.10 ratio when fontSize is overridden.
+    // See src/components/primitives/Text.tsx deriveLineHeightOverride().
     letterSpacing: -0.8,
     color: colors.fg.primary,
   },

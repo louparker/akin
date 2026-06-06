@@ -84,6 +84,7 @@ export type Database = {
           created_at: string;
           id: string;
           post_id: string;
+          removed_by_op: boolean;
           status: Database['public']['Enums']['content_status'];
         };
         Insert: {
@@ -93,6 +94,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           post_id: string;
+          removed_by_op?: boolean;
           status?: Database['public']['Enums']['content_status'];
         };
         Update: {
@@ -102,11 +104,41 @@ export type Database = {
           created_at?: string;
           id?: string;
           post_id?: string;
+          removed_by_op?: boolean;
           status?: Database['public']['Enums']['content_status'];
         };
         Relationships: [
           {
             foreignKeyName: 'comments_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_participant_removals: {
+        Row: {
+          created_at: string;
+          post_id: string;
+          removed_by: string;
+          removed_user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          post_id: string;
+          removed_by: string;
+          removed_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          post_id?: string;
+          removed_by?: string;
+          removed_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_participant_removals_post_id_fkey';
             columns: ['post_id'];
             isOneToOne: false;
             referencedRelation: 'posts';

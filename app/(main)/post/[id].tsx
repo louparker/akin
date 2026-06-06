@@ -29,6 +29,10 @@ import { useBlock } from '@/features/post/api/useBlock';
 import { SpiceVoteSheet } from '@/features/post/components/SpiceVoteSheet';
 import { LimitActiveSheet } from '@/features/post/components/LimitActiveSheet';
 import { ReportSheet } from '@/features/post/components/ReportSheet';
+import {
+  RemoveParticipantSheet,
+  type RemovableParticipant,
+} from '@/features/post/components/RemoveParticipantSheet';
 import { timeAgo } from '@/features/feed/api/timeAgo';
 
 export default function PostDetailScreen() {
@@ -43,6 +47,7 @@ export default function PostDetailScreen() {
   const [showSpiceSheet, setShowSpiceSheet] = useState(false);
   const [showLimitSheet, setShowLimitSheet] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showRemoveSheet, setShowRemoveSheet] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ id: string; type: 'post' | 'comment' } | null>(
     null,
   );
@@ -53,6 +58,19 @@ export default function PostDetailScreen() {
   const isParticipant =
     post !== undefined &&
     (post.author_id === currentUserId || post.comments.some((c) => c.author_id === currentUserId));
+  const isOP = post !== undefined && post.author_id === currentUserId;
+
+  // Participants the OP can remove: unique non-OP commenters who haven't already been removed.
+  const removableParticipants: RemovableParticipant[] =
+    post === undefined
+      ? []
+      : Array.from(
+          new Map(
+            post.comments
+              .filter((c) => c.author_id !== post.author_id && !c.removed_by_op)
+              .map((c) => [c.author_id, { userId: c.author_id, identifier: c.author_identifier }]),
+          ).values(),
+        );
 
   const canReply = post !== undefined && (!post.is_full || isParticipant);
   const showFullBanner = post?.is_full === true && !isParticipant;
@@ -79,6 +97,10 @@ export default function PostDetailScreen() {
             setShowLimitSheet(true);
           } else if (err instanceof CreateCommentError && err.kind === 'post_full') {
             Alert.alert(t('limit.full.error'));
+          } else if (err instanceof CreateCommentError && err.kind === 'removed_from_post') {
+            Alert.alert(t('post.comment.error.removedFromPost'), undefined, [
+              { text: t('common.ok'), onPress: () => router.back() },
+            ]);
           } else {
             Alert.alert(t('error.network'));
           }
@@ -102,6 +124,11 @@ export default function PostDetailScreen() {
     if (post) {
       setReportTarget({ id: post.id, type: 'post' });
     }
+  }
+
+  function handleRemoveParticipant() {
+    setShowMoreMenu(false);
+    setShowRemoveSheet(true);
   }
 
   function handleBlockUser() {
@@ -262,25 +289,30 @@ export default function PostDetailScreen() {
         {post.comments
           .filter((c) => c.status === 'active')
           .map((comment) => {
-            const isOP = comment.author_id === post.author_id;
+            const isCommentOP = comment.author_id === post.author_id;
             const isYou = comment.author_id === currentUserId;
+            const isRemoved = comment.removed_by_op === true;
             return (
               <View key={comment.id} style={styles.commentItem}>
                 <View style={styles.commentHeader}>
                   <IdentChip name={comment.author_identifier} you={isYou} />
-                  {isOP ? <Text style={styles.opBadge}>{t('post.op.badge')}</Text> : null}
+                  {isCommentOP ? <Text style={styles.opBadge}>{t('post.op.badge')}</Text> : null}
                   <View style={styles.flex1} />
-                  <Pressable
-                    onPress={() => handleReportComment(comment.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('comment.menu.report')}
-                    style={styles.commentMoreButton}
-                  >
-                    <Text style={styles.commentMoreIcon}>⋯</Text>
-                  </Pressable>
+                  {isRemoved ? null : (
+                    <Pressable
+                      onPress={() => handleReportComment(comment.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('comment.menu.report')}
+                      style={styles.commentMoreButton}
+                    >
+                      <Text style={styles.commentMoreIcon}>⋯</Text>
+                    </Pressable>
+                  )}
                   <Text style={styles.commentTime}>{timeAgo(comment.created_at)}</Text>
                 </View>
-                <Text style={styles.commentBody}>{comment.body}</Text>
+                <Text style={[styles.commentBody, isRemoved && styles.commentBodyRemoved]}>
+                  {isRemoved ? t('post.comment.removedByOp') : comment.body}
+                </Text>
               </View>
             );
           })}
@@ -353,6 +385,13 @@ export default function PostDetailScreen() {
         />
       ) : null}
 
+      <RemoveParticipantSheet
+        visible={showRemoveSheet}
+        postId={post.id}
+        participants={removableParticipants}
+        onClose={() => setShowRemoveSheet(false)}
+      />
+
       {/* More menu */}
       <Modal
         visible={showMoreMenu}
@@ -374,17 +413,36 @@ export default function PostDetailScreen() {
             >
               <Text style={styles.menuItemText}>{t('post.menu.report')}</Text>
             </Pressable>
-            <View style={styles.menuDivider} />
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleBlockUser}
-              accessibilityRole="button"
-              accessibilityLabel={t('post.menu.block')}
-            >
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                {t('post.menu.block')}
-              </Text>
-            </Pressable>
+            {isOP && removableParticipants.length > 0 ? (
+              <>
+                <View style={styles.menuDivider} />
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleRemoveParticipant}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('post.menu.removeParticipant')}
+                >
+                  <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                    {t('post.menu.removeParticipant')}
+                  </Text>
+                </Pressable>
+              </>
+            ) : null}
+            {isOP ? null : (
+              <>
+                <View style={styles.menuDivider} />
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleBlockUser}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('post.menu.block')}
+                >
+                  <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                    {t('post.menu.block')}
+                  </Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </Pressable>
       </Modal>
@@ -582,6 +640,10 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     lineHeight: 14.5 * 1.55,
     color: colors.fg.secondary,
+  },
+  commentBodyRemoved: {
+    fontStyle: 'italic',
+    color: colors.fg.tertiary,
   },
   // Reply bar
   replyBar: {

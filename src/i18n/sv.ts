@@ -13,6 +13,7 @@ export const sv: TranslationDict = {
   'nav.tab.read': 'Läs',
   'nav.tab.write': 'Skriv',
   'nav.tab.you': 'Du',
+  'nav.tab.settings': 'Inställningar',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'En lugnare plats\natt prata om\ndejting.',
@@ -273,12 +274,28 @@ export const sv: TranslationDict = {
   // ── Post / Comment menus ─────────────────────────────────────────────────────
   'post.menu.report': 'Rapportera inlägg',
   'post.menu.block': 'Blockera användaren',
+  'post.menu.removeParticipant': 'Ta bort någon från samtalet',
   'comment.menu.report': 'Rapportera kommentar',
   'block.confirm.title': 'Blockera den här personen?',
   'block.confirm.body': 'Du kommer inte se deras inlägg eller kommentarer. De får inte veta det.',
   'block.confirm.cta': 'Blockera',
   'block.confirm.cancel': 'Avbryt',
   'post.send.label': 'Skicka svar',
+
+  // ── Remove participant (OP-only) ─────────────────────────────────────────────
+  'post.removeParticipant.sheet.title': 'Ta bort någon från samtalet',
+  'post.removeParticipant.sheet.warning':
+    'De kommer inte längre kunna se inlägget eller skriva. Deras tidigare svar visas som borttagna för er andra.',
+  'post.removeParticipant.pick': 'Ta bort {{name}}',
+  'post.removeParticipant.pickCta': 'Ta bort',
+  'post.removeParticipant.empty': 'Ingen att ta bort än.',
+  'post.removeParticipant.confirm.title': 'Ta bort {{name}}?',
+  'post.removeParticipant.confirm.body':
+    'Det går inte att ångra. De förlorar åtkomsten till inlägget och alla svar som kommer efter.',
+  'post.removeParticipant.confirm.cta': 'Ta bort {{name}}',
+  'post.removeParticipant.error.forbidden': 'Bara inläggets författare kan ta bort en deltagare.',
+  'post.comment.removedByOp': '[borttagen av OP]',
+  'post.comment.error.removedFromPost': 'Du har tagits bort från det här samtalet.',
 
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Rapportera den här kommentaren',
@@ -335,13 +352,34 @@ export const sv: TranslationDict = {
 
   // ── Common ────────────────────────────────────────────────────────────────────
   'common.you': 'du',
+  'common.selected': 'Vald',
   'common.ago': '{{time}} sedan',
   'common.justNow': 'just nu',
   'common.retry': 'Försök igen',
   'common.back': 'Tillbaka',
   'common.close': 'Stäng',
+  'common.ok': 'OK',
   'common.loading': 'Laddar…',
   'common.cancel': 'Avbryt',
+
+  // ── Profile (You tab) ────────────────────────────────────────────────────────
+  'profile.title': 'Du',
+  'profile.joinedOn': 'Gick med {{month}}',
+  'profile.tab.myPosts': 'Mina inlägg',
+  'profile.tab.myActive': 'Mina aktiva',
+  'profile.empty.myPosts': 'Inget publicerat än. Dina framtida inlägg hamnar här.',
+  'profile.empty.myActive': 'Du är inte med i några öppna samtal just nu.',
+
+  // ── Settings — additions for 8.2a Settings shell (sections + sign-out confirm) ──
+  'settings.section.language': 'Språk',
+  'settings.section.appearance': 'Utseende',
+  'settings.section.notifications': 'Notiser',
+  'settings.section.blocked': 'Blockerade användare',
+  'settings.placeholder.comingNext': 'Kommer snart',
+  'settings.signOut.confirm.title': 'Logga ut?',
+  'settings.signOut.confirm.body':
+    'Du kan logga in igen när du vill med samma e-post. Dina inlägg och ditt alias finns kvar.',
+  'settings.signOut.confirm.cta': 'Logga ut',
   'create.discardConfirm': 'Kasta utkastet? Din text försvinner.',
   'create.discard.keep': 'Gå tillbaka',
   'create.discard.confirm': 'Ja',

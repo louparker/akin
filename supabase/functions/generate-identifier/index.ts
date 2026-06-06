@@ -1,14 +1,23 @@
 /**
  * generate-identifier — Supabase Edge Function (Deno)
  *
- * Assigns a random anonymous identifier ([Adjective][Noun][NN-NNNN]) to a
- * profile row whose identifier still starts with 'pending_'. Called from
- * the auth-trigger hook or polled by a cron on startup.
+ * Assigns (or regenerates) a random anonymous identifier
+ * ([Adjective][Noun][NN-NNNN]) on a profile row.
  *
- * Request body: { userId: string }
+ * Two modes:
+ *   • { userId } — default. Idempotent: returns the existing identifier if it
+ *     is already real (not 'pending_*'). Used by the post-signup poll.
+ *   • { userId, force: true } — bypasses idempotency to issue a NEW identifier.
+ *     Used by the "Try another name" button on the identifier reveal screen.
+ *     Only allowed while the profile is still pre-onboarding
+ *     (profiles.onboarded_at IS NULL). After onboarding, the identifier is
+ *     locked and any force=true call returns 403.
+ *
  * Response 200: { identifier: string }
  * Response 400: missing userId
- * Response 500: all retries exhausted
+ * Response 403: force=true after onboarding (identifier locked)
+ * Response 404: profile not found
+ * Response 500: all retries exhausted / internal error
  *
  * Security: requires service-role key in Authorization header.
  */
@@ -19,7 +28,7 @@ const MAX_RETRIES = 5;
 
 Deno.serve(async (req) => {
   try {
-    const { userId } = (await req.json()) as { userId?: string };
+    const { userId, force } = (await req.json()) as { userId?: string; force?: boolean };
 
     if (!userId) {
       return new Response(JSON.stringify({ error: 'userId is required' }), {
@@ -33,10 +42,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Fetch the user's language preference
+    // Fetch the user's language preference + onboarding state
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('language, anonymous_identifier')
+      .select('language, anonymous_identifier, onboarded_at')
       .eq('user_id', userId)
       .single();
 
@@ -47,10 +56,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Already has a real identifier — idempotent exit
-    if (!profile.anonymous_identifier.startsWith('pending_')) {
+    const hasRealIdentifier = !profile.anonymous_identifier.startsWith('pending_');
+
+    // Idempotent exit for the default (poll) path: identifier is already set
+    // and the caller didn't ask to regenerate. Return the current value.
+    if (hasRealIdentifier && !force) {
       return new Response(JSON.stringify({ identifier: profile.anonymous_identifier }), {
         status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Regeneration safety gate: once onboarding is complete, the identifier is
+    // locked. Trying to force a new one is a 403, not a silent no-op.
+    if (force && profile.onboarded_at !== null) {
+      return new Response(JSON.stringify({ error: 'identifier_locked' }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -100,13 +121,18 @@ Deno.serve(async (req) => {
         .eq('anonymous_identifier', profile.anonymous_identifier); // optimistic check
 
       if (!updateError) {
-        // Log to audit trail
+        // Audit trail — distinguish first-time assignment from explicit regeneration
         await supabase.rpc('log_audit', {
           p_actor_id: null,
-          p_action: 'profile.identifier_assigned',
+          p_action: force ? 'profile.identifier_regenerated' : 'profile.identifier_assigned',
           p_target_type: 'profile',
           p_target_id: userId,
-          p_metadata: { identifier, lang, attempt },
+          p_metadata: {
+            identifier,
+            lang,
+            attempt,
+            previous_identifier: profile.anonymous_identifier,
+          },
         });
 
         return new Response(JSON.stringify({ identifier }), {

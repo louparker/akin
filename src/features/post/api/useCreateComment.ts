@@ -10,8 +10,14 @@ export interface CreateCommentInput {
 // Postgres error codes raised by the participation-limit triggers
 const ERR_POST_FULL = 'P0001';
 const ERR_ACTIVE_LIMIT = 'P0003';
+const ERR_REMOVED_FROM_POST = 'P0004';
 
-export type CreateCommentErrorKind = 'post_full' | 'active_limit' | 'network' | 'unknown';
+export type CreateCommentErrorKind =
+  | 'post_full'
+  | 'active_limit'
+  | 'removed_from_post'
+  | 'network'
+  | 'unknown';
 
 export class CreateCommentError extends Error {
   constructor(
@@ -49,6 +55,12 @@ export function useCreateComment(
         }
         if (code === ERR_ACTIVE_LIMIT) {
           throw new CreateCommentError('active_limit', 'Active post limit reached.');
+        }
+        if (code === ERR_REMOVED_FROM_POST) {
+          throw new CreateCommentError(
+            'removed_from_post',
+            'You were removed from this conversation.',
+          );
         }
         if (error.message.toLowerCase().includes('network') || error.message.includes('fetch')) {
           throw new CreateCommentError('network', error.message);

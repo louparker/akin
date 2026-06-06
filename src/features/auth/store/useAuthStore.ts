@@ -25,7 +25,7 @@ export interface AuthActions {
   signUp(email: string, password: string, language?: string): Promise<void>;
   signIn(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
-  generateIdentifier(): Promise<void>;
+  generateIdentifier(options?: { force?: boolean }): Promise<void>;
   confirmIdentifier(): Promise<void>;
   completeOnboarding(): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
@@ -140,13 +140,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  async generateIdentifier() {
+  async generateIdentifier(options) {
     const { session } = get();
     if (!session) return;
     set({ isLoading: true, error: null });
     try {
+      // Only attach `force` when explicitly requested (the "Try another name"
+      // button). Leaving it out for the polling path keeps the call body
+      // backwards-compatible with the existing edge-function idempotency check.
+      const body: { userId: string; force?: boolean } = { userId: session.user.id };
+      if (options?.force) body.force = true;
+
       const invokeResult = await supabase.functions.invoke<unknown>('generate-identifier', {
-        body: { userId: session.user.id },
+        body,
       });
       if (invokeResult.error) {
         const msg =
@@ -286,10 +292,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       } = await supabase.auth.getSession();
 
       const profile = session ? await fetchProfile(session.user.id) : null;
+
+      // Zombie-session guard: if we have a session but no profile, the auth.users
+      // row exists but the profiles row was wiped (e.g. local db:reset while the
+      // Keychain refresh token survived). Force a sign-out so the user lands on
+      // welcome instead of a half-broken main screen with empty identifier and
+      // failing RLS-gated writes. Per CLAUDE.md §2, anonymity + correctness rely
+      // on profile being the source of truth for who the user is in public reads.
+      if (session && !profile) {
+        await supabase.auth.signOut();
+        set({ session: null, profile: null, isLoading: false });
+        router.replace('/(auth)');
+        return;
+      }
+
       set({ session, profile, isLoading: false });
 
       supabase.auth.onAuthStateChange(async (event, newSession) => {
         const currentProfile = newSession ? await fetchProfile(newSession.user.id) : null;
+
+        // Same zombie guard for live auth changes (e.g. SIGNED_IN after refresh
+        // with a stale session). Sign out and route to welcome.
+        if (newSession && !currentProfile && event !== 'SIGNED_OUT') {
+          await supabase.auth.signOut();
+          set({ session: null, profile: null });
+          router.replace('/(auth)');
+          return;
+        }
 
         // Guard against stale-fetch race: if completeOnboarding() ran while fetchProfile
         // was in-flight, the store already has the authoritative profile (with onboarded_at).

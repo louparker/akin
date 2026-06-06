@@ -64,6 +64,7 @@ function makeComment(overrides: Partial<CommentRow> = {}): CommentRow {
     author_identifier: 'BlueWolf99',
     body: 'A reply.',
     status: 'active',
+    removed_by_op: false,
     created_at: '2026-04-25T10:05:00Z',
     ...overrides,
   };

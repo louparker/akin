@@ -32,12 +32,12 @@ The Phase 5 audit flagged that several Phase 8 surfaces are de-facto blockers fo
 
 **Pull-forward order (work alongside Phase 6/7, do not block their sign-off):**
 
-1. **8.2a Settings shell + nav entry** (1 day) — empty sectioned list + route + i18n keys. Zero behaviour. Unblocks every later toggle.
-2. **8.2b Sign out + Account section** (½ day) — reuses `useLogout`, deep-links to delete-account flow.
-3. **8.2c Language toggle** (½ day) — Sweden default; writes to a `language` profile column (new migration) and refreshes the i18n locale. Requires migration `0017_add_language_to_profiles.sql`.
+1. **8.2a Settings shell + nav entry** ✅ **SHIPPED 2026-05-27** — empty sectioned list + route + i18n keys. Reachable via gear icon in the You header.
+2. **8.2b Sign out + Account section** ✅ **SHIPPED 2026-05-27** — masked email, change-password deep link to existing reset flow, delete-account deep link, Sign Out with confirm dialog. Uses `useLogout`.
+3. **8.2c Language toggle** (½ day) — Sweden default; writes to a `language` profile column (existing) and refreshes the i18n locale. Migration `0019` may not be needed — the `language` column already exists per 0001.
 4. **8.2d Appearance toggle** (½ day) — finishes Task 5.C.4. Wires `useThemeStore` to `useColorTokens`.
 5. **8.2e Blocked users list** (1 day) — depends on Phase 7 `blocks` queries.
-6. **8.1 Profile-mine** (1 day) — can ship before or after Settings; needs a new `useMyPosts` hook + `useMyActiveConversations` hook.
+6. **8.1 Profile-mine** ✅ **SHIPPED 2026-05-27** — replaces the You placeholder with identifier + Joined Month + My Posts / My Active tabs. New `useMyPosts` + `useMyActiveConversations` hooks with 9 tests.
 
 Track these as separate PRs. Each is small and reviewable.
 

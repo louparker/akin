@@ -301,12 +301,69 @@
 
 ---
 
+## Task 6.9 — OP removes a participant from a post
+
+**Context:** scope addition agreed 2026-05-27. Distinct from `blocks` (profile-wide, user-driven, bidirectional) and from `suspended`/`banned` (account-wide, moderator-driven). This is **post-scoped, OP-driven, unidirectional**. Sits in Phase 6 because it modifies the participation-limit machinery in [0005](../supabase/migrations/0005_participation_limits.sql).
+
+**Goal:** the post's author can remove a single commenter from the conversation. The removed user loses access to the post; their existing comments render as `[removed by OP]` placeholders for remaining participants; the slot reopens for a new commenter.
+
+**Acceptance criteria:**
+
+- New migration `supabase/migrations/0017_op_participant_removal.sql` adds:
+  - `comments.removed_by_op boolean NOT NULL DEFAULT false`
+  - `post_participant_removals(post_id, removed_user_id, removed_by, created_at)` table with RLS:
+    - INSERT: only OP of the post can insert; target must be a current participant; OP cannot remove themselves (CHECK).
+    - SELECT: OP, removed user, and moderators.
+  - Trigger `apply_op_participant_removal` (AFTER INSERT) that:
+    1. Locks the post row (`FOR UPDATE`).
+    2. Deletes the row from `post_participants`.
+    3. Decrements `posts.participant_count` (generated `is_full` flips automatically).
+    4. Slot accounting per [migration 0017 docstring](../supabase/migrations/0017_op_participant_removal.sql) — Case A (post not full): decrement removed user's `active_post_count`; Case B (post was full): re-increment remaining 3 with `LEAST(... ,3)` cap.
+    5. Marks the removed user's comments `removed_by_op = true`.
+    6. Calls `log_audit('op_removed_participant', ...)`.
+  - Extends `enforce_participation_limits()` (BEFORE INSERT on comments) to raise `P0004 REMOVED_FROM_POST` if `(post_id, author_id)` is in `post_participant_removals`. Check runs after `POST_NOT_FOUND` and before all other checks.
+  - Replaces posts SELECT policy with a "block + removal-aware" version that hides the post from any user in the removals table.
+  - Replaces comments SELECT policy with the same removal-aware NOT EXISTS clause (defense in depth — post is already hidden, but a direct comments-by-post query must not leak).
+- pgTAP suite `supabase/tests/op_participant_removal.test.sql` covering 13+ assertions: schema, INSERT happy path, participant_count decrement, comments marked, P0004 on re-comment, removed user cannot SELECT the post or comments, OP retains visibility, slot reopens for a new joiner, RLS denies non-OP, CHECK rejects self-removal, audit log row written.
+- Client mutation `src/features/post/api/useRemoveParticipant.ts` (TanStack mutation) with error mapping for RLS denial (`forbidden`), network, unknown. Invalidates `['post', postId]` and `['feed']`.
+- Component `src/features/post/components/RemoveParticipantSheet.tsx` — two-step (pick → confirm) bottom sheet. Source-of-truth list comes from `post.comments` filtered to non-OP, non-already-removed commenters (deduplicated by `author_id`).
+- Post detail wiring ([app/(main)/post/[id].tsx](<../app/(main)/post/[id].tsx>)):
+  - Action sheet shows "Remove someone from this conversation" entry ONLY when `post.author_id === me` AND there is at least one removable participant.
+  - The same action sheet hides "Block user" for the OP (block is for other people's posts).
+  - Comment list renders `[removed by OP]` italic placeholder + hides the `···` (report) affordance for `removed_by_op === true` rows.
+  - `useCreateComment` error map gains `removed_from_post`; the screen surfaces an alert and pops the route (the post will RLS-vanish on next list refresh anyway).
+- i18n keys added to both [src/i18n/en.ts](../src/i18n/en.ts) and [src/i18n/sv.ts](../src/i18n/sv.ts) under `post.menu.removeParticipant`, `post.removeParticipant.*`, `post.comment.removedByOp`, `post.comment.error.removedFromPost`.
+
+**Tests to write first (TDD order):**
+
+1. pgTAP — see assertion list above. Runs first; fails without the migration.
+2. Hook test `src/features/post/__tests__/useRemoveParticipant.test.ts` — INSERT payload shape, query invalidation, RLS error mapping (42501), network mapping, unauthenticated guard.
+3. Component test (Phase 6 carryover, not blocking) — sheet renders only with participants, pick→confirm two-step flow, error alert, dismissal.
+
+**Implementation notes:**
+
+- Optimistic update deliberately omitted in v1 — server-side side effects (cascading comment marks, capacity recompute) make refetch-on-success cleaner. Revisit if it feels slow.
+- The "post disappears from removed user" UX is the choice agreed on 2026-05-27 (option 3 in the design questions). A "you were removed" notice option was deferred to v1.1.
+- The slot-reopens-fully choice (no per-post quota) means OP can repeatedly remove and refill participants. Accepted curation risk; revisit if abuse signal appears in beta.
+- Error code `P0004` is now reserved across the project. Document in the codes table at the top of [0005](../supabase/migrations/0005_participation_limits.sql) when next touched.
+
+**Self-review:**
+
+- [ ] **Security:** RLS on the new table is the source of truth — verify the INSERT policy's three sub-conditions (`removed_by = auth.uid()`, post author = caller, target is participant).
+- [ ] **Data:** Both Case A and Case B accounting branches covered by pgTAP. `is_full` flip is automatic via the generated column.
+- [ ] **UX:** Two-step confirmation in the sheet; danger colour on the confirm CTA; both languages reviewed.
+- [ ] **Performance:** trigger is O(1) plus one O(remaining-participants) UPDATE in Case B. Acceptable.
+
+**Done when:** all pgTAP + Jest tests pass; manual smoke shows OP can remove a commenter and the comment renders as removed for remaining participants; the removed user navigated to the post URL gets the "post not found" state.
+
+---
+
 ## End of Phase 6
 
 Sign-off ritual:
 
 1. Deliverables checklist.
-2. ADR entry: realtime scope decision, "full" notice approach.
+2. ADR entry: realtime scope decision, "full" notice approach, OP-removal design choices (slot reopens, removed user loses post entirely, audit log mandatory).
 3. New TestFlight + Play Internal build.
 4. **Schedule second paid expert review** — this is the one for the limits trigger code, now that it's been exercised in real flows.
 5. Tag `phase-6-complete`.

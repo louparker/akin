@@ -414,6 +414,18 @@ These tasks were discovered during the end-of-Phase-5 status audit (2026-05-27).
 
 **Done when:** `e2e/README.md` table lists all five critical flows with status (✓ green / ⏳ pending phase X).
 
+### Task 5.C.8 — pgTAP coverage of RLS as the authenticated role
+
+**Risk:** pgTAP tests run as the postgres superuser by default, which bypasses RLS. The "permission denied for table users" bug (fixed in 0018) lived in a merged migration unnoticed because no test exercised the INSERT path as the `authenticated` role. Every INSERT policy on a public table needs a `SET LOCAL ROLE authenticated` test or the next regression of this class will ship.
+
+**Acceptance criteria:**
+
+- Audit every `WITH CHECK` clause on every INSERT policy in `supabase/migrations/`. Any clause that references `auth.users` (directly or through a subquery) must go through a `SECURITY DEFINER` helper.
+- For each public-table INSERT, add a pgTAP test that runs `SET LOCAL ROLE authenticated` + `set_config('request.jwt.claim.sub', ...)` before attempting the INSERT.
+- Document the rule in `.claude/skills/database/SKILL.md`: "RLS policy tests must run as the `authenticated` role; testing as postgres only catches CHECK constraints, not RLS."
+
+**Done when:** every INSERT policy is exercised by at least one pgTAP test under `authenticated`; the skill file documents the rule.
+
 ### Task 5.C.7 — PostHog event coverage
 
 **Risk:** PostHog is wired but only `app_opened` is tracked. Without behavioural events we can't measure activation funnel during the closed beta.
