@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
+import { CommentItem } from '@/components/composed/CommentItem';
 import { IdentChip } from '@/components/composed/IdentChip';
 import { CapacityDots } from '@/components/composed/CapacityDots';
 import { SpiceFlames } from '@/components/composed/SpiceFlames';
@@ -33,6 +35,7 @@ import {
   RemoveParticipantSheet,
   type RemovableParticipant,
 } from '@/features/post/components/RemoveParticipantSheet';
+import { useFullTransition } from '@/features/post/api/useFullTransition';
 import { timeAgo } from '@/features/feed/api/timeAgo';
 
 export default function PostDetailScreen() {
@@ -42,6 +45,9 @@ export default function PostDetailScreen() {
   const { data: post, isLoading, isError } = usePost(id ?? '');
   const { mutate: createComment, isPending: isSubmitting } = useCreateComment(id ?? '');
   const { mutate: blockUser } = useBlock();
+  const { showNotice: showFullNotice, dismiss: dismissFullNotice } = useFullTransition(
+    post?.is_full,
+  );
 
   const [replyText, setReplyText] = useState('');
   const [showSpiceSheet, setShowSpiceSheet] = useState(false);
@@ -285,37 +291,37 @@ export default function PostDetailScreen() {
           </Text>
         </View>
 
+        {/* Full notice — appears only when the post transitions to full during this session */}
+        {showFullNotice ? (
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            style={styles.fullNotice}
+            testID="full-notice"
+          >
+            <Text style={styles.fullNoticeText}>{t('post.full.notice')}</Text>
+            <Pressable
+              onPress={dismissFullNotice}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
+              style={styles.fullNoticeDismiss}
+            >
+              <Text style={styles.fullNoticeDismissIcon}>×</Text>
+            </Pressable>
+          </Animated.View>
+        ) : null}
+
         {/* Comments list */}
-        {post.comments
-          .filter((c) => c.status === 'active')
-          .map((comment) => {
-            const isCommentOP = comment.author_id === post.author_id;
-            const isYou = comment.author_id === currentUserId;
-            const isRemoved = comment.removed_by_op === true;
-            return (
-              <View key={comment.id} style={styles.commentItem}>
-                <View style={styles.commentHeader}>
-                  <IdentChip name={comment.author_identifier} you={isYou} />
-                  {isCommentOP ? <Text style={styles.opBadge}>{t('post.op.badge')}</Text> : null}
-                  <View style={styles.flex1} />
-                  {isRemoved ? null : (
-                    <Pressable
-                      onPress={() => handleReportComment(comment.id)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('comment.menu.report')}
-                      style={styles.commentMoreButton}
-                    >
-                      <Text style={styles.commentMoreIcon}>⋯</Text>
-                    </Pressable>
-                  )}
-                  <Text style={styles.commentTime}>{timeAgo(comment.created_at)}</Text>
-                </View>
-                <Text style={[styles.commentBody, isRemoved && styles.commentBodyRemoved]}>
-                  {isRemoved ? t('post.comment.removedByOp') : comment.body}
-                </Text>
-              </View>
-            );
-          })}
+        {post.comments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            postId={post.id}
+            isOpComment={comment.author_id === post.author_id}
+            currentUserId={currentUserId}
+            onReport={handleReportComment}
+            onBlock={(authorId) => blockUser({ blocked_id: authorId })}
+          />
+        ))}
       </ScrollView>
 
       {/* Reply bar or full banner */}
@@ -599,52 +605,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     color: colors.fg.secondary,
   },
-  // Comment items
-  commentItem: {
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 18,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.hairline,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  opBadge: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10.5,
-    color: colors.brand.primary,
-    textTransform: 'uppercase',
-  },
-  flex1: {
-    flex: 1,
-  },
-  commentMoreButton: {
-    paddingHorizontal: 4,
-  },
-  commentMoreIcon: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-  },
-  commentTime: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
-  commentBody: {
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    lineHeight: 14.5 * 1.55,
-    color: colors.fg.secondary,
-  },
-  commentBodyRemoved: {
-    fontStyle: 'italic',
-    color: colors.fg.tertiary,
-  },
   // Reply bar
   replyBar: {
     flexDirection: 'row',
@@ -745,5 +705,35 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border.hairline,
     marginHorizontal: 22,
+  },
+  // Full-transition notice
+  fullNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 22,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: colors.bg.raised,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.divider,
+  },
+  fullNoticeText: {
+    flex: 1,
+    fontFamily: 'Inter',
+    fontSize: 13,
+    lineHeight: 13 * 1.5,
+    color: colors.fg.secondary,
+  },
+  fullNoticeDismiss: {
+    paddingLeft: 12,
+    paddingVertical: 4,
+  },
+  fullNoticeDismissIcon: {
+    fontFamily: 'Inter',
+    fontSize: 18,
+    color: colors.fg.tertiary,
+    lineHeight: 20,
   },
 });

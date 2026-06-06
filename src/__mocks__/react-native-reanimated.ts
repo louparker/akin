@@ -60,3 +60,10 @@ export default Animated;
 
 // Named export used by <Animated.View> JSX in _layout.tsx
 export { AnimatedViewComponent as View };
+
+// Entering / exiting animation stubs — no-ops in tests.
+const noopAnimation = { duration: () => noopAnimation, delay: () => noopAnimation };
+export const FadeIn = noopAnimation;
+export const FadeOut = noopAnimation;
+export const SlideInDown = noopAnimation;
+export const SlideOutDown = noopAnimation;

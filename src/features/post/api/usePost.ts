@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useCallback, useRef } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { useFlag } from '@/features/flags/api/useFeatureFlags';
 import type { Tables } from '@/types/database';
 
 export type PostRow = Tables<'posts'>;
@@ -33,28 +35,43 @@ async function fetchPost(id: string): Promise<PostWithComments> {
 
 export function usePost(id: string): UseQueryResult<PostWithComments, Error> {
   const queryClient = useQueryClient();
+  const realtimeOpen = useFlag('realtime_open');
+  // Skip invalidation on the first SUBSCRIBED — the initial fetch already has fresh data.
+  // Every subsequent SUBSCRIBED (reconnect, refocus) means we may have missed events.
+  const wasSubscribedRef = useRef(false);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel(`post:${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'comments',
-          filter: `post_id=eq.${id}`,
-        },
-        () => {
-          void queryClient.invalidateQueries({ queryKey: ['post', id] });
-        },
-      )
-      .subscribe();
+  useFocusEffect(
+    useCallback(() => {
+      if (!realtimeOpen || !id) return;
 
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [id, queryClient]);
+      const channel = supabase
+        .channel(`post:${id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'comments',
+            filter: `post_id=eq.${id}`,
+          },
+          () => {
+            void queryClient.invalidateQueries({ queryKey: ['post', id] });
+          },
+        )
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            if (wasSubscribedRef.current) {
+              void queryClient.invalidateQueries({ queryKey: ['post', id] });
+            }
+            wasSubscribedRef.current = true;
+          }
+        });
+
+      return () => {
+        void supabase.removeChannel(channel);
+      };
+    }, [id, queryClient, realtimeOpen]),
+  );
 
   return useQuery<PostWithComments, Error>({
     queryKey: ['post', id],

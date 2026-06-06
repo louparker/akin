@@ -51,7 +51,9 @@ describe('useFlag', () => {
 
   it('returns the updated value after the store is set', () => {
     act(() => {
-      useFlagsStore.setState({ flags: { signups_open: false, posting_open: true } });
+      useFlagsStore.setState({
+        flags: { signups_open: false, posting_open: true, realtime_open: true },
+      });
     });
     const { result } = renderHook(() => useFlag('signups_open'));
     expect(result.current).toBe(false);
