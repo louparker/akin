@@ -1,0 +1,179 @@
+appId: com.ourakin.app
+---
+# Phase 7.9 — Moderator action E2E
+# Tests: moderator logs in → sees report in queue → actions it → audit log updated.
+#
+# Run: maestro test e2e/moderator-action.yaml
+# Prereqs:
+#   1. Run report-flow.yaml first (or INSERT a report via SQL) so the queue has an open report.
+#   2. Grant yourself the moderator role:
+#      INSERT INTO user_roles (user_id, role)
+#      VALUES ('<your-user-id>', 'moderator');
+#   3. alice@ourakin.app is the test moderator account.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# MANUAL TEST CHECKLIST (run this before marking 7.9 done)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Setup:
+#   1. Grant moderator role to alice via SQL (see Prereqs above).
+#   2. Use report-flow.yaml or manual reporting to create an open report.
+#
+# 7.4 Moderator route guard
+#   [ ] Log in as a non-moderator (e.g. bob@ourakin.app).
+#   [ ] Open Settings.
+#   [ ] Verify the "Moderation" section is NOT visible.
+#   [ ] If you somehow navigate to /(moderator)/queue directly (deep link), verify
+#       you are immediately redirected to the feed.
+#
+# 7.5 Moderator queue
+#   [ ] Log in as alice (who has the moderator role).
+#   [ ] Open Settings.
+#   [ ] Verify a "Moderation" section appears with a "Moderation queue" row.
+#   [ ] Tap "Moderation queue".
+#   [ ] Verify the queue screen shows the title "Moderation queue" and a
+#       badge like "1 open" or "2 open" (depending on how many reports exist).
+#   [ ] Verify filter chips are visible: All, Harassment, Hate, Sexual, Threat.
+#   [ ] Tap "Harassment" chip — verify the list filters.
+#   [ ] Tap "All" chip — verify all reports reappear.
+#   [ ] Verify each row shows: reason (capitalised), target type, and time ago.
+#
+# 7.6 Report detail + dismiss
+#   [ ] From the queue, tap any open report.
+#   [ ] Verify the report detail screen shows:
+#       - Reason (e.g. "harassment")
+#       - Target (post/comment/user UUID)
+#       - Filed time
+#       - Notes (if any)
+#       - Status: "open"
+#   [ ] Tap "Dismiss".
+#   [ ] Verify a confirmation modal appears with "Are you sure?".
+#   [ ] Tap Confirm WITHOUT entering a reason — verify an error "Please add a reason." appears.
+#   [ ] Type a reason (e.g. "Not a violation.") and tap Confirm.
+#   [ ] Verify an "Action taken." alert appears.
+#   [ ] Tap OK — verify you're returned to the queue.
+#   [ ] Verify the dismissed report no longer appears in the queue.
+#   [ ] Check SQL: SELECT status FROM reports ORDER BY created_at DESC LIMIT 1;
+#       Confirm status = 'dismissed'.
+#   [ ] Check audit log: SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 1;
+#       Confirm action = 'report.dismissed', reason is in metadata.
+#
+# 7.6 Report detail + warn
+#   [ ] Create a new open report (via the report flow).
+#   [ ] Open it from the queue.
+#   [ ] Tap "Warn user", enter a reason, confirm.
+#   [ ] SQL: SELECT strike_count FROM profiles WHERE user_id = '<reported-user-id>';
+#       Confirm strike_count incremented by 1.
+#   [ ] SQL: SELECT action FROM audit_log ORDER BY created_at DESC LIMIT 1;
+#       Confirm action = 'user.warned'.
+#
+# 7.6 Report detail + hide
+#   [ ] Create a report against a post.
+#   [ ] Open it, tap "Hide content", confirm with a reason.
+#   [ ] SQL: SELECT status FROM posts WHERE id = '<target-post-id>';
+#       Confirm status = 'hidden'.
+#   [ ] Verify the post no longer appears on the feed for any user.
+#
+# 7.6 Report detail + ban
+#   [ ] Create a report against a user.
+#   [ ] Open it, tap "Ban permanently", enter reason "Repeated severe violations", confirm.
+#   [ ] SQL: SELECT status FROM profiles WHERE user_id = '<target-user-id>';
+#       Confirm status = 'banned'.
+#   [ ] SQL: SELECT count(*) FROM posts WHERE author_id = '<target-user-id>' AND status = 'active';
+#       Confirm 0 active posts (all hidden).
+#   [ ] Log in as the banned user — verify you're redirected to the banned screen.
+#
+# 7.7 Strikes lifecycle
+#   [ ] Reset a test user's strike_count to 0 via SQL.
+#   [ ] Warn them (strike 1) — verify strike_count = 1, status = 'active'.
+#   [ ] Warn again via a second report (strike 2) — verify status still 'active'.
+#   [ ] Suspend via a third report (strike 3) — verify status = 'suspended',
+#       suspended_until is ~7 days from now.
+#   [ ] Warn a 4th time — the moderator can still override: tap "Ban permanently"
+#       explicitly, confirm status becomes 'banned'.
+#
+# 7.8 Audit log
+#   [ ] In Settings → Moderation queue, navigate back to Settings.
+#   [ ] There's no separate audit log route yet in the nav — navigate directly:
+#       Push /(moderator)/audit (via deep link or add a temp button).
+#   [ ] Verify paginated audit log entries appear, newest first.
+#   [ ] Tap an entry — verify a modal shows the metadata JSON.
+#   [ ] Tap Close — modal dismisses.
+#   [ ] Verify entries have: action name, target info, time ago.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTOMATED FLOW
+# (login as moderator → open queue → action first report → confirm audit row)
+# ─────────────────────────────────────────────────────────────────────────────
+
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Log in'
+- tapOn:
+    id: 'login-email'
+- inputText: 'alice@ourakin.app'
+- tapOn:
+    id: 'login-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    text: 'Log in'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 15000
+- waitForAnimationToEnd
+
+# Navigate to Settings → Moderation queue
+- tapOn:
+    id: 'tab-settings'
+- extendedWaitUntil:
+    visible:
+      text: 'Settings'
+    timeout: 5000
+- tapOn:
+    text: 'Moderation queue'
+- extendedWaitUntil:
+    visible:
+      text: 'Moderation queue'
+    timeout: 8000
+
+# Tap the first report in the queue
+- tapOn:
+    index: 0
+    text: 'harassment'
+- extendedWaitUntil:
+    visible:
+      text: 'Report detail'
+    timeout: 8000
+
+# Dismiss the report
+- tapOn:
+    text: 'Dismiss'
+- extendedWaitUntil:
+    visible:
+      text: 'Are you sure?'
+    timeout: 5000
+- tapOn:
+    id: 'moderator-reason-input'
+- inputText: 'Not a violation, test dismissal.'
+- tapOn:
+    text: 'Confirm'
+- extendedWaitUntil:
+    visible:
+      text: 'Action taken.'
+    timeout: 8000
+- tapOn:
+    text: 'OK'
+- extendedWaitUntil:
+    visible:
+      text: 'Moderation queue'
+    timeout: 5000

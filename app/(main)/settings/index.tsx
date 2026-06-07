@@ -17,6 +17,7 @@ import type { TranslationKey } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useLogout } from '@/features/auth/api/useLogout';
+import { useIsModerator } from '@/features/moderation/api/useIsModerator';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -42,6 +43,7 @@ const PENDING_SECTIONS: PendingSection[] = [
 export default function SettingsScreen() {
   const session = useAuthStore((s) => s.session);
   const { logout } = useLogout();
+  const { data: isMod } = useIsModerator();
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
 
@@ -101,6 +103,18 @@ export default function SettingsScreen() {
             isLast
           />
         </Section>
+
+        {/* Moderation — visible only to moderators ─────────────────────────── */}
+        {isMod ? (
+          <Section titleKey="settings.section.moderation">
+            <Row
+              label={t('settings.mod.queue')}
+              chevron
+              onPress={() => router.push('/(moderator)/queue' as Parameters<typeof router.push>[0])}
+              isLast
+            />
+          </Section>
+        ) : null}
 
         {/* Placeholder sections — landing in subsequent sub-tasks ─────────── */}
         {PENDING_SECTIONS.map((s) => (

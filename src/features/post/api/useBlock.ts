@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 export interface BlockInput {
   blocked_id: string;
+  postId?: string;
 }
 
 export function useBlock(): UseMutationResult<void, Error, BlockInput> {
@@ -26,8 +27,11 @@ export function useBlock(): UseMutationResult<void, Error, BlockInput> {
         throw new Error(error.message);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, { postId }) => {
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
+      if (postId) {
+        void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      }
     },
   });
 }

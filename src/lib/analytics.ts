@@ -51,6 +51,7 @@ export type AnalyticsEvent =
   | { name: 'comment_created'; props: { category: string } }
   | { name: 'report_filed'; props: { reason: string } }
   | { name: 'block_added'; props?: Record<string, never> }
+  | { name: 'content_filter_blocked'; props: { rule_type: string } }
   | { name: 'language_changed'; props: { language: string } };
 
 /**

@@ -2,20 +2,21 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { track } from '@/lib/analytics';
 
-export interface CreateCommentInput {
-  body: string;
-}
-
-// Postgres error codes raised by the participation-limit triggers
+// Postgres error codes raised by triggers
 const ERR_POST_FULL = 'P0001';
 const ERR_ACTIVE_LIMIT = 'P0003';
 const ERR_REMOVED_FROM_POST = 'P0004';
+const ERR_CONTENT_FILTER = 'P0010';
+const ERR_CONTACT_INFO = 'P0011';
 
 export type CreateCommentErrorKind =
   | 'post_full'
   | 'active_limit'
   | 'removed_from_post'
+  | 'content_filter'
+  | 'contact_info'
   | 'network'
   | 'unknown';
 
@@ -27,6 +28,10 @@ export class CreateCommentError extends Error {
     super(message);
     this.name = 'CreateCommentError';
   }
+}
+
+export interface CreateCommentInput {
+  body: string;
 }
 
 export function useCreateComment(
@@ -61,6 +66,14 @@ export function useCreateComment(
             'removed_from_post',
             'You were removed from this conversation.',
           );
+        }
+        if (code === ERR_CONTENT_FILTER) {
+          void track('content_filter_blocked', { rule_type: 'slur' });
+          throw new CreateCommentError('content_filter', error.message);
+        }
+        if (code === ERR_CONTACT_INFO) {
+          void track('content_filter_blocked', { rule_type: 'contact_info' });
+          throw new CreateCommentError('contact_info', error.message);
         }
         if (error.message.toLowerCase().includes('network') || error.message.includes('fetch')) {
           throw new CreateCommentError('network', error.message);

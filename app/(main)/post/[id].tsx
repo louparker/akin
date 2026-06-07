@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +51,7 @@ export default function PostDetailScreen() {
   );
 
   const [replyText, setReplyText] = useState('');
+  const [replyFilterError, setReplyFilterError] = useState<string | null>(null);
   const [showSpiceSheet, setShowSpiceSheet] = useState(false);
   const [showLimitSheet, setShowLimitSheet] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -91,6 +93,7 @@ export default function PostDetailScreen() {
     const body = replyText.trim();
     if (!body || isSubmitting) return;
 
+    setReplyFilterError(null);
     createComment(
       { body },
       {
@@ -107,6 +110,10 @@ export default function PostDetailScreen() {
             Alert.alert(t('post.comment.error.removedFromPost'), undefined, [
               { text: t('common.ok'), onPress: () => router.back() },
             ]);
+          } else if (err instanceof CreateCommentError && err.kind === 'content_filter') {
+            setReplyFilterError(t('error.CONTENT_FILTER_HIT.comment'));
+          } else if (err instanceof CreateCommentError && err.kind === 'contact_info') {
+            setReplyFilterError(t('error.CONTACT_INFO_NOT_ALLOWED.comment'));
           } else {
             Alert.alert(t('error.network'));
           }
@@ -145,7 +152,7 @@ export default function PostDetailScreen() {
       {
         text: t('block.confirm.cta'),
         style: 'destructive',
-        onPress: () => blockUser({ blocked_id: post.author_id }),
+        onPress: () => blockUser({ blocked_id: post.author_id, postId: post.id }),
       },
     ]);
   }
@@ -321,7 +328,7 @@ export default function PostDetailScreen() {
             isOpComment={comment.author_id === post.author_id}
             currentUserId={currentUserId}
             onReport={handleReportComment}
-            onBlock={(authorId) => blockUser({ blocked_id: authorId })}
+            onBlock={(authorId) => blockUser({ blocked_id: authorId, postId: post.id })}
           />
         ))}
       </ScrollView>
@@ -337,39 +344,55 @@ export default function PostDetailScreen() {
         </View>
       ) : (
         <View style={[styles.replyBar, { paddingBottom: Math.max(insets.bottom, 8) + 4 }]}>
-          <TextInput
-            ref={inputRef}
-            style={styles.replyInput}
-            placeholder={t('post.reply.placeholder')}
-            placeholderTextColor={colors.fg.faint}
-            value={replyText}
-            onChangeText={setReplyText}
-            multiline={false}
-            autoCorrect={false}
-            returnKeyType="send"
-            onSubmitEditing={handleSendReply}
-            editable={canReply && !isSubmitting}
-            accessibilityLabel={t('post.reply.placeholder')}
-            testID="post-reply-input"
-          />
-          <Pressable
-            style={[
-              styles.sendButton,
-              (!replyText.trim() || !canReply) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSendReply}
-            disabled={!replyText.trim() || !canReply || isSubmitting}
-            accessibilityRole="button"
-            accessibilityLabel={t('post.send.label')}
-            accessibilityState={{ disabled: !replyText.trim() || !canReply || isSubmitting }}
-            testID="post-send-button"
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color={colors.fg.inverse} size="small" />
-            ) : (
-              <Text style={styles.sendIcon}>›</Text>
-            )}
-          </Pressable>
+          {replyFilterError ? (
+            <View style={styles.filterErrorRow}>
+              <Text style={styles.filterErrorText}>{replyFilterError} </Text>
+              <Pressable
+                onPress={() =>
+                  void Linking.openURL('mailto:hi@akin.app?subject=Content%20filter%20appeal')
+                }
+                accessibilityRole="link"
+                accessibilityLabel={t('error.contact_support')}
+              >
+                <Text style={styles.filterErrorLink}>{t('error.contact_support')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <View style={styles.replyInputRow}>
+            <TextInput
+              ref={inputRef}
+              style={styles.replyInput}
+              placeholder={t('post.reply.placeholder')}
+              placeholderTextColor={colors.fg.faint}
+              value={replyText}
+              onChangeText={setReplyText}
+              multiline={false}
+              autoCorrect={false}
+              returnKeyType="send"
+              onSubmitEditing={handleSendReply}
+              editable={canReply && !isSubmitting}
+              accessibilityLabel={t('post.reply.placeholder')}
+              testID="post-reply-input"
+            />
+            <Pressable
+              style={[
+                styles.sendButton,
+                (!replyText.trim() || !canReply) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSendReply}
+              disabled={!replyText.trim() || !canReply || isSubmitting}
+              accessibilityRole="button"
+              accessibilityLabel={t('post.send.label')}
+              accessibilityState={{ disabled: !replyText.trim() || !canReply || isSubmitting }}
+              testID="post-send-button"
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.fg.inverse} size="small" />
+              ) : (
+                <Text style={styles.sendIcon}>›</Text>
+              )}
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -612,14 +635,35 @@ const styles = StyleSheet.create({
   },
   // Reply bar
   replyBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     backgroundColor: colors.bg.base,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border.hairline,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
+    gap: 6,
+  },
+  replyInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    paddingBottom: 2,
+  },
+  filterErrorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  filterErrorText: {
+    fontFamily: 'Inter',
+    fontSize: 12.5,
+    color: colors.semantic.danger,
+  },
+  filterErrorLink: {
+    fontFamily: 'Inter',
+    fontSize: 12.5,
+    color: colors.brand.primary,
+    textDecorationLine: 'underline',
   },
   replyInput: {
     flex: 1,

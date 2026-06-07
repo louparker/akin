@@ -1,0 +1,142 @@
+appId: com.ourakin.app
+---
+# Phase 7.9 — Report flow E2E
+# Tests: long-press post → Report → pick reason → submit → success toast.
+#
+# Run: maestro test e2e/report-flow.yaml
+# Prereqs: seed.sql loaded (posts visible on feed); SUPABASE_AUTH_AUTO_CONFIRM=true
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# MANUAL TEST CHECKLIST (run this on a device before marking 7.9 done)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Setup: use seed credentials alice@ourakin.app / TestPass123! (or a fresh account).
+#
+# 7.1 Report a post
+#   [ ] Tap a post card on the feed to open the post detail screen.
+#   [ ] Tap the ⋯ (more) button in the top-right corner.
+#   [ ] Tap "Report post".
+#   [ ] Verify the report sheet slides up with the serif title "Report this post".
+#   [ ] Verify there are exactly 6 reason rows with radio circles.
+#   [ ] Verify selecting "Something else" shows a text input below the reasons.
+#   [ ] Verify the "Send report" button is disabled when no reason is selected.
+#   [ ] Verify the "Send report" button is disabled when "Something else" is
+#       selected but the notes field is empty.
+#   [ ] Type something in the notes field, confirm button becomes enabled.
+#   [ ] Select "Harassment or targeting", confirm notes field is NOT shown.
+#   [ ] Tap "Send report" — verify a brief "Report sent." success message appears
+#       and the sheet closes automatically (~2 seconds).
+#   [ ] Check Supabase table: SELECT * FROM reports ORDER BY created_at DESC LIMIT 1;
+#       Verify reason = 'harassment', status = 'open', reporter_id matches your user.
+#
+# 7.1 Report a comment
+#   [ ] Open a post with at least one comment.
+#   [ ] Long-press a comment (or tap the ⋮ menu icon if visible).
+#   [ ] Tap "Report comment".
+#   [ ] Verify title is "Report this comment" (not "this post").
+#   [ ] Pick a reason and submit. Confirm "Report sent." appears.
+#
+# 7.1 Rate limit (requires firing 5 reports within 1 hour)
+#   [ ] File 5 reports in quick succession on different posts.
+#   [ ] On the 6th attempt, verify the sheet shows:
+#       "You've sent too many reports recently. Try again in an hour."
+#       (Swedish: "Du har skickat för många rapporter nyligen. Försök igen om en timme.")
+#
+# 7.2 Block from post author (via ⋯ menu)
+#   [ ] Open a post you did NOT write.
+#   [ ] Tap ⋯ → "Block user".
+#   [ ] Verify a native confirm dialog appears: "Block this person?" with
+#       "Block" (destructive) and "Cancel" buttons.
+#   [ ] Tap Cancel — verify no block was created.
+#   [ ] Repeat, tap Block — verify the user's posts disappear from your feed
+#       immediately (pull to refresh if needed).
+#
+# 7.2 Block from comment author
+#   [ ] Open a post, find a comment from another user.
+#   [ ] Long-press the comment → tap "Block user".
+#   [ ] Verify the same confirm dialog appears before anything is blocked.
+#   [ ] Confirm — verify the commenter's comments disappear from this post.
+#   [ ] Navigate back to feed — verify their posts are gone.
+#
+# 7.3 Content filter — slur in post
+#   [ ] Tap the Write tab.
+#   [ ] Fill in title, body, category. Include a slur in the body.
+#   [ ] Tap Post.
+#   [ ] Verify an alert appears: "Your post couldn't be submitted. Please
+#       review the community guidelines."
+#   [ ] Verify a "Contact support" button is present in the alert.
+#   [ ] Tap "Contact support" — verify your mail client opens with
+#       To: hi@akin.app and subject "Content filter appeal".
+#
+# 7.3 Content filter — phone number in comment
+#   [ ] Open a post and type a phone number (e.g. "call me on 0701234567") in
+#       the reply bar.
+#   [ ] Tap Send.
+#   [ ] Verify an inline error appears above the reply bar:
+#       "Comments can't include phone numbers, emails, or social handles."
+#   [ ] Verify a "Contact support" link is visible next to the error.
+#   [ ] Tap "Contact support" — verify mail client opens.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTOMATED FLOW (login → find seed post → report it)
+# ─────────────────────────────────────────────────────────────────────────────
+
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Log in'
+- tapOn:
+    id: 'login-email'
+- inputText: 'alice@ourakin.app'
+- tapOn:
+    id: 'login-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    text: 'Log in'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 15000
+- waitForAnimationToEnd
+
+# Open the first post on feed
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 10000
+- tapOn:
+    index: 0
+    text: '.*'
+    selector: '[testID="post-card-pressable"]'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 10000
+
+# Open the ⋯ more menu and tap Report post
+- tapOn:
+    label: 'More options'
+- tapOn:
+    text: 'Report post'
+- extendedWaitUntil:
+    visible:
+      text: 'Report this post'
+    timeout: 5000
+
+# Pick "Harassment or targeting"
+- tapOn:
+    text: 'Harassment or targeting'
+- tapOn:
+    text: 'Send report'
+- extendedWaitUntil:
+    visible:
+      text: 'Report sent.'
+    timeout: 8000

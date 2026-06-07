@@ -115,7 +115,14 @@ export const CommentItem = memo(function CommentItem({
 
   function handleBlockPress() {
     setShowMenu(false);
-    onBlock(comment.author_id);
+    Alert.alert(t('block.confirm.title'), t('block.confirm.body'), [
+      { text: t('block.confirm.cancel'), style: 'cancel' },
+      {
+        text: t('block.confirm.cta'),
+        style: 'destructive',
+        onPress: () => onBlock(comment.author_id),
+      },
+    ]);
   }
 
   const bodyContent = () => {

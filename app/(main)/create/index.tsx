@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Linking,
   ScrollView,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -77,7 +78,18 @@ export default function CreateScreen() {
         setLimitOpen(true);
         return;
       }
-      Alert.alert(t('error.generic'), t(i18nKey));
+      const isFilterError =
+        err instanceof CreatePostError &&
+        (err.kind === 'content_filter' || err.kind === 'contact_info');
+      Alert.alert(t('error.generic'), t(i18nKey), [
+        isFilterError
+          ? {
+              text: t('error.contact_support'),
+              onPress: () =>
+                void Linking.openURL('mailto:hi@akin.app?subject=Content%20filter%20appeal'),
+            }
+          : { text: t('common.ok') },
+      ]);
     }
   };
 

@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Enums } from '@/types/database';
-import { useReport } from '../api/useReport';
+import { useReport, ReportError } from '../api/useReport';
 
 type ReportTarget = Enums<'report_target'>;
 type ReportReason = Enums<'report_reason'>;
@@ -14,9 +22,12 @@ interface ReasonOption {
   labelKey: TranslationKey;
 }
 
+// 6 options matching the design spec. "Identifying someone" is doxxing —
+// the closest enum value is 'harassment'. Two entries mapped to 'other'
+// previously; now only "Something else" maps to 'other'.
 const REASON_OPTIONS: ReasonOption[] = [
   { reason: 'harassment', labelKey: 'report.reason.harassment' },
-  { reason: 'other', labelKey: 'report.reason.identifying' },
+  { reason: 'harassment', labelKey: 'report.reason.identifying' },
   { reason: 'hate', labelKey: 'report.reason.hate' },
   { reason: 'sexual', labelKey: 'report.reason.sexual' },
   { reason: 'spam', labelKey: 'report.reason.spam' },
@@ -32,30 +43,48 @@ interface ReportSheetProps {
 
 export function ReportSheet({ visible, targetId, targetType, onClose }: ReportSheetProps) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [rateLimitError, setRateLimitError] = useState(false);
   const { mutate: sendReport, isPending } = useReport();
 
   useEffect(() => {
     if (visible) {
       setSelectedIdx(null);
+      setNotes('');
       setShowSuccess(false);
+      setRateLimitError(false);
     }
   }, [visible]);
 
   const titleKey: TranslationKey =
     targetType === 'post' ? 'report.title.post' : 'report.title.comment';
 
+  // eslint-disable-next-line security/detect-object-injection -- selectedIdx is a controlled state index bounded to REASON_OPTIONS.length
+  const selectedOption = selectedIdx !== null ? REASON_OPTIONS[selectedIdx] : null;
+  const isOther =
+    selectedOption?.reason === 'other' && selectedOption?.labelKey === 'report.reason.other';
+  const canSubmit = selectedIdx !== null && (!isOther || notes.trim().length > 0) && !isPending;
+
   function handleSubmit() {
-    if (selectedIdx === null || isPending) return;
-    // eslint-disable-next-line security/detect-object-injection -- selectedIdx is a controlled state index bounded to REASON_OPTIONS.length
-    const option = REASON_OPTIONS[selectedIdx];
-    if (!option) return;
+    if (!canSubmit || selectedOption == null) return;
+    setRateLimitError(false);
     sendReport(
-      { target_id: targetId, target_type: targetType, reason: option.reason },
+      {
+        target_id: targetId,
+        target_type: targetType,
+        reason: selectedOption.reason,
+        notes: notes.trim() || undefined,
+      },
       {
         onSuccess: () => {
           setShowSuccess(true);
           setTimeout(onClose, 2000);
+        },
+        onError: (err) => {
+          if (err instanceof ReportError && err.kind === 'rate_limit') {
+            setRateLimitError(true);
+          }
         },
       },
     );
@@ -79,32 +108,53 @@ export function ReportSheet({ visible, targetId, targetType, onClose }: ReportSh
           <Text style={styles.success}>{t('report.success')}</Text>
         ) : (
           <>
+            {rateLimitError ? (
+              <Text style={styles.errorText}>{t('report.error.rateLimit')}</Text>
+            ) : null}
+
             {REASON_OPTIONS.map((option, idx) => {
               const isLast = idx === REASON_OPTIONS.length - 1;
               const isSelected = selectedIdx === idx;
               return (
                 <Pressable
-                  key={option.labelKey}
+                  key={`${option.reason}-${option.labelKey}`}
                   style={[styles.reasonRow, isLast ? undefined : styles.reasonRowBordered]}
                   onPress={() => setSelectedIdx(idx)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: isSelected }}
                   accessibilityLabel={t(option.labelKey)}
                 >
-                  <Text style={[styles.reasonText, isSelected && styles.reasonSelected]}>
-                    {t(option.labelKey)}
-                  </Text>
+                  <View style={styles.reasonRowInner}>
+                    <View style={[styles.radioCircle, isSelected && styles.radioSelected]} />
+                    <Text style={[styles.reasonText, isSelected && styles.reasonSelected]}>
+                      {t(option.labelKey)}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
 
+            {isOther ? (
+              <TextInput
+                style={styles.notesInput}
+                placeholder={t('report.notes.placeholder')}
+                placeholderTextColor={colors.fg.faint}
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+                maxLength={500}
+                accessibilityLabel={t('report.notes.label')}
+                testID="report-notes-input"
+              />
+            ) : null}
+
             <Pressable
-              style={[styles.submitButton, selectedIdx === null && styles.submitDisabled]}
+              style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
               onPress={handleSubmit}
-              disabled={selectedIdx === null || isPending}
+              disabled={!canSubmit}
               accessibilityRole="button"
               accessibilityLabel={t('report.cta')}
-              accessibilityState={{ disabled: selectedIdx === null || isPending }}
+              accessibilityState={{ disabled: !canSubmit }}
             >
               {isPending ? (
                 <ActivityIndicator color={colors.fg.inverse} />
@@ -155,6 +205,12 @@ const styles = StyleSheet.create({
     color: colors.fg.secondary,
     marginBottom: 20,
   },
+  errorText: {
+    fontFamily: 'Inter',
+    fontSize: 13.5,
+    color: colors.semantic.danger,
+    marginBottom: 12,
+  },
   reasonRow: {
     paddingVertical: 13,
   },
@@ -162,13 +218,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border.hairline,
   },
+  reasonRowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: colors.border.divider,
+  },
+  radioSelected: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary,
+  },
   reasonText: {
     fontFamily: 'Inter',
     fontSize: 15,
     color: colors.fg.primary,
+    flex: 1,
   },
   reasonSelected: {
     fontWeight: '500',
+  },
+  notesInput: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.divider,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: colors.fg.primary,
+    minHeight: 72,
+    marginTop: 8,
+    marginBottom: 4,
   },
   submitButton: {
     backgroundColor: colors.bg.inverse,

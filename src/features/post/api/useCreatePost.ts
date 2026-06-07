@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { track } from '@/lib/analytics';
 import type { Enums } from '@/types/database';
 
 // CRITICAL-PATH: posts — content filter + active-limit triggers raise SQLSTATEs we surface here.
@@ -94,9 +95,11 @@ export function useCreatePost(): UseMutationResult<
           );
         }
         if (code === ERR_CONTENT_FILTER) {
+          void track('content_filter_blocked', { rule_type: 'slur' });
           throw new CreatePostError('content_filter', 'error.CONTENT_FILTER_HIT', error.message);
         }
         if (code === ERR_CONTACT_INFO) {
+          void track('content_filter_blocked', { rule_type: 'contact_info' });
           throw new CreatePostError(
             'contact_info',
             'error.CONTACT_INFO_NOT_ALLOWED',

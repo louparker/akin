@@ -9,6 +9,8 @@ jest.mock('@/lib/supabase', () => ({
   supabase: { from: jest.fn() },
 }));
 
+jest.mock('@/lib/analytics', () => ({ track: jest.fn() }));
+
 function mockInsertResult(result: {
   data: unknown;
   error: { code?: string; message: string } | null;
