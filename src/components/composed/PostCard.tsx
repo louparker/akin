@@ -34,7 +34,7 @@ function PostCardImpl({
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Post: ${title}`}
+      accessibilityLabel={title}
     >
       {/* Padding lives on a child View, not the Pressable root.
           On Fabric (New Architecture), FlashList's CellContainer measures the

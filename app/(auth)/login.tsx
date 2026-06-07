@@ -86,6 +86,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 accessibilityLabel={t('auth.login.email.label')}
+                testID="login-email"
               />
             )}
           />
@@ -109,6 +110,7 @@ export default function LoginScreen() {
                 onBlur={onBlur}
                 secureTextEntry
                 accessibilityLabel={t('auth.login.password.label')}
+                testID="login-password"
               />
             )}
           />

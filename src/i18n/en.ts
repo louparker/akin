@@ -12,6 +12,7 @@ export const en = {
   'nav.tab.write': 'Write',
   'nav.tab.you': 'You',
   'nav.tab.settings': 'Settings',
+  'nav.tab.write.badge.a11y': 'Write, {{n}} of 3 conversations active',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'A quieter place\nto talk about\ndating.',

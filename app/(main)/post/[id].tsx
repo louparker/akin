@@ -252,7 +252,9 @@ export default function PostDetailScreen() {
             <Text style={styles.metaTime}>{timeAgo(post.created_at)}</Text>
           </View>
 
-          <Text style={styles.postTitle}>{post.title}</Text>
+          <Text testID="post-title" style={styles.postTitle}>
+            {post.title}
+          </Text>
           <Text style={styles.postBody}>{post.body}</Text>
 
           <View style={styles.authorRow}>
@@ -343,10 +345,12 @@ export default function PostDetailScreen() {
             value={replyText}
             onChangeText={setReplyText}
             multiline={false}
+            autoCorrect={false}
             returnKeyType="send"
             onSubmitEditing={handleSendReply}
             editable={canReply && !isSubmitting}
             accessibilityLabel={t('post.reply.placeholder')}
+            testID="post-reply-input"
           />
           <Pressable
             style={[
@@ -358,6 +362,7 @@ export default function PostDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('post.send.label')}
             accessibilityState={{ disabled: !replyText.trim() || !canReply || isSubmitting }}
+            testID="post-send-button"
           >
             {isSubmitting ? (
               <ActivityIndicator color={colors.fg.inverse} size="small" />

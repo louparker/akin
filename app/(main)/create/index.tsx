@@ -161,6 +161,7 @@ export default function CreateScreen() {
             style={styles.title}
             multiline
             maxLength={TITLE_MAX}
+            autoCorrect={false}
             accessibilityLabel={t('create.title.placeholder')}
             testID="create-title-input"
           />
@@ -174,6 +175,7 @@ export default function CreateScreen() {
             style={styles.body}
             multiline
             maxLength={BODY_MAX}
+            autoCorrect={false}
             accessibilityLabel={t('create.body.placeholder')}
             testID="create-body-input"
           />

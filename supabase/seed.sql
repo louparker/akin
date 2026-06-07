@@ -91,6 +91,7 @@ BEGIN
     UPDATE public.profiles
        SET anonymous_identifier = identifiers[i],
            age_verified_at      = now() - (i || ' days')::interval,
+           onboarded_at         = now() - (i || ' days')::interval,
            language             = CASE WHEN i <= 6 THEN 'sv' ELSE 'en' END
      WHERE user_id = users[i];
   END LOOP;
@@ -264,13 +265,63 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------------------
+-- Near-full E2E test fixture (f05): 3 of 4 slots taken (bob + carol + dave).
+-- alice (001) is reserved as the 4th commenter in the comment-to-full E2E flow.
+-- created_at is 30 seconds in the future so f05 sorts above all other seed posts
+-- (including bulk posts seeded at now()) and appears at position 1 in the recent feed.
+-- ---------------------------------------------------------------------------
+
+INSERT INTO public.posts (
+  id, author_id, author_identifier, title, body, category,
+  participant_count, created_at, updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000f05',
+  '00000000-0000-0000-0000-000000000002', 'CalmOtter17',
+  'Near-full E2E post',
+  'This post has 3 of 4 participant slots filled. Used by the comment-to-full E2E flow.',
+  'vent_space',
+  3,
+  now() + interval '30 seconds',
+  now() + interval '30 seconds'
+);
+
+INSERT INTO public.post_participants (post_id, user_id, joined_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000f05', '00000000-0000-0000-0000-000000000002', now() - interval '20 minutes'),
+  ('00000000-0000-0000-0000-000000000f05', '00000000-0000-0000-0000-000000000003', now() - interval '15 minutes'),
+  ('00000000-0000-0000-0000-000000000f05', '00000000-0000-0000-0000-000000000004', now() - interval '10 minutes')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.comments (post_id, author_id, author_identifier, body, created_at)
+VALUES
+  ('00000000-0000-0000-0000-000000000f05',
+   '00000000-0000-0000-0000-000000000003', 'BrightWren88',
+   'Same here, would be interested in hearing different perspectives.',
+   now() - interval '15 minutes'),
+  ('00000000-0000-0000-0000-000000000f05',
+   '00000000-0000-0000-0000-000000000004', 'SteadyElk03',
+   'I think it really depends on the situation honestly.',
+   now() - interval '10 minutes');
+
+-- triggers are disabled above, so comment_count won't auto-increment — patch it.
+UPDATE public.posts SET comment_count = 2
+ WHERE id = '00000000-0000-0000-0000-000000000f05';
+
+-- ---------------------------------------------------------------------------
 -- Manually set active_post_count to match the seed state.
--- All users have 0 active (non-full) posts except Iris who has 3.
+-- All users have 0 active (non-full) posts except Iris (3) and f05 participants.
 -- ---------------------------------------------------------------------------
 
 UPDATE public.profiles SET active_post_count = 0;
 UPDATE public.profiles SET active_post_count = 3
  WHERE user_id = '00000000-0000-0000-0000-000000000009';
+-- bob (002), carol (003), dave (004) each have 1 active post from f05
+UPDATE public.profiles SET active_post_count = 1
+ WHERE user_id IN (
+   '00000000-0000-0000-0000-000000000002',
+   '00000000-0000-0000-0000-000000000003',
+   '00000000-0000-0000-0000-000000000004'
+ );
 
 -- ---------------------------------------------------------------------------
 -- Spice votes — a few votes on the first 10 active posts

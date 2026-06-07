@@ -14,6 +14,7 @@ export const sv: TranslationDict = {
   'nav.tab.write': 'Skriv',
   'nav.tab.you': 'Du',
   'nav.tab.settings': 'Inställningar',
+  'nav.tab.write.badge.a11y': 'Skriv, {{n}} av 3 konversationer aktiva',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'En lugnare plats\natt prata om\ndejting.',

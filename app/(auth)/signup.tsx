@@ -1,6 +1,6 @@
 // CRITICAL-PATH: auth — pending expert review
 
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, ScrollView, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,7 +60,9 @@ export default function SignupScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{t('auth.signup.title')}</Text>
+        <Text testID="signup-title" style={styles.title}>
+          {t('auth.signup.title')}
+        </Text>
         <Text style={styles.subtitle}>{t('auth.signup.subtitle')}</Text>
 
         <View style={styles.fields}>
@@ -110,6 +112,7 @@ export default function SignupScreen() {
                   placeholder={t('auth.signup.password.placeholder')}
                   hint={t('auth.signup.password.hint')}
                   secureTextEntry
+                  textContentType="none"
                   accessibilityLabel={t('auth.signup.password.label')}
                   testID="signup-password"
                 />
@@ -135,6 +138,9 @@ export default function SignupScreen() {
                   onBlur={onBlur}
                   placeholder={t('auth.signup.confirmPassword.placeholder')}
                   secureTextEntry
+                  textContentType="none"
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                   accessibilityLabel={t('auth.signup.confirmPassword.label')}
                   testID="signup-confirm-password"
                 />

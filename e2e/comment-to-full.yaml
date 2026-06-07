@@ -1,0 +1,329 @@
+appId: com.ourakin.app
+---
+# Phase 6.8 — comment-to-full E2E flow.
+# Tests the full journey: OP creates post → 3 commenters join → 4th commenter
+# triggers the full-transition notice → a 5th user sees the full banner.
+#
+# Uses fresh sign-ups (not seeded credentials) so the flow works against any
+# Supabase environment — local or cloud. Same pattern as create-post.yaml.
+#
+# Prerequisite: SUPABASE_AUTH_AUTO_CONFIRM=true in local .env.local.
+# Run: maestro test e2e/comment-to-full.yaml
+#
+# Note on stopApp + launchApp pattern: Maestro's XCTest driver caches
+# accessibility element references between launchApp calls. Without an
+# explicit stopApp first, those stale refs cause kAXErrorInvalidUIElement
+# on the 3rd+ relaunch. stopApp + waitForAnimationToEnd cleanly tears down
+# the bridge before the new session begins.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER 1 — OP creates the post
+# ─────────────────────────────────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'signup-email'
+- inputText: 'e2eop${js:Date.now()}@ourakin.app'
+- tapOn:
+    id: 'signup-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-confirm-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-title'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-write'
+    timeout: 10000
+- tapOn:
+    id: 'tab-write'
+- assertVisible: 'Before you post.'
+- tapOn: 'Continue'
+- tapOn: 'Category'
+- extendedWaitUntil:
+    visible:
+      id: 'category-picker-title'
+    timeout: 5000
+- tapOn: 'Vent Space'
+- tapOn:
+    id: 'create-title-input'
+- inputText: 'Near-full E2E post'
+- tapOn:
+    id: 'create-body-input'
+- inputText: 'E2E test: this post will fill up to 4 participants.'
+- tapOn: 'Post'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 15000
+- waitForAnimationToEnd
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER 2 — first commenter
+# ─────────────────────────────────────────────────────────────────────────────
+- stopApp
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'signup-email'
+- inputText: 'e2ec1${js:Date.now()}@ourakin.app'
+- tapOn:
+    id: 'signup-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-confirm-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-title'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 10000
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: 'Near-full E2E post'
+    timeout: 15000
+- tapOn:
+    text: 'Near-full E2E post'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 10000
+- tapOn:
+    id: 'post-reply-input'
+- inputText: 'E2E: first comment.'
+- tapOn:
+    id: 'post-send-button'
+- extendedWaitUntil:
+    visible:
+      text: 'E2E: first comment.'
+    timeout: 10000
+- waitForAnimationToEnd
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER 3 — second commenter
+# ─────────────────────────────────────────────────────────────────────────────
+- stopApp
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'signup-email'
+- inputText: 'e2ec2${js:Date.now()}@ourakin.app'
+- tapOn:
+    id: 'signup-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-confirm-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-title'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 10000
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: 'Near-full E2E post'
+    timeout: 15000
+- tapOn:
+    text: 'Near-full E2E post'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 10000
+- tapOn:
+    id: 'post-reply-input'
+- inputText: 'E2E: second comment.'
+- tapOn:
+    id: 'post-send-button'
+- extendedWaitUntil:
+    visible:
+      text: 'E2E: second comment.'
+    timeout: 10000
+- waitForAnimationToEnd
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER 4 — 4th participant, triggers the full-transition notice
+# ─────────────────────────────────────────────────────────────────────────────
+- stopApp
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'signup-email'
+- inputText: 'e2ec3${js:Date.now()}@ourakin.app'
+- tapOn:
+    id: 'signup-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-confirm-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-title'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 10000
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: 'Near-full E2E post'
+    timeout: 15000
+- tapOn:
+    text: 'Near-full E2E post'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 10000
+- tapOn:
+    id: 'post-reply-input'
+- inputText: 'E2E: fourth participant joins.'
+- tapOn:
+    id: 'post-send-button'
+- extendedWaitUntil:
+    visible:
+      id: 'full-notice'
+    timeout: 15000
+- assertVisible: 'This conversation is now full.'
+- tapOn:
+    label: 'Close'
+- tapOn:
+    label: 'Back'
+- extendedWaitUntil:
+    visible:
+      text: 'Near-full E2E post'
+    timeout: 5000
+- waitForAnimationToEnd
+
+# ─────────────────────────────────────────────────────────────────────────────
+# USER 5 — non-participant sees the full banner, no reply input
+# ─────────────────────────────────────────────────────────────────────────────
+- stopApp
+- launchApp:
+    clearState: true
+    arguments:
+      AppleLanguages: '(en)'
+      AppleLocale: en_US
+      E2E: '1'
+- extendedWaitUntil:
+    visible:
+      text: 'Make an account'
+    timeout: 60000
+- tapOn: 'Make an account'
+- tapOn: 'Make an account'
+- tapOn:
+    id: 'signup-email'
+- inputText: 'e2ec4${js:Date.now()}@ourakin.app'
+- tapOn:
+    id: 'signup-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-confirm-password'
+- inputText: 'TestPass123!'
+- tapOn:
+    id: 'signup-title'
+- tapOn: 'I am 18 or older.'
+- tapOn: 'Continue'
+- assertVisible: 'Check your email'
+- waitForAnimationToEnd
+- assertVisible:
+    text: "This is who you'll be here"
+- tapOn: 'This is me'
+- assertVisible: 'Anonymous, by design'
+- tapOn: 'Skip'
+- extendedWaitUntil:
+    visible:
+      id: 'tab-read'
+    timeout: 10000
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: 'Near-full E2E post'
+    timeout: 15000
+- tapOn:
+    text: 'Near-full E2E post'
+- extendedWaitUntil:
+    visible:
+      id: 'post-title'
+    timeout: 10000
+- assertVisible: 'This conversation is full.'
+- assertNotVisible:
+    id: 'post-reply-input'
