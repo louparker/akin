@@ -345,6 +345,7 @@ export const en = {
   'mod.report.reason': 'Reason',
   'mod.report.notes': 'Notes',
   'mod.report.reporter': 'Reported by',
+  'mod.report.against': 'Against',
   'mod.report.target.post': 'Post',
   'mod.report.target.comment': 'Comment',
   'mod.report.target.user': 'User',

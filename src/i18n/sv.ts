@@ -348,6 +348,7 @@ export const sv: TranslationDict = {
   'mod.report.reason': 'Skäl',
   'mod.report.notes': 'Anteckningar',
   'mod.report.reporter': 'Rapporterad av',
+  'mod.report.against': 'Gäller',
   'mod.report.target.post': 'Inlägg',
   'mod.report.target.comment': 'Kommentar',
   'mod.report.target.user': 'Användare',

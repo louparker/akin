@@ -45,6 +45,15 @@ export default function ModeratorQueueScreen() {
     <View style={styles.container}>
       <TopBar
         title={t('mod.queue.title')}
+        left={
+          <Pressable
+            onPress={() => router.push('/(main)/settings')}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+          >
+            <Text style={styles.backIcon}>‹</Text>
+          </Pressable>
+        }
         right={
           openCount > 0 ? (
             <Text style={styles.depthBadge}>{t('mod.queue.depth', { n: String(openCount) })}</Text>
@@ -101,9 +110,7 @@ function ReportQueueRow({ report }: { report: ReportRow }) {
   return (
     <Pressable
       style={styles.row}
-      onPress={() =>
-        router.push(`/(moderator)/report/${report.id}` as Parameters<typeof router.push>[0])
-      }
+      onPress={() => router.push(`/(moderator)/report/${report.id}`)}
       accessibilityRole="button"
       accessibilityLabel={`${targetLabel} — ${report.reason} — ${timeAgo(report.created_at)}`}
     >
@@ -121,6 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg.base,
   },
+  backIcon: { fontFamily: 'Inter', fontSize: 28, color: colors.fg.primary, paddingHorizontal: 4 },
   depthBadge: {
     fontFamily: 'Inter',
     fontSize: 13,

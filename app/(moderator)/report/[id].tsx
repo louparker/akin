@@ -24,18 +24,21 @@ import { timeAgo } from '@/features/feed/api/timeAgo';
 
 interface ActionConfig {
   action: ModerationAction;
-  labelKey: string;
+  label: string;
   destructive?: boolean;
 }
 
-const ACTIONS: ActionConfig[] = [
-  { action: 'dismiss', labelKey: 'mod.action.dismiss' },
-  { action: 'hide', labelKey: 'mod.action.hide', destructive: true },
-  { action: 'warn', labelKey: 'mod.action.warn', destructive: true },
-  { action: 'suspend', labelKey: 'mod.action.suspend', destructive: true },
-  { action: 'ban', labelKey: 'mod.action.ban', destructive: true },
-  { action: 'csam', labelKey: 'mod.action.csam', destructive: true },
-];
+function buildActions(reportedIdentifier: string | null): ActionConfig[] {
+  const u = reportedIdentifier ?? '…';
+  return [
+    { action: 'dismiss', label: t('mod.action.dismiss') },
+    { action: 'hide', label: t('mod.action.hide'), destructive: true },
+    { action: 'warn', label: `${t('mod.action.warn')} (${u})`, destructive: true },
+    { action: 'suspend', label: `${t('mod.action.suspend')} (${u})`, destructive: true },
+    { action: 'ban', label: `${t('mod.action.ban')} (${u})`, destructive: true },
+    { action: 'csam', label: `${t('mod.action.csam')} (${u})`, destructive: true },
+  ];
+}
 
 export default function ModeratorReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -118,6 +121,8 @@ export default function ModeratorReportScreen() {
         ? t('mod.report.target.comment')
         : t('mod.report.target.user');
 
+  const actions = buildActions(report.reportedIdentifier);
+
   return (
     <View style={styles.container}>
       <TopBar
@@ -140,20 +145,28 @@ export default function ModeratorReportScreen() {
           <Row label="Target" value={`${targetLabel}: ${report.target_id}`} />
           <Row label="Filed" value={timeAgo(report.created_at)} />
           {report.notes ? <Row label={t('mod.report.notes')} value={report.notes} /> : null}
-          <Row label="Status" value={report.status} isLast />
+          <Row label="Status" value={report.status} />
+          {report.reporterIdentifier ? (
+            <Row label={t('mod.report.reporter')} value={report.reporterIdentifier} />
+          ) : null}
+          {report.reportedIdentifier ? (
+            <Row label={t('mod.report.against')} value={report.reportedIdentifier} isLast />
+          ) : (
+            <Row label={t('mod.report.against')} value="—" isLast />
+          )}
         </View>
 
         {/* Action buttons */}
         <View style={styles.section}>
-          {ACTIONS.map((cfg, i) => (
+          {actions.map((cfg, i) => (
             <Pressable
               key={cfg.action}
-              style={[styles.actionRow, i < ACTIONS.length - 1 && styles.rowDivider]}
+              style={[styles.actionRow, i < actions.length - 1 && styles.rowDivider]}
               onPress={() => handleActionPress(cfg.action)}
               accessibilityRole="button"
             >
               <Text style={[styles.actionLabel, cfg.destructive && styles.actionDanger]}>
-                {t(cfg.labelKey as Parameters<typeof t>[0])}
+                {cfg.label}
               </Text>
             </Pressable>
           ))}

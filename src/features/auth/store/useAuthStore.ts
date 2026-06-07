@@ -54,8 +54,10 @@ function routeAfterSignIn(profile: Profile | null) {
     return;
   }
   if (profile.status === 'banned') {
-    // Root layout shows BannedScreen — just go to main and let it intercept.
-    router.replace('/(main)/feed');
+    // Root layout renders <BannedScreen /> whenever profile.status === 'banned',
+    // replacing <Slot /> entirely. No navigation needed — the store update alone
+    // triggers the correct render. Navigating would race with the re-render and
+    // could land on the identifier screen if the profile fetch is delayed.
     return;
   }
   if (profile.status === 'suspended') {
@@ -120,6 +122,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
       const profile = data.session ? await fetchProfile(data.session.user.id) : null;
+
+      // Zombie-session guard: JWT is valid but profile is unreadable (e.g. RLS
+      // timing issue, or profile row was wiped). Sign out rather than routing
+      // to /(auth)/identifier which would start the new-user onboarding flow.
+      if (data.session && !profile) {
+        await supabase.auth.signOut();
+        set({
+          session: null,
+          profile: null,
+          error: 'Account not found. Please try again.',
+          isLoading: false,
+        });
+        return;
+      }
+
       set({ session: data.session, profile, isLoading: false });
       routeAfterSignIn(profile);
     } catch (err) {
