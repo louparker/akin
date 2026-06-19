@@ -439,6 +439,9 @@ export const en = {
   'settings.section.notifications': 'Notifications',
   'settings.section.blocked': 'Blocked users',
   'settings.placeholder.comingNext': 'Coming next',
+  'settings.language.system': 'System',
+  'settings.language.sv': 'Svenska',
+  'settings.language.en': 'English',
   'settings.signOut.confirm.title': 'Sign out?',
   'settings.signOut.confirm.body':
     'You can sign back in any time with the same email. Your posts and identifier stay put.',

@@ -15,9 +15,12 @@ import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
+import { SegmentedRow } from '@/components/composed/SegmentedRow';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useLogout } from '@/features/auth/api/useLogout';
 import { useIsModerator } from '@/features/moderation/api/useIsModerator';
+import { useLanguagePreference } from '@/features/locale/api/useLanguagePreference';
+import type { LocalePreference } from '@/features/locale/store/useLocaleStore';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -32,7 +35,6 @@ interface PendingSection {
 }
 
 const PENDING_SECTIONS: PendingSection[] = [
-  { titleKey: 'settings.section.language' },
   { titleKey: 'settings.section.appearance' },
   { titleKey: 'settings.section.notifications' },
   { titleKey: 'settings.section.blocked' },
@@ -44,8 +46,15 @@ export default function SettingsScreen() {
   const session = useAuthStore((s) => s.session);
   const { logout } = useLogout();
   const { data: isMod } = useIsModerator();
+  const { preference: languagePref, setPreference: setLanguagePref } = useLanguagePreference();
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
+
+  const languageOptions: { value: LocalePreference; label: string }[] = [
+    { value: 'system', label: t('settings.language.system') },
+    { value: 'sv', label: t('settings.language.sv') },
+    { value: 'en', label: t('settings.language.en') },
+  ];
 
   function handleSignOut() {
     Alert.alert(t('settings.signOut.confirm.title'), t('settings.signOut.confirm.body'), [
@@ -103,6 +112,17 @@ export default function SettingsScreen() {
             isLast
           />
         </Section>
+
+        {/* Language ────────────────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.section.language').toUpperCase()}</Text>
+          <SegmentedRow<LocalePreference>
+            testID="settings-language"
+            options={languageOptions}
+            value={languagePref}
+            onChange={(v) => void setLanguagePref(v)}
+          />
+        </View>
 
         {/* Moderation — visible only to moderators ─────────────────────────── */}
         {isMod ? (

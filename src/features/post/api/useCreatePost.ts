@@ -3,6 +3,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { track } from '@/lib/analytics';
+import { getActiveLocale } from '@/lib/i18n';
 import type { Enums } from '@/types/database';
 
 // CRITICAL-PATH: posts — content filter + active-limit triggers raise SQLSTATEs we surface here.
@@ -73,6 +74,7 @@ export function useCreatePost(): UseMutationResult<
           category,
           author_id: authedSession.user.id,
           author_identifier: authedProfile.anonymous_identifier,
+          language: getActiveLocale(),
         })
         .select('id')
         .single();

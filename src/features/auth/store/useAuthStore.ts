@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { useLocaleStore } from '@/features/locale/store/useLocaleStore';
 import type { Database } from '@/types/database';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'] & {
@@ -55,6 +56,32 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
 
   if (error ?? !data) return null;
   return data;
+}
+
+/**
+ * On first auth resolve after install (or after a `Clear Data` wipe),
+ * the local locale store still holds its default 'system' value. If the
+ * profile carries an explicit language ('sv' or 'en') from a previous
+ * session on another device, honour it so the user doesn't get bounced
+ * back to device locale on every fresh install.
+ *
+ * Only seeds when the local store is still at default — never overrides
+ * an explicit local choice (including 'system' that the user picked).
+ *
+ * Distinguishing "default 'system'" from "user explicitly chose 'system'"
+ * is impossible client-side without an extra flag; v1 accepts the tradeoff
+ * that a user who explicitly picks 'system' on device A and then signs in
+ * on device B may see device B's locale (acceptable: 'system' literally
+ * means "follow this device").
+ */
+function seedLocaleFromProfile(profile: Profile | null) {
+  if (!profile) return;
+  const lang = profile.language;
+  if (lang !== 'sv' && lang !== 'en') return;
+  const localeStore = useLocaleStore.getState();
+  if (localeStore.preference === 'system') {
+    localeStore.setPreference(lang);
+  }
 }
 
 function routeAfterSignIn(profile: Profile | null) {
@@ -340,6 +367,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
 
       set({ session, profile, isLoading: false });
+      seedLocaleFromProfile(profile);
 
       supabase.auth.onAuthStateChange(async (event, newSession) => {
         const currentProfile = newSession ? await fetchProfile(newSession.user.id) : null;
@@ -364,6 +392,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         }
 
         set({ session: newSession, profile: currentProfile });
+        if (event === 'SIGNED_IN') seedLocaleFromProfile(currentProfile);
 
         if (event === 'SIGNED_IN' && newSession) {
           routeAfterSignIn(currentProfile);
