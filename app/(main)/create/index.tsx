@@ -19,6 +19,7 @@ import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { CategoryTag } from '@/components/composed/CategoryTag';
+import { ActiveConversationsPill } from '@/components/composed/ActiveConversationsPill';
 import { LimitActiveSheet } from '@/features/post/components/LimitActiveSheet';
 import { CategoryPickerSheet } from '@/features/post/components/CategoryPickerSheet';
 import { GuidelinesSheet } from '@/features/post/components/GuidelinesSheet';
@@ -195,9 +196,12 @@ export default function CreateScreen() {
 
         {/* Bottom toolbar */}
         <View style={styles.toolbar}>
-          <Text style={styles.postingAs} numberOfLines={1}>
-            {t('create.footer.postingAs')} <Text style={styles.identifier}>{identifier}</Text>
-          </Text>
+          <View style={styles.identityCol}>
+            <Text style={styles.postingAs} numberOfLines={1}>
+              {t('create.footer.postingAs')} <Text style={styles.identifier}>{identifier}</Text>
+            </Text>
+            <ActiveConversationsPill count={activeCount} />
+          </View>
           <View style={styles.counters}>
             <Text style={styles.counter}>
               {t('create.charCount.title', { n: String(title.length) })}
@@ -329,16 +333,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colors.bg.raised,
     paddingHorizontal: 22,
-    paddingVertical: 12,
+    paddingTop: 14,
+    paddingBottom: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border.hairline,
+  },
+  identityCol: {
+    flex: 1,
+    marginRight: 12,
+    gap: 6,
   },
   postingAs: {
     fontFamily: 'Inter',
     fontSize: 12,
     color: colors.fg.tertiary,
-    flex: 1,
-    marginRight: 12,
   },
   identifier: {
     fontFamily: 'JetBrains Mono',

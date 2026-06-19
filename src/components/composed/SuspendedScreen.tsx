@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatDistanceToNow } from 'date-fns';
-import { sv, enUS } from 'date-fns/locale';
 
 import { t } from '@/lib/i18n';
 import { Text } from '@/components/primitives/Text';
@@ -10,15 +8,19 @@ import { Button } from '@/components/primitives/Button';
 import { colors } from '@/theme/colors';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
+const SUPPORT_EMAIL = 'hi@akin.app';
+
 interface Props {
   suspendedUntil: string;
   locale?: 'sv' | 'en';
 }
 
-function formatCountdown(until: string, locale: 'sv' | 'en'): string {
-  const dateFnsLocale = locale === 'sv' ? sv : enUS;
+function formatAbsolute(until: string, locale: 'sv' | 'en'): string {
   try {
-    return formatDistanceToNow(new Date(until), { locale: dateFnsLocale, addSuffix: false });
+    return new Intl.DateTimeFormat(locale === 'sv' ? 'sv-SE' : 'en-US', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    }).format(new Date(until));
   } catch {
     return '';
   }
@@ -28,18 +30,14 @@ export default function SuspendedScreen({
   suspendedUntil,
   locale = 'en',
 }: Props): React.JSX.Element {
-  const [countdown, setCountdown] = useState(() => formatCountdown(suspendedUntil, locale));
+  const absolute = formatAbsolute(suspendedUntil, locale);
 
-  // Refresh countdown every 60 seconds (battery-friendly).
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(formatCountdown(suspendedUntil, locale));
-    }, 60_000);
-    return () => clearInterval(timer);
-  }, [suspendedUntil, locale]);
-
-  function handleLogOut() {
+  function handleBackToLogin() {
     void useAuthStore.getState().signOut();
+  }
+
+  function handleSupportPress() {
+    void Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=Suspended%20account`);
   }
 
   return (
@@ -51,19 +49,34 @@ export default function SuspendedScreen({
         <Text variant="bodyMuted" style={styles.body}>
           {t('suspended.body')}
         </Text>
-        {countdown ? (
-          <Text style={styles.countdown}>{t('suspended.countdown', { time: countdown })}</Text>
+        {absolute ? (
+          <Text testID="suspended-until" style={styles.until}>
+            {t('suspended.until', { date: absolute })}
+          </Text>
         ) : null}
+        <View style={styles.contactBlock}>
+          <Text variant="bodyMuted" style={styles.contactLabel}>
+            {t('suspended.contact')}
+          </Text>
+          <Pressable
+            onPress={handleSupportPress}
+            accessibilityRole="link"
+            accessibilityLabel={`${t('suspended.contact')} ${SUPPORT_EMAIL}`}
+            testID="suspended-support-email"
+          >
+            <Text style={styles.contactEmail}>{SUPPORT_EMAIL}</Text>
+          </Pressable>
+        </View>
         <View style={styles.buttonWrapper}>
           <Button
             kind="secondary"
             size="lg"
             full
-            onPress={handleLogOut}
-            accessibilityLabel={t('suspended.logout')}
+            onPress={handleBackToLogin}
+            accessibilityLabel={t('suspended.backToLogin')}
             accessibilityRole="button"
           >
-            {t('suspended.logout')}
+            {t('suspended.backToLogin')}
           </Button>
         </View>
       </View>
@@ -89,15 +102,30 @@ const styles = StyleSheet.create({
   },
   body: {
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
     lineHeight: 22,
   },
-  countdown: {
+  until: {
     fontFamily: 'JetBrains Mono',
     fontSize: 13,
     color: colors.fg.tertiary,
-    marginBottom: 40,
+    marginBottom: 32,
     textAlign: 'center',
+  },
+  contactBlock: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 40,
+  },
+  contactLabel: {
+    textAlign: 'center',
+    color: colors.fg.tertiary,
+  },
+  contactEmail: {
+    fontFamily: 'JetBrains Mono',
+    fontSize: 14,
+    color: colors.brand.primary,
+    textDecorationLine: 'underline',
   },
   buttonWrapper: {
     width: '100%',

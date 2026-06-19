@@ -12,7 +12,6 @@ export const en = {
   'nav.tab.write': 'Write',
   'nav.tab.you': 'You',
   'nav.tab.settings': 'Settings',
-  'nav.tab.write.badge.a11y': 'Write, {{n}} of 3 conversations active',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'A quieter place\nto talk about\ndating.',
@@ -207,6 +206,9 @@ export const en = {
   'create.body.placeholder':
     'Tell us more. The people who join this conversation will see everything you write here.',
   'create.footer.postingAs': 'Posting as',
+  'create.footer.activeConversations.label': 'active in {{n}} of 3 conversations',
+  'create.footer.activeConversations.a11y.atLimit':
+    "You're in 3 active conversations, the maximum. Wait for one to fill up before starting a new one.",
   'create.footer.afterPost':
     'Three other people can join this conversation. After that it stays open for the four of you.',
   'create.charCount.title': 'Title {{n}} / 150',
@@ -275,6 +277,7 @@ export const en = {
   'post.menu.block': 'Block user',
   'post.menu.removeParticipant': 'Remove someone from this conversation',
   'comment.menu.report': 'Report comment',
+  'comment.menu.reportPerson': 'Report this person',
   'comment.action.edit': 'Edit',
   'comment.action.delete': 'Delete',
   'comment.action.block': 'Block user',
@@ -312,6 +315,7 @@ export const en = {
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Report this comment',
   'report.title.post': 'Report this post',
+  'report.title.user': 'Report this person',
   'report.body': "A real person reads every report. We don't auto-action. Pick the closest reason.",
   'report.reason.harassment': 'Harassment or targeting',
   'report.reason.identifying': 'Identifying someone',
@@ -378,10 +382,12 @@ export const en = {
 
   // ── Suspended screen ─────────────────────────────────────────────────────────
   'suspended.title': 'Your account is suspended.',
-  'suspended.body': "You can read posts but can't post or comment until the suspension ends.",
-  'suspended.countdown': 'Suspended for {{time}} more.',
+  'suspended.body':
+    "You can't use Akin during the suspension. We'll restore full access automatically when it lifts.",
+  'suspended.until': 'Until {{date}}',
+  'suspended.contact': 'Questions? Email us at',
   'suspended.lifted': 'Your suspension has been lifted.',
-  'suspended.logout': 'Log out',
+  'suspended.backToLogin': 'Back to login',
 
   // ── Account deletion ─────────────────────────────────────────────────────────
   'auth.delete.title': 'Delete your account',

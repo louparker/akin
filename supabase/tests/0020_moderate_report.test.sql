@@ -8,6 +8,12 @@ SELECT plan(14);
 
 -- ── Helpers ──────────────────────────────────────────────────────────────────
 
+-- Ensure deterministic start: clear any pre-existing moderator row for alice
+-- (e.g. seeded during manual Phase 7 testing). Runs as superuser, before any
+-- SET LOCAL role change — RLS does not apply.
+DELETE FROM public.user_roles
+ WHERE user_id = '00000000-0000-0000-0000-000000000001';
+
 -- Seed a minimal open report against seed post f01 (id: ...000f01).
 INSERT INTO public.reports (id, reporter_id, target_type, target_id, reason, status)
 VALUES (
@@ -35,9 +41,14 @@ SELECT throws_ok(
 );
 
 -- ── Elevate caller to moderator ───────────────────────────────────────────────
+-- RLS denies INSERT into user_roles for the authenticated role, so flip back
+-- to the session role (superuser) for the write, then return to authenticated.
+RESET role;
 INSERT INTO public.user_roles (user_id, role)
 VALUES ('00000000-0000-0000-0000-000000000001', 'moderator')
 ON CONFLICT DO NOTHING;
+SET LOCAL role TO authenticated;
+SET LOCAL "request.jwt.claims" TO '{"sub":"00000000-0000-0000-0000-000000000001"}';
 
 -- ── Test 2: empty reason is rejected ─────────────────────────────────────────
 SELECT throws_ok(
@@ -142,8 +153,13 @@ SELECT lives_ok(
   'suspend succeeds'
 );
 
+-- The author's profile is now 'suspended' — the public-read RLS policy
+-- (USING status = 'active') no longer matches, and the authenticated caller
+-- (alice = 001) is not the row owner. Bypass RLS for the verification queries.
+RESET role;
+
 SELECT is(
-  (SELECT status FROM public.profiles
+  (SELECT status::text FROM public.profiles
     WHERE user_id = (SELECT author_id FROM public.posts WHERE id = '00000000-0000-0000-0000-000000000f01')),
   'suspended',
   'profile status is suspended after suspend action'
@@ -154,6 +170,10 @@ SELECT ok(
     WHERE user_id = (SELECT author_id FROM public.posts WHERE id = '00000000-0000-0000-0000-000000000f01')),
   'suspended_until is in the future'
 );
+
+-- Restore authenticated/moderator context for the remaining tests.
+SET LOCAL role TO authenticated;
+SET LOCAL "request.jwt.claims" TO '{"sub":"00000000-0000-0000-0000-000000000001"}';
 
 -- ── Seed a fourth report for ban test (against a comment) ────────────────────
 INSERT INTO public.reports (id, reporter_id, target_type, target_id, reason, status)
@@ -176,11 +196,18 @@ SELECT lives_ok(
   'ban succeeds'
 );
 
+-- Same RLS reasoning as Test 7 — eve is now banned, public-read no longer matches.
+RESET role;
+
 SELECT is(
-  (SELECT status FROM public.profiles WHERE user_id = '00000000-0000-0000-0000-000000000005'),
+  (SELECT status::text FROM public.profiles WHERE user_id = '00000000-0000-0000-0000-000000000005'),
   'banned',
   'profile status is banned after ban action'
 );
+
+-- Restore authenticated/moderator context for Test 9.
+SET LOCAL role TO authenticated;
+SET LOCAL "request.jwt.claims" TO '{"sub":"00000000-0000-0000-0000-000000000001"}';
 
 -- ── Test 9: report not found raises P0404 ────────────────────────────────────
 SELECT throws_ok(

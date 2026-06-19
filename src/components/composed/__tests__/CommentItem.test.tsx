@@ -73,6 +73,7 @@ const defaultProps = {
   currentUserId: 'user-99',
   isOpComment: false,
   onReport: jest.fn(),
+  onReportPerson: jest.fn(),
   onBlock: jest.fn(),
 };
 
@@ -296,6 +297,49 @@ describe('CommentItem', () => {
       fireEvent.press(screen.getByText('Report comment'));
 
       expect(onReport).toHaveBeenCalledWith('comment-1');
+    });
+
+    it('renders the "Report this person" entry on a non-own comment', async () => {
+      render(<CommentItem comment={aComment({ author_id: 'user-other' })} {...defaultProps} />, {
+        wrapper: makeWrapper(),
+      });
+
+      fireEvent.press(screen.getByTestId('comment-menu-btn'));
+      await waitFor(() => screen.getByTestId('comment-menu-report-person'));
+      expect(screen.getByText('Report this person')).toBeOnTheScreen();
+    });
+
+    it('calls onReportPerson with the comment author id when pressed', async () => {
+      const onReportPerson = jest.fn();
+      render(
+        <CommentItem
+          comment={aComment({ author_id: 'user-other' })}
+          {...defaultProps}
+          onReportPerson={onReportPerson}
+        />,
+        { wrapper: makeWrapper() },
+      );
+
+      fireEvent.press(screen.getByTestId('comment-menu-btn'));
+      await waitFor(() => screen.getByTestId('comment-menu-report-person'));
+      fireEvent.press(screen.getByTestId('comment-menu-report-person'));
+
+      expect(onReportPerson).toHaveBeenCalledWith('user-other');
+    });
+
+    it('does not render "Report this person" on the user\'s own comment', async () => {
+      render(
+        <CommentItem
+          comment={aComment({ author_id: 'user-99' })} // == currentUserId
+          {...defaultProps}
+        />,
+        { wrapper: makeWrapper() },
+      );
+
+      fireEvent.press(screen.getByTestId('comment-menu-btn'));
+      // Own comment shows Edit/Delete, not Report/Block/Report-this-person.
+      await waitFor(() => screen.getByText('Edit'));
+      expect(screen.queryByTestId('comment-menu-report-person')).toBeNull();
     });
   });
 });

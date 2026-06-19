@@ -11,7 +11,6 @@ import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
-import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { IconSettings } from '@/components/composed/icons/IconSettings';
 
 // Custom tab button — replaces React Navigation's default PlatformPressable.
@@ -118,12 +117,10 @@ function TabItem({
   id,
   focused,
   label,
-  badge,
 }: {
   id: 'read' | 'write' | 'you' | 'settings';
   focused: boolean;
   label: string;
-  badge?: number;
 }) {
   return (
     <View style={tabStyles.item}>
@@ -132,11 +129,6 @@ function TabItem({
         {id === 'write' && <IconPencil active={focused} />}
         {id === 'you' && <IconUser active={focused} />}
         {id === 'settings' && <IconSettings active={focused} />}
-        {badge !== undefined && badge > 0 ? (
-          <View style={[tabStyles.badge, badge >= 3 && tabStyles.badgeAtLimit]}>
-            <Text style={tabStyles.badgeText}>{String(badge)}</Text>
-          </View>
-        ) : null}
       </View>
       <TabLabel label={label} focused={focused} />
     </View>
@@ -146,7 +138,6 @@ function TabItem({
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 20);
-  const activeCount = useAuthStore((s) => s.profile?.active_post_count ?? 0);
 
   return (
     <Tabs
@@ -178,14 +169,11 @@ export default function MainLayout() {
         name="create/index"
         options={{
           title: t('nav.tab.write'),
-          tabBarAccessibilityLabel:
-            activeCount > 0
-              ? t('nav.tab.write.badge.a11y', { n: String(activeCount) })
-              : t('nav.tab.write'),
+          tabBarAccessibilityLabel: t('nav.tab.write'),
           tabBarButtonTestID: 'tab-write',
           tabBarButton: TabButton,
           tabBarIcon: ({ focused }) => (
-            <TabItem id="write" focused={focused} label={t('nav.tab.write')} badge={activeCount} />
+            <TabItem id="write" focused={focused} label={t('nav.tab.write')} />
           ),
         }}
       />
@@ -240,28 +228,6 @@ const tabStyles = StyleSheet.create({
   },
   iconWrapper: {
     position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -7,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.brand.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeAtLimit: {
-    backgroundColor: colors.semantic.danger,
-  },
-  badgeText: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.fg.onAccent,
-    lineHeight: 14,
   },
   labelBase: {
     fontFamily: 'Inter',

@@ -31,6 +31,7 @@ export interface CommentItemProps {
   isOpComment: boolean;
   currentUserId: string;
   onReport: (commentId: string) => void;
+  onReportPerson: (authorId: string) => void;
   onBlock: (authorId: string) => void;
 }
 
@@ -40,6 +41,7 @@ export const CommentItem = memo(function CommentItem({
   isOpComment,
   currentUserId,
   onReport,
+  onReportPerson,
   onBlock,
 }: CommentItemProps) {
   const [showMenu, setShowMenu] = useState(false);
@@ -111,6 +113,11 @@ export const CommentItem = memo(function CommentItem({
   function handleReportPress() {
     setShowMenu(false);
     onReport(comment.id);
+  }
+
+  function handleReportPersonPress() {
+    setShowMenu(false);
+    onReportPerson(comment.author_id);
   }
 
   function handleBlockPress() {
@@ -262,6 +269,15 @@ export const CommentItem = memo(function CommentItem({
                   accessibilityRole="button"
                 >
                   <Text style={styles.sheetItemText}>{t('comment.menu.report')}</Text>
+                </Pressable>
+                <View style={styles.divider} />
+                <Pressable
+                  style={styles.sheetItem}
+                  onPress={handleReportPersonPress}
+                  accessibilityRole="button"
+                  testID="comment-menu-report-person"
+                >
+                  <Text style={styles.sheetItemText}>{t('comment.menu.reportPerson')}</Text>
                 </Pressable>
                 <View style={styles.divider} />
                 <Pressable

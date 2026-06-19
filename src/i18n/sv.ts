@@ -14,7 +14,6 @@ export const sv: TranslationDict = {
   'nav.tab.write': 'Skriv',
   'nav.tab.you': 'Du',
   'nav.tab.settings': 'Inställningar',
-  'nav.tab.write.badge.a11y': 'Skriv, {{n}} av 3 konversationer aktiva',
 
   // ── Auth — Welcome ───────────────────────────────────────────────────────────
   'auth.welcome.headline': 'En lugnare plats\natt prata om\ndejting.',
@@ -210,6 +209,9 @@ export const sv: TranslationDict = {
   'create.body.placeholder':
     'Berätta mer. De som går med i konversationen ser allt du skriver här.',
   'create.footer.postingAs': 'Postar som',
+  'create.footer.activeConversations.label': 'aktiv i {{n}} av 3 konversationer',
+  'create.footer.activeConversations.a11y.atLimit':
+    'Du är med i 3 aktiva konversationer, det maximala antalet. Vänta tills en blir full innan du startar en ny.',
   'create.footer.afterPost':
     'Tre andra kan gå med i konversationen. Sedan är den öppen bara för er fyra.',
   'create.charCount.title': 'Titel {{n}} / 150',
@@ -278,6 +280,7 @@ export const sv: TranslationDict = {
   'post.menu.block': 'Blockera användaren',
   'post.menu.removeParticipant': 'Ta bort någon från samtalet',
   'comment.menu.report': 'Rapportera kommentar',
+  'comment.menu.reportPerson': 'Rapportera personen',
   'comment.action.edit': 'Redigera',
   'comment.action.delete': 'Radera',
   'comment.action.block': 'Blockera användare',
@@ -314,6 +317,7 @@ export const sv: TranslationDict = {
   // ── Report Sheet ─────────────────────────────────────────────────────────────
   'report.title.comment': 'Rapportera den här kommentaren',
   'report.title.post': 'Rapportera det här inlägget',
+  'report.title.user': 'Rapportera personen',
   'report.body':
     'En riktig person läser varje rapport. Vi agerar inte automatiskt. Välj det närmaste skälet.',
   'report.reason.harassment': 'Trakasserier eller utpekande',
@@ -381,11 +385,12 @@ export const sv: TranslationDict = {
 
   // ── Suspended screen ─────────────────────────────────────────────────────────
   'suspended.title': 'Ditt konto är tillfälligt avstängt.',
+  'suspended.until': 'Till {{date}}',
+  'suspended.contact': 'Frågor? Mejla oss på',
+  'suspended.backToLogin': 'Tillbaka till inloggning',
   'suspended.body':
-    'Du kan läsa inlägg men inte posta eller kommentera förrän avstängningen upphör.',
-  'suspended.countdown': 'Avstängt i {{time}} till.',
+    'Du kan inte använda Akin under avstängningen. Vi återställer åtkomsten automatiskt när den upphör.',
   'suspended.lifted': 'Din avstängning har hävts.',
-  'suspended.logout': 'Logga ut',
 
   // ── Account deletion ─────────────────────────────────────────────────────────
   'auth.delete.title': 'Radera ditt konto',

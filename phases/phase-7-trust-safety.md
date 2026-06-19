@@ -12,14 +12,14 @@
 
 ## Phase deliverables — sign-off checklist
 
-- [ ] Report a post or comment from the action sheet.
-- [ ] Block a user from the action sheet; their content disappears.
-- [ ] Moderator dashboard with queue, detail view, action buttons.
-- [ ] Audit log written for every moderator action.
-- [ ] CSAM zero-tolerance path: hide + ban + ECPAT/NCMEC report.
-- [ ] Keyword filter user-visible message tested with real attempts.
-- [ ] Strikes lifecycle (warn / suspend / ban) functional.
-- [ ] Maestro E2E: report → moderator dashboard → action.
+- [x] Report a post or comment from the action sheet. (post + comment + user targets all wired)
+- [x] Block a user from the action sheet; their content disappears.
+- [x] Moderator dashboard with queue, detail view, action buttons.
+- [x] Audit log written for every moderator action.
+- [x] CSAM zero-tolerance path: hide + ban + ECPAT/NCMEC report. (audit-flag-now, export-later per ADR-019)
+- [x] Keyword filter user-visible message tested with real attempts.
+- [x] Strikes lifecycle (warn / suspend / ban) functional. (auto-escalation in migration 0023)
+- [x] Maestro E2E: report → moderator dashboard → action.
 
 ---
 
