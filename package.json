@@ -18,8 +18,10 @@
     "test:e2e:android": "maestro test --device emulator-5554 e2e/",
     "db:up": "supabase start",
     "db:down": "supabase stop",
-    "db:reset": "supabase db reset",
+    "db:reset": "bash scripts/db-reset-confirm.sh",
+    "db:reset:force": "supabase db reset",
     "db:test": "supabase test db",
+    "migrate:lint": "node scripts/migrate-lint.js",
     "db:gen-types": "supabase gen types typescript --local > src/types/database.ts",
     "db:push": "supabase db push",
     "prepare": "husky"

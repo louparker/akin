@@ -37,6 +37,15 @@ export interface AuthActions {
 
 type AuthStore = AuthState & AuthActions;
 
+/**
+ * The single source of truth for "is this suspension still in effect."
+ * Must match the boot guard in app/_layout.tsx — see Profile.status / .suspended_until.
+ */
+function isSuspensionActive(suspendedUntil: string | null): boolean {
+  if (!suspendedUntil) return false;
+  return new Date(suspendedUntil) > new Date();
+}
+
 async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
@@ -60,8 +69,15 @@ function routeAfterSignIn(profile: Profile | null) {
     // could land on the identifier screen if the profile fetch is delayed.
     return;
   }
-  if (profile.status === 'suspended') {
-    router.replace('/(main)/suspended');
+  if (profile.status === 'suspended' && isSuspensionActive(profile.suspended_until)) {
+    // CRITICAL-PATH: same pattern as banned above — the root layout in
+    // app/_layout.tsx swaps <Slot /> for <SuspendedScreen /> when the profile
+    // is suspended AND the timestamp is still in the future. router.replace
+    // would race with that swap and bounce the user to /(auth). Just return.
+    //
+    // If the timestamp has lapsed, fall through so the user routes normally
+    // (to feed/onboarding). profiles.status will remain 'suspended' on the row
+    // until a cleanup job clears it — see follow-up pg_cron task.
     return;
   }
   if (!profile.onboarded_at) {

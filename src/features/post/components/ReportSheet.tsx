@@ -58,7 +58,11 @@ export function ReportSheet({ visible, targetId, targetType, onClose }: ReportSh
   }, [visible]);
 
   const titleKey: TranslationKey =
-    targetType === 'post' ? 'report.title.post' : 'report.title.comment';
+    targetType === 'post'
+      ? 'report.title.post'
+      : targetType === 'user'
+        ? 'report.title.user'
+        : 'report.title.comment';
 
   // eslint-disable-next-line security/detect-object-injection -- selectedIdx is a controlled state index bounded to REASON_OPTIONS.length
   const selectedOption = selectedIdx !== null ? REASON_OPTIONS[selectedIdx] : null;

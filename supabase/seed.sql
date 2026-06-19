@@ -1,7 +1,8 @@
 -- supabase/seed.sql
 -- Local development seed data.
 -- Run automatically on: supabase db reset
--- Provides: 10 users, 50 posts (all full), ~150 comments, spice votes, blocks.
+-- Provides: 10 users, 50 posts (all full), ~150 comments, spice votes, blocks,
+--           3 open moderation reports (so alice's queue starts non-empty).
 -- All UUIDs are deterministic so tests can reference them by ID.
 --
 -- IMPORTANT: this file uses service-role-level operations (direct inserts
@@ -348,6 +349,40 @@ VALUES (
   '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000005'
 )
+ON CONFLICT DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- Pre-filed open reports — let Phase 7 moderation testing skip the "file a
+-- report first" prerequisite. Each report sits in alice's queue after
+-- db:reset, so she can immediately exercise Hide / Warn / Suspend / Ban /
+-- CSAM without juggling two test users. Filed against f01/f02 which are
+-- existing post fixtures.
+-- ---------------------------------------------------------------------------
+
+INSERT INTO public.reports (id, reporter_id, target_type, target_id, reason, status)
+VALUES
+  -- Carol reports bob's "This conversation is full" (f01) for harassment.
+  ('00000000-0000-0000-0000-0000000000a1',
+   '00000000-0000-0000-0000-000000000003', -- carol
+   'post',
+   '00000000-0000-0000-0000-000000000f01',
+   'harassment',
+   'open'),
+  -- Bob reports one of Iris's not-yet-full posts (f02) for spam.
+  ('00000000-0000-0000-0000-0000000000a2',
+   '00000000-0000-0000-0000-000000000002', -- bob
+   'post',
+   '00000000-0000-0000-0000-000000000f02',
+   'spam',
+   'open'),
+  -- Dave reports the same f01 post for hate — gives alice a same-target
+  -- duplicate to test the queue surfacing repeated reports.
+  ('00000000-0000-0000-0000-0000000000a3',
+   '00000000-0000-0000-0000-000000000004', -- dave
+   'post',
+   '00000000-0000-0000-0000-000000000f01',
+   'hate',
+   'open')
 ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------------------

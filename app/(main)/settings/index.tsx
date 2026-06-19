@@ -110,7 +110,7 @@ export default function SettingsScreen() {
             <Row
               label={t('settings.mod.queue')}
               chevron
-              onPress={() => router.push('/(moderator)/queue' as Parameters<typeof router.push>[0])}
+              onPress={() => router.push('/(moderator)/queue')}
               isLast
             />
           </Section>

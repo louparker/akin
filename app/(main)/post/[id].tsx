@@ -22,6 +22,7 @@ import { TopBar } from '@/components/composed/TopBar';
 import { CommentItem } from '@/components/composed/CommentItem';
 import { IdentChip } from '@/components/composed/IdentChip';
 import { CapacityDots } from '@/components/composed/CapacityDots';
+import { ActiveConversationsPill } from '@/components/composed/ActiveConversationsPill';
 import { SpiceFlames } from '@/components/composed/SpiceFlames';
 import { CategoryTag } from '@/components/composed/CategoryTag';
 import { Skeleton } from '@/components/composed/Skeleton';
@@ -56,9 +57,10 @@ export default function PostDetailScreen() {
   const [showLimitSheet, setShowLimitSheet] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRemoveSheet, setShowRemoveSheet] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ id: string; type: 'post' | 'comment' } | null>(
-    null,
-  );
+  const [reportTarget, setReportTarget] = useState<{
+    id: string;
+    type: 'post' | 'comment' | 'user';
+  } | null>(null);
 
   const inputRef = useRef<TextInput>(null);
 
@@ -159,6 +161,10 @@ export default function PostDetailScreen() {
 
   function handleReportComment(commentId: string) {
     setReportTarget({ id: commentId, type: 'comment' });
+  }
+
+  function handleReportPerson(authorId: string) {
+    setReportTarget({ id: authorId, type: 'user' });
   }
 
   const categoryLabel = post ? t(`category.${post.category}`) : '';
@@ -265,7 +271,10 @@ export default function PostDetailScreen() {
           <Text style={styles.postBody}>{post.body}</Text>
 
           <View style={styles.authorRow}>
-            <IdentChip name={post.author_identifier} you={post.author_id === currentUserId} />
+            <View style={styles.authorLeftCol}>
+              <IdentChip name={post.author_identifier} you={post.author_id === currentUserId} />
+              <ActiveConversationsPill count={profile?.active_post_count ?? 0} />
+            </View>
             <View style={styles.capacityContainer}>
               <CapacityDots filled={post.participant_count} total={4} size={7} />
               <Text style={styles.capacityText}>{capacityText}</Text>
@@ -328,6 +337,7 @@ export default function PostDetailScreen() {
             isOpComment={comment.author_id === post.author_id}
             currentUserId={currentUserId}
             onReport={handleReportComment}
+            onReportPerson={handleReportPerson}
             onBlock={(authorId) => blockUser({ blocked_id: authorId, postId: post.id })}
           />
         ))}
@@ -581,6 +591,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 4,
+  },
+  authorLeftCol: {
+    gap: 6,
+    flex: 1,
+    marginRight: 12,
   },
   capacityContainer: {
     flexDirection: 'row',

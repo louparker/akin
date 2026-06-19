@@ -29,6 +29,63 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-019 — Phase 7 sign-off: trust & safety choices
+
+Date: 2026-06-19
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 7 delivered reporting, blocking, the keyword filter UX, the moderator dashboard (queue + detail + audit log viewer), the strike → suspend → ban lifecycle, the CSAM zero-tolerance path, and the Maestro E2E flows. Closing the phase required documenting the implementation choices, the deferrals, and the side-quest infrastructure that landed during closure but wasn't in the original brief.
+
+### Implementation choices
+
+1. **`moderate_report()` as a SECURITY DEFINER PL/pgSQL function.** All moderator actions (dismiss, hide, warn, suspend, ban, csam) run through a single function ([0020_moderate_report.sql](supabase/migrations/0020_moderate_report.sql)) that combines the consequence + the report status update + the audit-log write in one transaction. The function self-gates on `is_moderator()` and rejects empty reasons. There is no other code path that mutates reports or writes mod-action audit rows — making the audit log structurally non-bypassable.
+
+2. **CSAM: audit-flag-now, export-later.** The CSAM branch performs the ban + content hide + audit row with `metadata->>'csam' = 'true'` so a future ECPAT/NCMEC export job can find these rows by querying the audit log. The dedicated `report-csam` Edge Function described in Task 7.6 implementation notes is **deferred** — for v1 the founder forwards manually based on the audit row. Engagement with ECPAT Sweden / NCMEC is also deferred until pre-launch (Phase 8.9 checklist).
+
+3. **Strike auto-escalation as a separate migration (0023).** The original 0020 only incremented `strike_count` for `warn`; the Task 7.7 acceptance criteria (warn at strike 1 → suspend, warn at strike 2 → ban) was missed and caught during manual verification. Migration [0023_escalate_warn_action.sql](supabase/migrations/0023_escalate_warn_action.sql) replaces the function with the escalation logic and uses `SELECT strike_count + 1 ... FOR UPDATE` to avoid races between concurrent moderators. Audit labels distinguish manual from system-escalated: `user.warned` / `user.suspended.auto` / `user.banned.auto`, with `metadata.escalated_from = 'warn'` on the auto paths.
+
+4. **Expired-suspension cleanup via pg_cron (0022).** Without a cleanup job, `profiles.status` stayed `'suspended'` forever once `suspended_until` lapsed. The public-read RLS policy `USING (status = 'active')` would have hidden the user's identifier from feed reads even after their lockout lifted. Migration [0022_clear_expired_suspensions_pgcron.sql](supabase/migrations/0022_clear_expired_suspensions_pgcron.sql) backfills the inconsistent rows and schedules an hourly cron. The client-side helpers (boot guard in `app/_layout.tsx` and `isSuspensionActive()` in `useAuthStore.ts`) handle the user experience in real time — this job is purely for DB consistency.
+
+5. **Routing parity for banned and suspended.** The root layout in `app/_layout.tsx` swaps `<Slot />` for the relevant lockout screen based on profile status. `routeAfterSignIn()` mirrors the boot guard: returns early for `banned` (always) and for `suspended` _only while the timestamp is still in the future_. An expired suspension routes the user normally. This pair was the source of two bugs caught during Phase 7: (a) the original suspended path did a `router.replace` that raced with the swap and bounced the user to `/(auth)`; (b) the over-corrected fix stranded users whose suspension had lapsed. The current symmetry is pinned by the regression test suite in `useAuthStore.test.ts`.
+
+### Deferrals
+
+| Item                                                                  | Why deferred                                                 | Where it surfaces                               |
+| --------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------- |
+| Resend email templates for suspend/ban (Task 7.6 implementation note) | Not in the deliverables checklist; Resend not wired yet.     | Phase 8 hardening. Mod still has the audit log. |
+| `report-csam` Edge Function (Task 7.6)                                | Spec explicitly defers it for v1; founder forwards manually. | Pre-launch (Phase 8.9) ECPAT engagement.        |
+| ECPAT Sweden / NCMEC formal engagement                                | Spec says "before public launch," not before phase sign-off. | Phase 8.9 pre-launch checklist.                 |
+| Mod action button labelling (e.g. "Warn (u, strike 2→3)")             | Not in spec; small UX polish.                                | Phase 8 polish.                                 |
+| Email-based notifications for any moderation event                    | Not in spec.                                                 | Post-launch (v1.1).                             |
+
+### Side-quest infrastructure landed during closure
+
+These weren't in the Phase 7 brief but address real risks that surfaced during manual testing:
+
+- **`pnpm db:reset` guardrail** ([scripts/db-reset-confirm.sh](scripts/db-reset-confirm.sh)) — typed-confirmation wrapper. `db:reset:force` is the CI/scripted escape hatch. Driven by an actual incident where `db:reset` was recommended as "easiest" and wiped a session's manual test state. CLAUDE.md §6 now explicitly forbids labelling destructive db commands as the convenient default.
+- **Migration lint** ([scripts/migrate-lint.js](scripts/migrate-lint.js)) — wired into `pnpm migrate:lint` and the CI workflow. Blocks PRs that introduce `TRUNCATE`, unguarded `DELETE FROM`, `DROP TABLE` outside `NNNN_drop_*.sql`, and warns on `ALTER TABLE … DROP COLUMN`.
+- **`ActiveConversationsPill`** — replaces the misleading red-dot tab badge with an always-visible capsule that shows "active in N of 3 conversations." Avoids the "looks like an unread badge" ambiguity that came up during testing. Rendered on the Write composer and on post detail.
+- **`SuspendedScreen` redesign** — absolute datetime in user locale, support email, full-lockout copy that matches the implementation (the old "you can still read posts" copy was wrong). Built alongside the routing-race fix.
+- **Open-report seed fixtures** — `seed.sql` now adds 3 pre-filed reports against fixture posts so manual moderation testing starts one click from action.
+
+### Consequences
+
+- The mod surfaces meet App Store guideline 1.2 (UGC moderation): report, block, filter, action, audit. Phase 7 is technically shippable for App Review purposes.
+- The audit log is the only durable record of moderator actions; backups/PITR matter more than for other tables. Worth a note in the Phase 8 ops runbook.
+- The `report-csam` deferral is the single largest "is this acceptable for launch" question. The founder must engage ECPAT before public launch (Phase 8.9 gate). If that engagement reveals integration requirements we haven't designed for, this ADR gets superseded by a follow-up that documents the chosen export mechanism.
+- The strike escalation behaviour is now opaque to moderators in the UI — a "Warn" press at strike 2 silently bans. Worth a Phase 8 polish task to surface the next-step preview on the action button.
+
+### Related work
+
+Migrations: [0020](supabase/migrations/0020_moderate_report.sql), [0022](supabase/migrations/0022_clear_expired_suspensions_pgcron.sql), [0023](supabase/migrations/0023_escalate_warn_action.sql).
+pgTAP: [0020_moderate_report.test.sql](supabase/tests/0020_moderate_report.test.sql), [0023_escalate_warn_action.test.sql](supabase/tests/0023_escalate_warn_action.test.sql).
+Skills referenced: `.claude/skills/moderation/SKILL.md`, `database`, `security`, `i18n`.
+
+---
+
 ## ADR-018 — Fix: age_verified_at not propagated from auth metadata to profile
 
 Date: 2026-05-19

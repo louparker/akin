@@ -268,6 +268,103 @@ describe('useAuthStore', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(auth)/identifier');
     });
+
+    it('does not navigate when the profile is suspended (root layout handles render)', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ status: 'suspended', suspended_until: future }),
+          error: null,
+        }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('suspended@example.com', 'password123');
+      });
+
+      // The root layout swaps <Slot /> for <SuspendedScreen /> based on
+      // profile.status — navigation would race against that swap and bounce.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).not.toHaveBeenCalled();
+    });
+
+    it('routes to feed when suspension has expired (status stale, timestamp in past)', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      const past = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ status: 'suspended', suspended_until: past }),
+          error: null,
+        }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('expired@example.com', 'password123');
+      });
+
+      // The boot guard in app/_layout.tsx treats this as "not suspended" because
+      // suspended_until < now(). routeAfterSignIn MUST match: fall through and
+      // route normally rather than stranding the user with no navigation.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(main)/feed');
+    });
+
+    it('does not navigate when the profile is banned (root layout handles render)', async () => {
+      const session = mockSession();
+
+      mockedSignIn.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+
+      mockedFrom.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile({ status: 'banned' }),
+          error: null,
+        }),
+        update: jest.fn().mockReturnThis(),
+      } as ReturnType<typeof supabase.from>);
+
+      const { result } = renderHook(() => useAuthStore());
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      const { signIn } = result.current;
+
+      await act(async () => {
+        await signIn('banned@example.com', 'password123');
+      });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).not.toHaveBeenCalled();
+    });
   });
 
   describe('requestPasswordReset', () => {

@@ -182,6 +182,7 @@ If the task changed architecture, add an entry to `DECISIONS.md` (use the templa
 - Add a console.log to production code. (Use the logger in `src/lib/logger.ts`, which scrubs PII.)
 - Disable or weaken an RLS policy.
 - Modify the participation-limit triggers without writing pgTAP tests first.
+- Run, recommend, or label as "easiest" any destructive database command. `pnpm db:reset` / `supabase db reset` / `supabase db push --linked` / `TRUNCATE` / `DELETE FROM <table>` without a `WHERE` / migrations containing `DROP TABLE` or `DROP COLUMN` are all destructive. **Name the destruction first** ("this will wipe every locally-signed-up user, post, comment, and report"), then let the user opt in. Never frame a destructive command as the convenient default.
 
 ---
 
