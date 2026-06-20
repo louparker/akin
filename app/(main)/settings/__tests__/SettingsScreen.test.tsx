@@ -1,11 +1,24 @@
-// Settings screen — Language, Appearance, and Blocked sections.
+// Settings screen — Language, Appearance, Blocked, Legal, and Support sections.
 //
 // Asserts each segmented control reflects the current preference and that
-// tapping a segment invokes the correct hook. Hooks are mocked to keep tests
-// focused on screen wiring.
+// tapping a segment invokes the correct hook. Hooks and native modules are
+// mocked to keep tests focused on screen wiring.
 
 import { render, fireEvent } from '@testing-library/react-native';
+import * as ReactNative from 'react-native';
 import SettingsScreen from '../index';
+
+jest.mock('@/lib/appConfig', () => ({
+  legalConfig: {
+    privacyUrl: 'https://ourakin.com/privacy',
+    termsUrl: 'https://ourakin.com/terms',
+    guidelinesUrl: 'https://ourakin.com/guidelines',
+  },
+  supportConfig: { feedbackEmail: 'feedback@ourakin.com' },
+  appVersion: '1.2.3',
+}));
+
+let mockLinkingSpy: jest.SpyInstance;
 
 const mockSetLanguagePref = jest.fn(() => Promise.resolve());
 let mockCurrentLangPref: 'sv' | 'en' | 'system' = 'system';
@@ -65,6 +78,11 @@ beforeEach(() => {
   mockSetThemePref.mockClear();
   mockBlocks = [];
   mockUnblock.mockClear();
+  mockLinkingSpy = jest.spyOn(ReactNative.Linking, 'openURL').mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  mockLinkingSpy.mockRestore();
 });
 
 describe('SettingsScreen — Language section', () => {
@@ -154,5 +172,36 @@ describe('SettingsScreen — Blocked users section', () => {
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent.press(getByTestId('unblock-u2'));
     expect(mockUnblock).toHaveBeenCalledWith('u2');
+  });
+});
+
+describe('SettingsScreen — Legal + Support sections', () => {
+  it('opens the privacy URL when Privacy Policy row is pressed', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-legal-privacy'));
+    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/privacy');
+  });
+
+  it('opens the terms URL when Terms of Service row is pressed', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-legal-terms'));
+    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/terms');
+  });
+
+  it('opens the guidelines URL when Community Guidelines row is pressed', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-legal-guidelines'));
+    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/guidelines');
+  });
+
+  it('opens a mailto link when Send feedback is pressed', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-support-feedback'));
+    expect(mockLinkingSpy).toHaveBeenCalledWith('mailto:feedback@ourakin.com');
+  });
+
+  it('displays the app version string', () => {
+    const { getByText } = render(<SettingsScreen />);
+    expect(getByText('1.2.3')).toBeOnTheScreen();
   });
 });

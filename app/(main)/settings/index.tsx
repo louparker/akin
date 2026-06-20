@@ -8,8 +8,9 @@
 // Legal / Support / Moderator are rendered as "Coming next" placeholders so the
 // shell is recognisable while later sub-tasks land.
 import { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
+import { legalConfig, supportConfig, appVersion } from '@/lib/appConfig';
 
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
@@ -38,11 +39,7 @@ interface PendingSection {
   titleKey: TranslationKey;
 }
 
-const PENDING_SECTIONS: PendingSection[] = [
-  { titleKey: 'settings.section.notifications' },
-  { titleKey: 'settings.legal.title' },
-  { titleKey: 'settings.support.title' },
-];
+const PENDING_SECTIONS: PendingSection[] = [{ titleKey: 'settings.section.notifications' }];
 
 export default function SettingsScreen() {
   const session = useAuthStore((s) => s.session);
@@ -183,12 +180,46 @@ export default function SettingsScreen() {
           </Section>
         ) : null}
 
-        {/* Placeholder sections — landing in subsequent sub-tasks ─────────── */}
+        {/* Placeholder sections — remaining sub-tasks ─────────────────────── */}
         {PENDING_SECTIONS.map((s) => (
           <Section key={s.titleKey} titleKey={s.titleKey}>
             <Row label={t('settings.placeholder.comingNext')} muted isLast />
           </Section>
         ))}
+
+        {/* Legal ───────────────────────────────────────────────────────────── */}
+        <Section titleKey="settings.legal.title">
+          <Row
+            testID="settings-legal-privacy"
+            label={t('settings.legal.privacy')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.privacyUrl)}
+          />
+          <Row
+            testID="settings-legal-terms"
+            label={t('settings.legal.terms')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.termsUrl)}
+          />
+          <Row
+            testID="settings-legal-guidelines"
+            label={t('settings.legal.guidelines')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.guidelinesUrl)}
+            isLast
+          />
+        </Section>
+
+        {/* Support ─────────────────────────────────────────────────────────── */}
+        <Section titleKey="settings.support.title">
+          <Row
+            testID="settings-support-feedback"
+            label={t('settings.support.feedback')}
+            chevron
+            onPress={() => void Linking.openURL(`mailto:${supportConfig.feedbackEmail}`)}
+          />
+          <Row label={t('settings.support.version')} value={appVersion} isLast />
+        </Section>
 
         {/* Sign Out ────────────────────────────────────────────────────────── */}
         <View style={styles.signOutBlock}>
@@ -229,6 +260,7 @@ interface RowProps {
   isLast?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 function Row({
@@ -240,6 +272,7 @@ function Row({
   isLast,
   onPress,
   accessibilityLabel,
+  testID,
 }: RowProps) {
   const content = (
     <View style={[styles.row, !isLast && styles.rowDivider]}>
@@ -263,6 +296,7 @@ function Row({
 
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
