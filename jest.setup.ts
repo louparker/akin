@@ -15,6 +15,31 @@ jest.mock('react-native/Libraries/Settings/NativeSettingsManager', () => ({
   },
 }));
 
+// AsyncStorage native module isn't available in Jest. Tests that need to
+// inspect persisted values can still re-mock this module locally to capture
+// setItem/getItem calls — this default just keeps the module loadable.
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    default: {
+      setItem: jest.fn((k: string, v: string) => {
+        store.set(k, v);
+        return Promise.resolve();
+      }),
+      getItem: jest.fn((k: string) => Promise.resolve(store.get(k) ?? null)),
+      removeItem: jest.fn((k: string) => {
+        store.delete(k);
+        return Promise.resolve();
+      }),
+      clear: jest.fn(() => {
+        store.clear();
+        return Promise.resolve();
+      }),
+    },
+  };
+});
+
 beforeAll(() =>
   supabaseServer.listen({
     // Warn (not error) on unhandled requests — catches gaps in mocking without

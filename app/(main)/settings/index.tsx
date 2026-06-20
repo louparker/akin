@@ -8,16 +8,24 @@
 // Legal / Support / Moderator are rendered as "Coming next" placeholders so the
 // shell is recognisable while later sub-tasks land.
 import { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
+import { legalConfig, supportConfig, appVersion } from '@/lib/appConfig';
 
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
+import { SegmentedRow } from '@/components/composed/SegmentedRow';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useLogout } from '@/features/auth/api/useLogout';
 import { useIsModerator } from '@/features/moderation/api/useIsModerator';
+import { useLanguagePreference } from '@/features/locale/api/useLanguagePreference';
+import type { LocalePreference } from '@/features/locale/store/useLocaleStore';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import type { ThemePreference } from '@/features/theme/store/useThemeStore';
+import { useMyBlocks } from '@/features/post/api/useMyBlocks';
+import { useUnblock } from '@/features/post/api/useUnblock';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -31,21 +39,31 @@ interface PendingSection {
   titleKey: TranslationKey;
 }
 
-const PENDING_SECTIONS: PendingSection[] = [
-  { titleKey: 'settings.section.language' },
-  { titleKey: 'settings.section.appearance' },
-  { titleKey: 'settings.section.notifications' },
-  { titleKey: 'settings.section.blocked' },
-  { titleKey: 'settings.legal.title' },
-  { titleKey: 'settings.support.title' },
-];
+const PENDING_SECTIONS: PendingSection[] = [{ titleKey: 'settings.section.notifications' }];
 
 export default function SettingsScreen() {
   const session = useAuthStore((s) => s.session);
   const { logout } = useLogout();
   const { data: isMod } = useIsModerator();
+  const { preference: languagePref, setPreference: setLanguagePref } = useLanguagePreference();
+  const themePref = useThemeStore((s) => s.preference);
+  const setThemePref = useThemeStore((s) => s.setPreference);
+  const { data: blocks } = useMyBlocks();
+  const { mutate: unblock } = useUnblock();
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
+
+  const languageOptions: { value: LocalePreference; label: string }[] = [
+    { value: 'system', label: t('settings.language.system') },
+    { value: 'sv', label: t('settings.language.sv') },
+    { value: 'en', label: t('settings.language.en') },
+  ];
+
+  const appearanceOptions: { value: ThemePreference; label: string }[] = [
+    { value: 'system', label: t('settings.appearance.system') },
+    { value: 'light', label: t('settings.appearance.light') },
+    { value: 'dark', label: t('settings.appearance.dark') },
+  ];
 
   function handleSignOut() {
     Alert.alert(t('settings.signOut.confirm.title'), t('settings.signOut.confirm.body'), [
@@ -104,6 +122,52 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        {/* Language ────────────────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.section.language').toUpperCase()}</Text>
+          <SegmentedRow<LocalePreference>
+            testID="settings-language"
+            options={languageOptions}
+            value={languagePref}
+            onChange={(v) => void setLanguagePref(v)}
+          />
+        </View>
+
+        {/* Appearance ──────────────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.section.appearance').toUpperCase()}</Text>
+          <SegmentedRow<ThemePreference>
+            testID="settings-appearance"
+            options={appearanceOptions}
+            value={themePref}
+            onChange={setThemePref}
+          />
+        </View>
+
+        {/* Blocked users ───────────────────────────────────────────────────── */}
+        <Section titleKey="settings.section.blocked">
+          {blocks && blocks.length > 0 ? (
+            blocks.map((block) => (
+              <View key={block.blocked_id} style={[styles.row, styles.rowDivider]}>
+                <Text style={styles.rowLabel}>{block.blocked_identifier}</Text>
+                <Pressable
+                  testID={`unblock-${block.blocked_id}`}
+                  onPress={() => unblock(block.blocked_id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('blocked.unblock')}
+                  hitSlop={8}
+                >
+                  <Text style={styles.unblockText}>{t('blocked.unblock')}</Text>
+                </Pressable>
+              </View>
+            ))
+          ) : (
+            <View style={styles.row}>
+              <Text style={styles.rowLabelMuted}>{t('blocked.empty')}</Text>
+            </View>
+          )}
+        </Section>
+
         {/* Moderation — visible only to moderators ─────────────────────────── */}
         {isMod ? (
           <Section titleKey="settings.section.moderation">
@@ -116,12 +180,46 @@ export default function SettingsScreen() {
           </Section>
         ) : null}
 
-        {/* Placeholder sections — landing in subsequent sub-tasks ─────────── */}
+        {/* Placeholder sections — remaining sub-tasks ─────────────────────── */}
         {PENDING_SECTIONS.map((s) => (
           <Section key={s.titleKey} titleKey={s.titleKey}>
             <Row label={t('settings.placeholder.comingNext')} muted isLast />
           </Section>
         ))}
+
+        {/* Legal ───────────────────────────────────────────────────────────── */}
+        <Section titleKey="settings.legal.title">
+          <Row
+            testID="settings-legal-privacy"
+            label={t('settings.legal.privacy')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.privacyUrl)}
+          />
+          <Row
+            testID="settings-legal-terms"
+            label={t('settings.legal.terms')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.termsUrl)}
+          />
+          <Row
+            testID="settings-legal-guidelines"
+            label={t('settings.legal.guidelines')}
+            chevron
+            onPress={() => void Linking.openURL(legalConfig.guidelinesUrl)}
+            isLast
+          />
+        </Section>
+
+        {/* Support ─────────────────────────────────────────────────────────── */}
+        <Section titleKey="settings.support.title">
+          <Row
+            testID="settings-support-feedback"
+            label={t('settings.support.feedback')}
+            chevron
+            onPress={() => void Linking.openURL(`mailto:${supportConfig.feedbackEmail}`)}
+          />
+          <Row label={t('settings.support.version')} value={appVersion} isLast />
+        </Section>
 
         {/* Sign Out ────────────────────────────────────────────────────────── */}
         <View style={styles.signOutBlock}>
@@ -162,6 +260,7 @@ interface RowProps {
   isLast?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 function Row({
@@ -173,6 +272,7 @@ function Row({
   isLast,
   onPress,
   accessibilityLabel,
+  testID,
 }: RowProps) {
   const content = (
     <View style={[styles.row, !isLast && styles.rowDivider]}>
@@ -196,6 +296,7 @@ function Row({
 
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
@@ -280,6 +381,12 @@ const styles = StyleSheet.create({
     color: colors.fg.tertiary,
     // ›  glyph drops slightly below baseline; nudge up to centre with row label.
     transform: [{ translateY: -1 }],
+  },
+  unblockText: {
+    fontFamily: 'Inter Medium',
+    fontWeight: '500',
+    fontSize: 13,
+    color: colors.semantic.danger,
   },
   signOutBlock: {
     paddingHorizontal: 22,
