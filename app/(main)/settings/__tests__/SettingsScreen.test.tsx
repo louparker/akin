@@ -1,4 +1,4 @@
-// Settings screen — Language + Appearance sections.
+// Settings screen — Language, Appearance, and Blocked sections.
 //
 // Asserts each segmented control reflects the current preference and that
 // tapping a segment invokes the correct hook. Hooks are mocked to keep tests
@@ -13,6 +13,10 @@ let mockCurrentLangPref: 'sv' | 'en' | 'system' = 'system';
 const mockSetThemePref = jest.fn();
 let mockCurrentThemePref: 'system' | 'light' | 'dark' = 'system';
 
+type MockBlock = { blocked_id: string; blocked_identifier: string; created_at: string };
+let mockBlocks: MockBlock[] = [];
+const mockUnblock = jest.fn(() => Promise.resolve());
+
 jest.mock('@/features/locale/api/useLanguagePreference', () => ({
   useLanguagePreference: () => ({
     preference: mockCurrentLangPref,
@@ -25,6 +29,14 @@ jest.mock('@/features/theme/store/useThemeStore', () => ({
   useThemeStore: (
     selector: (s: { preference: string; setPreference: (p: string) => void }) => unknown,
   ) => selector({ preference: mockCurrentThemePref, setPreference: mockSetThemePref }),
+}));
+
+jest.mock('@/features/post/api/useMyBlocks', () => ({
+  useMyBlocks: () => ({ data: mockBlocks, isLoading: false }),
+}));
+
+jest.mock('@/features/post/api/useUnblock', () => ({
+  useUnblock: () => ({ mutate: mockUnblock, isPending: false }),
 }));
 
 jest.mock('@/features/auth/api/useLogout', () => ({
@@ -51,6 +63,8 @@ beforeEach(() => {
   mockSetLanguagePref.mockClear();
   mockCurrentThemePref = 'system';
   mockSetThemePref.mockClear();
+  mockBlocks = [];
+  mockUnblock.mockClear();
 });
 
 describe('SettingsScreen — Language section', () => {
@@ -116,5 +130,29 @@ describe('SettingsScreen — Appearance section', () => {
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent.press(getByTestId('settings-appearance-system'));
     expect(mockSetThemePref).toHaveBeenCalledWith('system');
+  });
+});
+
+describe('SettingsScreen — Blocked users section', () => {
+  it('shows empty state when no users are blocked', () => {
+    const { getByText } = render(<SettingsScreen />);
+    expect(getByText("You haven't blocked anyone.")).toBeOnTheScreen();
+  });
+
+  it('renders each blocked user identifier', () => {
+    mockBlocks = [
+      { blocked_id: 'u2', blocked_identifier: 'BlueFox11', created_at: '2026-01-01' },
+      { blocked_id: 'u3', blocked_identifier: 'GreenOwl22', created_at: '2026-01-02' },
+    ];
+    const { getByText } = render(<SettingsScreen />);
+    expect(getByText('BlueFox11')).toBeOnTheScreen();
+    expect(getByText('GreenOwl22')).toBeOnTheScreen();
+  });
+
+  it('calls unblock with the correct blocked_id when Unblock is pressed', () => {
+    mockBlocks = [{ blocked_id: 'u2', blocked_identifier: 'BlueFox11', created_at: '2026-01-01' }];
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('unblock-u2'));
+    expect(mockUnblock).toHaveBeenCalledWith('u2');
   });
 });

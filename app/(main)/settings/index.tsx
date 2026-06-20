@@ -23,6 +23,8 @@ import { useLanguagePreference } from '@/features/locale/api/useLanguagePreferen
 import type { LocalePreference } from '@/features/locale/store/useLocaleStore';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import type { ThemePreference } from '@/features/theme/store/useThemeStore';
+import { useMyBlocks } from '@/features/post/api/useMyBlocks';
+import { useUnblock } from '@/features/post/api/useUnblock';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -38,7 +40,6 @@ interface PendingSection {
 
 const PENDING_SECTIONS: PendingSection[] = [
   { titleKey: 'settings.section.notifications' },
-  { titleKey: 'settings.section.blocked' },
   { titleKey: 'settings.legal.title' },
   { titleKey: 'settings.support.title' },
 ];
@@ -50,6 +51,8 @@ export default function SettingsScreen() {
   const { preference: languagePref, setPreference: setLanguagePref } = useLanguagePreference();
   const themePref = useThemeStore((s) => s.preference);
   const setThemePref = useThemeStore((s) => s.setPreference);
+  const { data: blocks } = useMyBlocks();
+  const { mutate: unblock } = useUnblock();
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
 
@@ -143,6 +146,30 @@ export default function SettingsScreen() {
             onChange={setThemePref}
           />
         </View>
+
+        {/* Blocked users ───────────────────────────────────────────────────── */}
+        <Section titleKey="settings.section.blocked">
+          {blocks && blocks.length > 0 ? (
+            blocks.map((block) => (
+              <View key={block.blocked_id} style={[styles.row, styles.rowDivider]}>
+                <Text style={styles.rowLabel}>{block.blocked_identifier}</Text>
+                <Pressable
+                  testID={`unblock-${block.blocked_id}`}
+                  onPress={() => unblock(block.blocked_id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('blocked.unblock')}
+                  hitSlop={8}
+                >
+                  <Text style={styles.unblockText}>{t('blocked.unblock')}</Text>
+                </Pressable>
+              </View>
+            ))
+          ) : (
+            <View style={styles.row}>
+              <Text style={styles.rowLabelMuted}>{t('blocked.empty')}</Text>
+            </View>
+          )}
+        </Section>
 
         {/* Moderation — visible only to moderators ─────────────────────────── */}
         {isMod ? (
@@ -320,6 +347,12 @@ const styles = StyleSheet.create({
     color: colors.fg.tertiary,
     // ›  glyph drops slightly below baseline; nudge up to centre with row label.
     transform: [{ translateY: -1 }],
+  },
+  unblockText: {
+    fontFamily: 'Inter Medium',
+    fontWeight: '500',
+    fontSize: 13,
+    color: colors.semantic.danger,
   },
   signOutBlock: {
     paddingHorizontal: 22,
