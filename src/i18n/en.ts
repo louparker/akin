@@ -442,6 +442,9 @@ export const en = {
   'settings.language.system': 'System',
   'settings.language.sv': 'Svenska',
   'settings.language.en': 'English',
+  'settings.appearance.system': 'System',
+  'settings.appearance.light': 'Light',
+  'settings.appearance.dark': 'Dark',
   'settings.signOut.confirm.title': 'Sign out?',
   'settings.signOut.confirm.body':
     'You can sign back in any time with the same email. Your posts and identifier stay put.',

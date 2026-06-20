@@ -445,6 +445,9 @@ export const sv: TranslationDict = {
   'settings.language.system': 'System',
   'settings.language.sv': 'Svenska',
   'settings.language.en': 'English',
+  'settings.appearance.system': 'System',
+  'settings.appearance.light': 'Ljust',
+  'settings.appearance.dark': 'Mörkt',
   'settings.signOut.confirm.title': 'Logga ut?',
   'settings.signOut.confirm.body':
     'Du kan logga in igen när du vill med samma e-post. Dina inlägg och ditt alias finns kvar.',

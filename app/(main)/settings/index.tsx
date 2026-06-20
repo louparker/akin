@@ -21,6 +21,8 @@ import { useLogout } from '@/features/auth/api/useLogout';
 import { useIsModerator } from '@/features/moderation/api/useIsModerator';
 import { useLanguagePreference } from '@/features/locale/api/useLanguagePreference';
 import type { LocalePreference } from '@/features/locale/store/useLocaleStore';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import type { ThemePreference } from '@/features/theme/store/useThemeStore';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -35,7 +37,6 @@ interface PendingSection {
 }
 
 const PENDING_SECTIONS: PendingSection[] = [
-  { titleKey: 'settings.section.appearance' },
   { titleKey: 'settings.section.notifications' },
   { titleKey: 'settings.section.blocked' },
   { titleKey: 'settings.legal.title' },
@@ -47,6 +48,8 @@ export default function SettingsScreen() {
   const { logout } = useLogout();
   const { data: isMod } = useIsModerator();
   const { preference: languagePref, setPreference: setLanguagePref } = useLanguagePreference();
+  const themePref = useThemeStore((s) => s.preference);
+  const setThemePref = useThemeStore((s) => s.setPreference);
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
 
@@ -54,6 +57,12 @@ export default function SettingsScreen() {
     { value: 'system', label: t('settings.language.system') },
     { value: 'sv', label: t('settings.language.sv') },
     { value: 'en', label: t('settings.language.en') },
+  ];
+
+  const appearanceOptions: { value: ThemePreference; label: string }[] = [
+    { value: 'system', label: t('settings.appearance.system') },
+    { value: 'light', label: t('settings.appearance.light') },
+    { value: 'dark', label: t('settings.appearance.dark') },
   ];
 
   function handleSignOut() {
@@ -121,6 +130,17 @@ export default function SettingsScreen() {
             options={languageOptions}
             value={languagePref}
             onChange={(v) => void setLanguagePref(v)}
+          />
+        </View>
+
+        {/* Appearance ──────────────────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.section.appearance').toUpperCase()}</Text>
+          <SegmentedRow<ThemePreference>
+            testID="settings-appearance"
+            options={appearanceOptions}
+            value={themePref}
+            onChange={setThemePref}
           />
         </View>
 

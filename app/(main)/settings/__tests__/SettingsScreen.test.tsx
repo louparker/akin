@@ -1,21 +1,30 @@
-// Settings screen — Language section.
+// Settings screen — Language + Appearance sections.
 //
-// Asserts the segmented control reflects the current preference and that
-// tapping a segment invokes the mutation hook. Mocks the mutation hook to
-// keep the test focused on the screen wiring.
+// Asserts each segmented control reflects the current preference and that
+// tapping a segment invokes the correct hook. Hooks are mocked to keep tests
+// focused on screen wiring.
 
 import { render, fireEvent } from '@testing-library/react-native';
 import SettingsScreen from '../index';
 
-const mockSetPreference = jest.fn(() => Promise.resolve());
-let mockCurrentPref: 'sv' | 'en' | 'system' = 'system';
+const mockSetLanguagePref = jest.fn(() => Promise.resolve());
+let mockCurrentLangPref: 'sv' | 'en' | 'system' = 'system';
+
+const mockSetThemePref = jest.fn();
+let mockCurrentThemePref: 'system' | 'light' | 'dark' = 'system';
 
 jest.mock('@/features/locale/api/useLanguagePreference', () => ({
   useLanguagePreference: () => ({
-    preference: mockCurrentPref,
-    setPreference: mockSetPreference,
+    preference: mockCurrentLangPref,
+    setPreference: mockSetLanguagePref,
     isPending: false,
   }),
+}));
+
+jest.mock('@/features/theme/store/useThemeStore', () => ({
+  useThemeStore: (
+    selector: (s: { preference: string; setPreference: (p: string) => void }) => unknown,
+  ) => selector({ preference: mockCurrentThemePref, setPreference: mockSetThemePref }),
 }));
 
 jest.mock('@/features/auth/api/useLogout', () => ({
@@ -38,8 +47,10 @@ jest.mock('@/features/auth/store/useAuthStore', () => {
 });
 
 beforeEach(() => {
-  mockCurrentPref = 'system';
-  mockSetPreference.mockClear();
+  mockCurrentLangPref = 'system';
+  mockSetLanguagePref.mockClear();
+  mockCurrentThemePref = 'system';
+  mockSetThemePref.mockClear();
 });
 
 describe('SettingsScreen — Language section', () => {
@@ -51,7 +62,7 @@ describe('SettingsScreen — Language section', () => {
   });
 
   it('marks the current preference as selected', () => {
-    mockCurrentPref = 'en';
+    mockCurrentLangPref = 'en';
     const { getByTestId } = render(<SettingsScreen />);
     expect(getByTestId('settings-language-en').props.accessibilityState).toMatchObject({
       selected: true,
@@ -64,13 +75,46 @@ describe('SettingsScreen — Language section', () => {
   it('invokes setPreference("sv") when the Svenska segment is tapped', () => {
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent.press(getByTestId('settings-language-sv'));
-    expect(mockSetPreference).toHaveBeenCalledWith('sv');
+    expect(mockSetLanguagePref).toHaveBeenCalledWith('sv');
   });
 
   it('invokes setPreference("system") when the System segment is tapped', () => {
-    mockCurrentPref = 'en';
+    mockCurrentLangPref = 'en';
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent.press(getByTestId('settings-language-system'));
-    expect(mockSetPreference).toHaveBeenCalledWith('system');
+    expect(mockSetLanguagePref).toHaveBeenCalledWith('system');
+  });
+});
+
+describe('SettingsScreen — Appearance section', () => {
+  it('renders three options: System, Light, Dark', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    expect(getByTestId('settings-appearance-system')).toBeOnTheScreen();
+    expect(getByTestId('settings-appearance-light')).toBeOnTheScreen();
+    expect(getByTestId('settings-appearance-dark')).toBeOnTheScreen();
+  });
+
+  it('marks the current theme preference as selected', () => {
+    mockCurrentThemePref = 'dark';
+    const { getByTestId } = render(<SettingsScreen />);
+    expect(getByTestId('settings-appearance-dark').props.accessibilityState).toMatchObject({
+      selected: true,
+    });
+    expect(getByTestId('settings-appearance-light').props.accessibilityState).toMatchObject({
+      selected: false,
+    });
+  });
+
+  it('invokes setPreference("dark") when the Dark segment is tapped', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-appearance-dark'));
+    expect(mockSetThemePref).toHaveBeenCalledWith('dark');
+  });
+
+  it('invokes setPreference("system") when the System segment is tapped', () => {
+    mockCurrentThemePref = 'light';
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-appearance-system'));
+    expect(mockSetThemePref).toHaveBeenCalledWith('system');
   });
 });
