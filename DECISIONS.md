@@ -29,6 +29,57 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-021 — Phase 8.4 accessibility audit: a11yCheck helper, tap-target fixes, ARIA roles
+
+Date: 2026-06-21
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 8.4 performed a full WCAG 2.2 AA accessibility audit across all screens and components built in Phases 1–8.3. The `a11yCheck` helper referenced in CLAUDE.md and the UI skill did not exist; several interactive elements had missing or incorrect roles/labels; and two tap targets were below the 44pt minimum.
+
+### Issues found and fixed
+
+1. **`a11yCheck` helper missing** — Created `src/lib/test-utils/a11y.ts` plus `src/lib/test-utils/index.ts` barrel. The helper traverses the React test instance tree and fails on any interactive element (button, link, radio, tab, etc.) that has no accessible label. 324/324 tests pass with it wired in.
+
+2. **TopBar — duplicate `accessibilityRole="header"`** — The container `<View>` had the role and so did the title `<Text>`, causing double announcements. Removed from the View; kept on the Text (the semantic heading).
+
+3. **FeedHeader wordmark** — Added `accessibilityRole="header"` to the "akin" wordmark text so VoiceOver users can navigate to the screen heading.
+
+4. **FilterSheet overlay dismiss** — Had `accessibilityLabel` but no `accessibilityRole="button"`, making it invisible to assistive technology.
+
+5. **PostDetail more-menu overlay** — Same missing role. Also the `accessibilityLabel="More options"` was a hardcoded English string; replaced with `t('common.moreOptions')` and added the key to both locales.
+
+6. **CommentItem action-sheet overlay** — Same missing role.
+
+7. **CommentItem `⋯` menu button** — Icon glyph rendered at ~16pt with no hitSlop. Added `hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}` to reach the 44pt minimum. Also added explicit `accessibilityLabel` and `accessibilityState` to the inline-edit cancel/save buttons.
+
+8. **PostDetail send button** — 40×40pt; added `hitSlop={4}` to reach 48×48pt.
+
+9. **Settings section titles** — Inline `<Text>` section headings (Language, Appearance) and the `Section` component's header text now carry `accessibilityRole="header"` so screen readers can navigate by headings.
+
+### New i18n keys
+
+- `common.moreOptions` → EN: "More options" / SV: "Fler alternativ"
+
+### New test coverage
+
+- `src/lib/test-utils/a11y.ts` — `a11yCheck` helper
+- `src/components/composed/__tests__/PostCard.test.tsx` — PostCard a11y
+- `src/features/feed/components/__tests__/FilterSheet.test.tsx` — FilterSheet a11y
+- `src/features/post/components/__tests__/SpiceVoteSheet.test.tsx` — SpiceVoteSheet a11y
+- SettingsScreen and CommentItem tests extended with a11y assertions
+
+### Consequences
+
+- All interactive elements in the audited surface now have accessible labels and roles.
+- All tap targets meet the 44pt minimum (via hitSlop where the visual size is smaller).
+- The `a11yCheck` helper is now available from `@/lib/test-utils` for all future screen tests.
+- Screen tests written during later phases should include `expect(a11yCheck(root)).toEqual([])`.
+
+---
+
 ## ADR-020 — Phase 8 settings: locale store, blocked_identifier, appConfig
 
 Date: 2026-06-20

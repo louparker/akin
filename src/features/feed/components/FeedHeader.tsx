@@ -71,7 +71,9 @@ export function FeedHeader({ tab, sort, onSortPress }: FeedHeaderProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.wordmark}>{title}</Text>
+      <Text style={styles.wordmark} accessibilityRole="header">
+        {title}
+      </Text>
       <View style={styles.row}>
         <Pressable
           onPress={() => router.navigate('/(main)/feed')}

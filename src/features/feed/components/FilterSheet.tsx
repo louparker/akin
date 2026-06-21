@@ -157,7 +157,12 @@ export function FilterSheet({
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityLabel="Close filter sheet" />
+      <Pressable
+        style={styles.overlay}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel={t('common.close')}
+      />
       <View style={styles.sheet}>
         <View style={styles.handle} accessibilityElementsHidden />
 
