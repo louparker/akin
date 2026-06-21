@@ -1,6 +1,6 @@
 // CRITICAL-PATH: posts — composer for new posts. Server-side triggers enforce
 // content filter, contact-info filter, and the active-post limit.
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { CategoryTag } from '@/components/composed/CategoryTag';
@@ -32,6 +31,131 @@ import type { Enums } from '@/types/database';
 type Category = Enums<'post_category'>;
 const ACTIVE_LIMIT = 3;
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    flex: {
+      flex: 1,
+    },
+    scroll: {
+      paddingHorizontal: 22,
+      paddingTop: 8,
+      paddingBottom: 24,
+    },
+    cancel: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.tertiary,
+      paddingHorizontal: 8,
+    },
+    submit: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.fg.primary,
+      paddingHorizontal: 8,
+    },
+    submitDisabled: {
+      color: c.fg.faint,
+    },
+    categoryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+      gap: 12,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+    categoryLabel: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11,
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+      color: c.fg.tertiary,
+      flex: 0,
+    },
+    categoryPlaceholder: {
+      flex: 1,
+      fontFamily: 'Source Serif 4',
+      fontSize: 18,
+      color: c.fg.faint,
+    },
+    chevron: {
+      fontFamily: 'Inter',
+      fontSize: 22,
+      // lineHeight matches fontSize so the glyph's line box is tight rather than
+      // sitting inside default leading (which drags it visually low).
+      lineHeight: 22,
+      color: c.fg.tertiary,
+      marginLeft: 'auto',
+      // The ›  glyph has its visual mass below baseline; nudge it up so it reads
+      // as vertically centered with the CATEGORY label and "Pick a category" text.
+      transform: [{ translateY: -25 }],
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 26,
+      lineHeight: 26 * 1.25,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginTop: 20,
+      minHeight: 60,
+      padding: 0,
+      textAlignVertical: 'top',
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 15.5,
+      lineHeight: 15.5 * 1.6,
+      color: c.fg.secondary,
+      marginTop: 12,
+      minHeight: 160,
+      padding: 0,
+      textAlignVertical: 'top',
+    },
+    toolbar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: c.bg.raised,
+      paddingHorizontal: 22,
+      paddingTop: 14,
+      paddingBottom: 16,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border.hairline,
+    },
+    identityCol: {
+      flex: 1,
+      marginRight: 12,
+      gap: 6,
+    },
+    postingAs: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.tertiary,
+    },
+    identifier: {
+      fontFamily: 'JetBrains Mono',
+      color: c.fg.primary,
+    },
+    counters: {
+      alignItems: 'flex-end',
+      gap: 2,
+    },
+    counter: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11,
+      color: c.fg.tertiary,
+    },
+  });
+}
+
 export default function CreateScreen() {
   const profile = useAuthStore((s) => s.profile);
   const activeCount = profile?.active_post_count ?? 0;
@@ -47,6 +171,9 @@ export default function CreateScreen() {
 
   const atLimit = activeCount >= ACTIVE_LIMIT;
   const [limitOpen, setLimitOpen] = useState(false);
+
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   // Show the active-limit sheet immediately when the tab is focused if user is at cap.
   useFocusEffect(
@@ -170,7 +297,7 @@ export default function CreateScreen() {
             value={title}
             onChangeText={setTitle}
             placeholder={t('create.title.placeholder')}
-            placeholderTextColor={colors.fg.faint}
+            placeholderTextColor={c.fg.faint}
             style={styles.title}
             multiline
             maxLength={TITLE_MAX}
@@ -184,7 +311,7 @@ export default function CreateScreen() {
             value={body}
             onChangeText={setBody}
             placeholder={t('create.body.placeholder')}
-            placeholderTextColor={colors.fg.faint}
+            placeholderTextColor={c.fg.faint}
             style={styles.body}
             multiline
             maxLength={BODY_MAX}
@@ -239,126 +366,3 @@ export default function CreateScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  flex: {
-    flex: 1,
-  },
-  scroll: {
-    paddingHorizontal: 22,
-    paddingTop: 8,
-    paddingBottom: 24,
-  },
-  cancel: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.tertiary,
-    paddingHorizontal: 8,
-  },
-  submit: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.fg.primary,
-    paddingHorizontal: 8,
-  },
-  submitDisabled: {
-    color: colors.fg.faint,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-    gap: 12,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  categoryLabel: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    color: colors.fg.tertiary,
-    flex: 0,
-  },
-  categoryPlaceholder: {
-    flex: 1,
-    fontFamily: 'Source Serif 4',
-    fontSize: 18,
-    color: colors.fg.faint,
-  },
-  chevron: {
-    fontFamily: 'Inter',
-    fontSize: 22,
-    // lineHeight matches fontSize so the glyph's line box is tight rather than
-    // sitting inside default leading (which drags it visually low).
-    lineHeight: 22,
-    color: colors.fg.tertiary,
-    marginLeft: 'auto',
-    // The ›  glyph has its visual mass below baseline; nudge it up so it reads
-    // as vertically centered with the CATEGORY label and "Pick a category" text.
-    transform: [{ translateY: -25 }],
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 26,
-    lineHeight: 26 * 1.25,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginTop: 20,
-    minHeight: 60,
-    padding: 0,
-    textAlignVertical: 'top',
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 15.5,
-    lineHeight: 15.5 * 1.6,
-    color: colors.fg.secondary,
-    marginTop: 12,
-    minHeight: 160,
-    padding: 0,
-    textAlignVertical: 'top',
-  },
-  toolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg.raised,
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.hairline,
-  },
-  identityCol: {
-    flex: 1,
-    marginRight: 12,
-    gap: 6,
-  },
-  postingAs: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
-  identifier: {
-    fontFamily: 'JetBrains Mono',
-    color: colors.fg.primary,
-  },
-  counters: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  counter: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    color: colors.fg.tertiary,
-  },
-});

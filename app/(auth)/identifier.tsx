@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { Skeleton } from '@/components/composed/Skeleton';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
@@ -16,7 +16,85 @@ function isPending(id: string | null | undefined): boolean {
   return !id || id.startsWith('pending_');
 }
 
-function IdentifierDisplay({ identifier }: { identifier: string }) {
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    content: {
+      flex: 1,
+      paddingTop: 100,
+      paddingHorizontal: 32,
+    },
+    eyebrow: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11,
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+      color: c.fg.faint,
+      marginBottom: 24,
+    },
+    identifierSkeleton: {
+      height: 60,
+      width: 240,
+      borderRadius: 4,
+      marginBottom: 24,
+    },
+    identifier: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 52,
+      lineHeight: 52 * 1.05,
+      letterSpacing: -1,
+      color: c.fg.primary,
+      marginBottom: 24,
+    },
+    identifierWord: {
+      color: c.fg.primary,
+    },
+    identifierNumber: {
+      color: c.brand.primary,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      lineHeight: 15 * 1.55,
+      color: c.fg.secondary,
+      marginBottom: 36,
+      maxWidth: 310,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border.divider,
+      marginBottom: 16,
+    },
+    examplesLabel: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.secondary,
+      marginBottom: 8,
+    },
+    exampleItem: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 13,
+      color: c.fg.secondary,
+      lineHeight: 13 * 1.6,
+    },
+    bottom: {
+      paddingHorizontal: 24,
+      paddingBottom: 48,
+      gap: 12,
+    },
+  });
+}
+
+function IdentifierDisplay({
+  identifier,
+  styles,
+}: {
+  identifier: string;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   // adjustsFontSizeToFit + numberOfLines:1 means long identifiers shrink to
   // fit on one line instead of wrapping (which looked like a "smaller font"
   // bug to users); short identifiers stay at the full 52pt spec.
@@ -52,6 +130,8 @@ function IdentifierDisplay({ identifier }: { identifier: string }) {
 export default function IdentifierScreen() {
   const profile = useAuthStore((s) => s.profile);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const identifier = profile?.anonymous_identifier ?? null;
   const [timedOut, setTimedOut] = useState(false);
@@ -122,7 +202,7 @@ export default function IdentifierScreen() {
         {showContent ? (
           <>
             <Text style={styles.eyebrow}>{t('auth.identifier.eyebrow')}</Text>
-            <IdentifierDisplay identifier={identifier} />
+            <IdentifierDisplay identifier={identifier} styles={styles} />
             <Text style={styles.body}>{t('auth.identifier.body')}</Text>
             <View style={styles.divider} />
             <Text style={styles.examplesLabel}>{t('auth.identifier.examples.label')}</Text>
@@ -165,73 +245,3 @@ export default function IdentifierScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 32,
-  },
-  eyebrow: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    color: colors.fg.faint,
-    marginBottom: 24,
-  },
-  identifierSkeleton: {
-    height: 60,
-    width: 240,
-    borderRadius: 4,
-    marginBottom: 24,
-  },
-  identifier: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 52,
-    lineHeight: 52 * 1.05,
-    letterSpacing: -1,
-    color: colors.fg.primary,
-    marginBottom: 24,
-  },
-  identifierWord: {
-    color: colors.fg.primary,
-  },
-  identifierNumber: {
-    color: colors.brand.primary,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    lineHeight: 15 * 1.55,
-    color: colors.fg.secondary,
-    marginBottom: 36,
-    maxWidth: 310,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border.divider,
-    marginBottom: 16,
-  },
-  examplesLabel: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.secondary,
-    marginBottom: 8,
-  },
-  exampleItem: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 13,
-    color: colors.fg.secondary,
-    lineHeight: 13 * 1.6,
-  },
-  bottom: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
-    gap: 12,
-  },
-});

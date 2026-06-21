@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { IdentChip } from './IdentChip';
 import { CapacityDots } from './CapacityDots';
 import { SpiceFlames } from './SpiceFlames';
@@ -19,6 +19,76 @@ interface PostCardProps {
   onPress: () => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: c.bg.base,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    container: {
+      paddingHorizontal: 22,
+      paddingTop: 28,
+      paddingBottom: 36,
+    },
+    divider: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: c.border.divider,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 16,
+    },
+    dot: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.tertiary,
+    },
+    timestamp: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.tertiary,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 19,
+      color: c.fg.primary,
+      lineHeight: 19 * 1.3,
+      letterSpacing: -0.2,
+      marginBottom: 10,
+    },
+    excerpt: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+      lineHeight: 14 * 1.5,
+      marginBottom: 18,
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    footerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    capacityText: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.tertiary,
+    },
+  });
+}
+
 function PostCardImpl({
   category,
   timeAgo,
@@ -29,6 +99,9 @@ function PostCardImpl({
   spiceLevel,
   onPress,
 }: PostCardProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
@@ -90,72 +163,4 @@ export const PostCard = memo(PostCardImpl, (prev, next) => {
     prev.spiceLevel === next.spiceLevel &&
     prev.onPress === next.onPress
   );
-});
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bg.base,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  container: {
-    paddingHorizontal: 22,
-    paddingTop: 28,
-    paddingBottom: 36,
-  },
-  divider: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: colors.border.divider,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  dot: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
-  timestamp: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 19,
-    color: colors.fg.primary,
-    lineHeight: 19 * 1.3,
-    letterSpacing: -0.2,
-    marginBottom: 10,
-  },
-  excerpt: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.secondary,
-    lineHeight: 14 * 1.5,
-    marginBottom: 18,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  capacityText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
 });

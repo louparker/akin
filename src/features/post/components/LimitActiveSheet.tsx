@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 
 interface LimitActiveSheetProps {
@@ -8,7 +9,69 @@ interface LimitActiveSheetProps {
   onClose: () => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.55)',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 22,
+      paddingTop: 12,
+      paddingBottom: 40,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: c.border.divider,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 24,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 12,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 14.5,
+      lineHeight: 14.5 * 1.55,
+      color: c.fg.secondary,
+      marginBottom: 16,
+    },
+    countNote: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 12,
+      color: c.fg.tertiary,
+      marginBottom: 24,
+    },
+    button: {
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    buttonText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+  });
+}
+
 export function LimitActiveSheet({ visible, activeCount, onClose }: LimitActiveSheetProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <Modal
       visible={visible}
@@ -37,60 +100,3 @@ export function LimitActiveSheet({ visible, activeCount, onClose }: LimitActiveS
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.55)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border.divider,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 24,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 12,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    lineHeight: 14.5 * 1.55,
-    color: colors.fg.secondary,
-    marginBottom: 16,
-  },
-  countNote: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-    marginBottom: 24,
-  },
-  button: {
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-});

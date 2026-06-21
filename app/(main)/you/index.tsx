@@ -6,7 +6,7 @@ import { View, Text, Pressable, StyleSheet, RefreshControl } from 'react-native'
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t, locale } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { PostCard } from '@/components/composed/PostCard';
@@ -27,9 +27,105 @@ function formatJoinedMonth(isoDate: string): string {
   }).format(d);
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    gearPressable: {
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    headerBlock: {
+      paddingTop: 22,
+      paddingHorizontal: 22,
+      paddingBottom: 18,
+    },
+    identifier: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 30,
+      lineHeight: 30 * 1.1,
+      letterSpacing: -0.4,
+      color: c.fg.primary,
+      marginBottom: 6,
+    },
+    joined: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.tertiary,
+    },
+    tabRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 22,
+      gap: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border.hairline,
+    },
+    tabButton: {
+      paddingVertical: 10,
+      position: 'relative',
+    },
+    tabLabel: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      color: c.fg.tertiary,
+    },
+    tabLabelActive: {
+      color: c.fg.primary,
+      fontWeight: '500',
+    },
+    tabUnderline: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 1.5,
+      backgroundColor: c.fg.primary,
+    },
+    empty: {
+      paddingTop: 56,
+      paddingHorizontal: 22,
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.tertiary,
+      textAlign: 'center',
+      maxWidth: 280,
+    },
+  });
+}
+
+interface TabButtonProps {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  styles: ReturnType<typeof makeStyles>;
+}
+
+function TabButton({ label, active, onPress, styles }: TabButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      style={styles.tabButton}
+      hitSlop={8}
+    >
+      <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
+      {active ? <View style={styles.tabUnderline} /> : null}
+    </Pressable>
+  );
+}
+
 export default function YouScreen() {
   const profile = useAuthStore((s) => s.profile);
   const [activeTab, setActiveTab] = useState<Tab>('posts');
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const myPostsQuery = useMyPosts();
   const myActiveQuery = useMyActiveConversations();
@@ -99,11 +195,13 @@ export default function YouScreen() {
                 label={t('profile.tab.myPosts')}
                 active={activeTab === 'posts'}
                 onPress={() => setActiveTab('posts')}
+                styles={styles}
               />
               <TabButton
                 label={t('profile.tab.myActive')}
                 active={activeTab === 'active'}
                 onPress={() => setActiveTab('active')}
+                styles={styles}
               />
             </View>
           </View>
@@ -119,101 +217,10 @@ export default function YouScreen() {
           <RefreshControl
             refreshing={activeQuery.isRefetching}
             onRefresh={() => void activeQuery.refetch()}
-            tintColor={colors.fg.tertiary}
+            tintColor={c.fg.tertiary}
           />
         }
       />
     </View>
   );
 }
-
-interface TabButtonProps {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}
-
-function TabButton({ label, active, onPress }: TabButtonProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-      style={styles.tabButton}
-      hitSlop={8}
-    >
-      <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
-      {active ? <View style={styles.tabUnderline} /> : null}
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  gearPressable: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  headerBlock: {
-    paddingTop: 22,
-    paddingHorizontal: 22,
-    paddingBottom: 18,
-  },
-  identifier: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 30,
-    lineHeight: 30 * 1.1,
-    letterSpacing: -0.4,
-    color: colors.fg.primary,
-    marginBottom: 6,
-  },
-  joined: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.tertiary,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 22,
-    gap: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.hairline,
-  },
-  tabButton: {
-    paddingVertical: 10,
-    position: 'relative',
-  },
-  tabLabel: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    color: colors.fg.tertiary,
-  },
-  tabLabelActive: {
-    color: colors.fg.primary,
-    fontWeight: '500',
-  },
-  tabUnderline: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 1.5,
-    backgroundColor: colors.fg.primary,
-  },
-  empty: {
-    paddingTop: 56,
-    paddingHorizontal: 22,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-    textAlign: 'center',
-    maxWidth: 280,
-  },
-});

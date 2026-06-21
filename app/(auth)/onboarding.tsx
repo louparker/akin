@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, Dimensions } from 'react-native';
 
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
@@ -26,9 +26,74 @@ const PAGES: OnboardingPage[] = [
   { titleKey: 'auth.onboarding.screen3.title', bodyKey: 'auth.onboarding.screen3.body' },
 ];
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      paddingTop: 60,
+      paddingHorizontal: 28,
+    },
+    skipHit: {
+      padding: 8,
+    },
+    skipText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.tertiary,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 32,
+      paddingTop: 60,
+      maxWidth: SCREEN_W,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 32,
+      lineHeight: 32 * 1.2,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 20,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      lineHeight: 16 * 1.6,
+      color: c.fg.secondary,
+      maxWidth: 320,
+    },
+    dots: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+      paddingBottom: 24,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: c.border.divider,
+    },
+    dotActive: {
+      backgroundColor: c.brand.primary,
+    },
+    bottom: {
+      paddingHorizontal: 24,
+      paddingBottom: 48,
+    },
+  });
+}
+
 export default function OnboardingScreen() {
   const [page, setPage] = useState(0);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const isLast = page === PAGES.length - 1;
   // eslint-disable-next-line security/detect-object-injection
@@ -91,64 +156,3 @@ export default function OnboardingScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingTop: 60,
-    paddingHorizontal: 28,
-  },
-  skipHit: {
-    padding: 8,
-  },
-  skipText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 60,
-    maxWidth: SCREEN_W,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 32,
-    lineHeight: 32 * 1.2,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 20,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    lineHeight: 16 * 1.6,
-    color: colors.fg.secondary,
-    maxWidth: 320,
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    paddingBottom: 24,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border.divider,
-  },
-  dotActive: {
-    backgroundColor: colors.brand.primary,
-  },
-  bottom: {
-    paddingHorizontal: 24,
-    paddingBottom: 48,
-  },
-});

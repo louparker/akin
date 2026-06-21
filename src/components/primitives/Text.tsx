@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Text as RNText, StyleSheet, type TextProps, type TextStyle } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 export type TextVariant =
   | 'body'
@@ -35,64 +36,64 @@ interface AkinTextProps extends TextProps {
 // inventing a new one — visual rhythm depends on a small set of cadences.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Plain object (not StyleSheet.create) to avoid false-positive no-unused-styles
-// errors when styles are accessed via a dynamic key. Values are still typed.
-const variantMap: Record<TextVariant, TextStyle> = {
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    lineHeight: 21, // ratio 1.50
-    color: colors.fg.primary,
-  },
-  bodyMd: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    lineHeight: 22.5, // ratio 1.50
-    color: colors.fg.primary,
-  },
-  bodyMuted: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    lineHeight: 21, // ratio 1.50
-    color: colors.fg.secondary,
-  },
-  caption: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    lineHeight: 16.8, // ratio 1.40
-    color: colors.fg.tertiary,
-  },
-  label: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 12,
-    lineHeight: 16.8, // ratio 1.40
-    color: colors.fg.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.2,
-  },
-  mono: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 12.5,
-    lineHeight: 17.5, // ratio 1.40
-    color: colors.fg.secondary,
-    letterSpacing: 0.1,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 24,
-    lineHeight: 30, // ratio 1.25
-    color: colors.fg.primary,
-    letterSpacing: -0.3,
-  },
-  display: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 30,
-    lineHeight: 33, // ratio 1.10
-    color: colors.fg.primary,
-    letterSpacing: -0.5,
-  },
-};
+function makeVariantMap(c: ReturnType<typeof useColorTokens>): Record<TextVariant, TextStyle> {
+  return {
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      lineHeight: 21, // ratio 1.50
+      color: c.fg.primary,
+    },
+    bodyMd: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      lineHeight: 22.5, // ratio 1.50
+      color: c.fg.primary,
+    },
+    bodyMuted: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      lineHeight: 21, // ratio 1.50
+      color: c.fg.secondary,
+    },
+    caption: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      lineHeight: 16.8, // ratio 1.40
+      color: c.fg.tertiary,
+    },
+    label: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 12,
+      lineHeight: 16.8, // ratio 1.40
+      color: c.fg.tertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.2,
+    },
+    mono: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 12.5,
+      lineHeight: 17.5, // ratio 1.40
+      color: c.fg.secondary,
+      letterSpacing: 0.1,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 24,
+      lineHeight: 30, // ratio 1.25
+      color: c.fg.primary,
+      letterSpacing: -0.3,
+    },
+    display: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 30,
+      lineHeight: 33, // ratio 1.10
+      color: c.fg.primary,
+      letterSpacing: -0.5,
+    },
+  };
+}
 
 const styles = StyleSheet.create({
   root: {},
@@ -130,6 +131,8 @@ export function deriveLineHeightOverride(
 }
 
 export function Text({ variant = 'body', style, ...props }: AkinTextProps) {
+  const c = useColorTokens();
+  const variantMap = useMemo(() => makeVariantMap(c), [c]);
   // eslint-disable-next-line security/detect-object-injection -- variant is a union type; values are compile-time constants
   const variantStyle = variantMap[variant];
 

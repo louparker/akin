@@ -12,7 +12,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'r
 import { router } from 'expo-router';
 import { legalConfig, supportConfig, appVersion } from '@/lib/appConfig';
 
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
@@ -41,6 +41,108 @@ interface PendingSection {
 
 const PENDING_SECTIONS: PendingSection[] = [{ titleKey: 'settings.section.notifications' }];
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    backIcon: {
+      fontFamily: 'Inter',
+      fontSize: 28,
+      color: c.fg.primary,
+      paddingHorizontal: 4,
+    },
+    scroll: {
+      paddingTop: 12,
+      paddingBottom: 48,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 11,
+      letterSpacing: 0.6,
+      color: c.fg.tertiary,
+      paddingHorizontal: 22,
+      marginBottom: 8,
+    },
+    sectionBody: {
+      backgroundColor: c.bg.raised,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 22,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    rowLabel: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+      flex: 1,
+    },
+    rowLabelDestructive: {
+      color: c.semantic.danger,
+    },
+    rowLabelMuted: {
+      color: c.fg.tertiary,
+      fontStyle: 'italic',
+    },
+    rowRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    rowValue: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+    },
+    chevron: {
+      fontFamily: 'Inter',
+      fontSize: 20,
+      lineHeight: 20,
+      color: c.fg.tertiary,
+      // ›  glyph drops slightly below baseline; nudge up to centre with row label.
+      transform: [{ translateY: -1 }],
+    },
+    unblockText: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 13,
+      color: c.semantic.danger,
+    },
+    signOutBlock: {
+      paddingHorizontal: 22,
+      paddingTop: 8,
+    },
+    signOutButton: {
+      paddingVertical: 14,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: c.semantic.danger,
+      borderRadius: 8,
+    },
+    signOutText: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 15,
+      color: c.semantic.danger,
+    },
+  });
+}
+
 export default function SettingsScreen() {
   const session = useAuthStore((s) => s.session);
   const { logout } = useLogout();
@@ -50,6 +152,8 @@ export default function SettingsScreen() {
   const setThemePref = useThemeStore((s) => s.setPreference);
   const { data: blocks } = useMyBlocks();
   const { mutate: unblock } = useUnblock();
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
 
@@ -102,16 +206,18 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Account ─────────────────────────────────────────────────────────── */}
-        <Section titleKey="settings.account.title">
+        <Section titleKey="settings.account.title" styles={styles}>
           <Row
             label={t('settings.account.email')}
             value={maskedEmail}
             accessibilityLabel={`${t('settings.account.email')}: ${maskedEmail}`}
+            styles={styles}
           />
           <Row
             label={t('settings.account.changePassword')}
             chevron
             onPress={navigateToResetPassword}
+            styles={styles}
           />
           <Row
             label={t('settings.deleteAccount')}
@@ -119,6 +225,7 @@ export default function SettingsScreen() {
             destructive
             onPress={navigateToDeleteAccount}
             isLast
+            styles={styles}
           />
         </Section>
 
@@ -145,7 +252,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Blocked users ───────────────────────────────────────────────────── */}
-        <Section titleKey="settings.section.blocked">
+        <Section titleKey="settings.section.blocked" styles={styles}>
           {blocks && blocks.length > 0 ? (
             blocks.map((block) => (
               <View key={block.blocked_id} style={[styles.row, styles.rowDivider]}>
@@ -170,36 +277,39 @@ export default function SettingsScreen() {
 
         {/* Moderation — visible only to moderators ─────────────────────────── */}
         {isMod ? (
-          <Section titleKey="settings.section.moderation">
+          <Section titleKey="settings.section.moderation" styles={styles}>
             <Row
               label={t('settings.mod.queue')}
               chevron
               onPress={() => router.push('/(moderator)/queue')}
               isLast
+              styles={styles}
             />
           </Section>
         ) : null}
 
         {/* Placeholder sections — remaining sub-tasks ─────────────────────── */}
         {PENDING_SECTIONS.map((s) => (
-          <Section key={s.titleKey} titleKey={s.titleKey}>
-            <Row label={t('settings.placeholder.comingNext')} muted isLast />
+          <Section key={s.titleKey} titleKey={s.titleKey} styles={styles}>
+            <Row label={t('settings.placeholder.comingNext')} muted isLast styles={styles} />
           </Section>
         ))}
 
         {/* Legal ───────────────────────────────────────────────────────────── */}
-        <Section titleKey="settings.legal.title">
+        <Section titleKey="settings.legal.title" styles={styles}>
           <Row
             testID="settings-legal-privacy"
             label={t('settings.legal.privacy')}
             chevron
             onPress={() => void Linking.openURL(legalConfig.privacyUrl)}
+            styles={styles}
           />
           <Row
             testID="settings-legal-terms"
             label={t('settings.legal.terms')}
             chevron
             onPress={() => void Linking.openURL(legalConfig.termsUrl)}
+            styles={styles}
           />
           <Row
             testID="settings-legal-guidelines"
@@ -207,18 +317,20 @@ export default function SettingsScreen() {
             chevron
             onPress={() => void Linking.openURL(legalConfig.guidelinesUrl)}
             isLast
+            styles={styles}
           />
         </Section>
 
         {/* Support ─────────────────────────────────────────────────────────── */}
-        <Section titleKey="settings.support.title">
+        <Section titleKey="settings.support.title" styles={styles}>
           <Row
             testID="settings-support-feedback"
             label={t('settings.support.feedback')}
             chevron
             onPress={() => void Linking.openURL(`mailto:${supportConfig.feedbackEmail}`)}
+            styles={styles}
           />
-          <Row label={t('settings.support.version')} value={appVersion} isLast />
+          <Row label={t('settings.support.version')} value={appVersion} isLast styles={styles} />
         </Section>
 
         {/* Sign Out ────────────────────────────────────────────────────────── */}
@@ -240,9 +352,10 @@ export default function SettingsScreen() {
 interface SectionProps {
   titleKey: TranslationKey;
   children: React.ReactNode;
+  styles: ReturnType<typeof makeStyles>;
 }
 
-function Section({ titleKey, children }: SectionProps) {
+function Section({ titleKey, children, styles }: SectionProps) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{t(titleKey).toUpperCase()}</Text>
@@ -261,6 +374,7 @@ interface RowProps {
   onPress?: () => void;
   accessibilityLabel?: string;
   testID?: string;
+  styles: ReturnType<typeof makeStyles>;
 }
 
 function Row({
@@ -273,6 +387,7 @@ function Row({
   onPress,
   accessibilityLabel,
   testID,
+  styles,
 }: RowProps) {
   const content = (
     <View style={[styles.row, !isLast && styles.rowDivider]}>
@@ -306,103 +421,3 @@ function Row({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  backIcon: {
-    fontFamily: 'Inter',
-    fontSize: 28,
-    color: colors.fg.primary,
-    paddingHorizontal: 4,
-  },
-  scroll: {
-    paddingTop: 12,
-    paddingBottom: 48,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 11,
-    letterSpacing: 0.6,
-    color: colors.fg.tertiary,
-    paddingHorizontal: 22,
-    marginBottom: 8,
-  },
-  sectionBody: {
-    backgroundColor: colors.bg.raised,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  rowLabel: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-    flex: 1,
-  },
-  rowLabelDestructive: {
-    color: colors.semantic.danger,
-  },
-  rowLabelMuted: {
-    color: colors.fg.tertiary,
-    fontStyle: 'italic',
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowValue: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.secondary,
-  },
-  chevron: {
-    fontFamily: 'Inter',
-    fontSize: 20,
-    lineHeight: 20,
-    color: colors.fg.tertiary,
-    // ›  glyph drops slightly below baseline; nudge up to centre with row label.
-    transform: [{ translateY: -1 }],
-  },
-  unblockText: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 13,
-    color: colors.semantic.danger,
-  },
-  signOutBlock: {
-    paddingHorizontal: 22,
-    paddingTop: 8,
-  },
-  signOutButton: {
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.semantic.danger,
-    borderRadius: 8,
-  },
-  signOutText: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.semantic.danger,
-  },
-});

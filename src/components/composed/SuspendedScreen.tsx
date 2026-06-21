@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { t } from '@/lib/i18n';
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const SUPPORT_EMAIL = 'hi@akin.app';
@@ -26,10 +26,62 @@ function formatAbsolute(until: string, locale: 'sv' | 'en'): string {
   }
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: 16,
+      color: c.fg.primary,
+    },
+    body: {
+      textAlign: 'center',
+      marginBottom: 20,
+      lineHeight: 22,
+    },
+    until: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 13,
+      color: c.fg.tertiary,
+      marginBottom: 32,
+      textAlign: 'center',
+    },
+    contactBlock: {
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 40,
+    },
+    contactLabel: {
+      textAlign: 'center',
+      color: c.fg.tertiary,
+    },
+    contactEmail: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 14,
+      color: c.brand.primary,
+      textDecorationLine: 'underline',
+    },
+    buttonWrapper: {
+      width: '100%',
+    },
+  });
+}
+
 export default function SuspendedScreen({
   suspendedUntil,
   locale = 'en',
 }: Props): React.JSX.Element {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const absolute = formatAbsolute(suspendedUntil, locale);
 
   function handleBackToLogin() {
@@ -83,51 +135,3 @@ export default function SuspendedScreen({
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 16,
-    color: colors.fg.primary,
-  },
-  body: {
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  until: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 13,
-    color: colors.fg.tertiary,
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  contactBlock: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 40,
-  },
-  contactLabel: {
-    textAlign: 'center',
-    color: colors.fg.tertiary,
-  },
-  contactEmail: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 14,
-    color: colors.brand.primary,
-    textDecorationLine: 'underline',
-  },
-  buttonWrapper: {
-    width: '100%',
-  },
-});

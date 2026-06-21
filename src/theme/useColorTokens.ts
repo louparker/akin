@@ -9,3 +9,5 @@ export function useColorTokens() {
   const effectiveScheme = preference === 'system' ? systemScheme : preference;
   return effectiveScheme === 'dark' ? darkColors : colors;
 }
+
+export type ColorTokens = ReturnType<typeof useColorTokens>;

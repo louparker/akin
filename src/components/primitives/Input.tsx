@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { View, TextInput, Text, StyleSheet, type TextInputProps } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 interface InputProps extends Omit<TextInputProps, 'style'> {
   label: string;
@@ -11,6 +12,48 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   secureTextEntry?: boolean;
   accessibilityLabel?: string;
   testID?: string;
+}
+
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      gap: 6,
+    },
+    label: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 12,
+      color: c.fg.tertiary,
+      letterSpacing: 0.2,
+      textTransform: 'uppercase',
+    },
+    input: {
+      backgroundColor: c.bg.sunken,
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      borderRadius: 4,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      fontSize: 16,
+      fontFamily: 'Inter',
+      color: c.fg.primary,
+    },
+    hint: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.faint,
+      lineHeight: 12 * 1.4,
+    },
+    inputError: {
+      borderColor: c.semantic.danger,
+    },
+    errorText: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.semantic.danger,
+      lineHeight: 12 * 1.4,
+    },
+  });
 }
 
 export function Input({
@@ -26,6 +69,8 @@ export function Input({
   autoCapitalize,
   ...props
 }: InputProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const hasError = Boolean(error);
 
   return (
@@ -38,7 +83,7 @@ export function Input({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.fg.faint}
+        placeholderTextColor={c.fg.faint}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
@@ -57,43 +102,3 @@ export function Input({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  label: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-    letterSpacing: 0.2,
-    textTransform: 'uppercase',
-  },
-  input: {
-    backgroundColor: colors.bg.sunken,
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    borderRadius: 4,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    fontFamily: 'Inter',
-    color: colors.fg.primary,
-  },
-  hint: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.faint,
-    lineHeight: 12 * 1.4,
-  },
-  inputError: {
-    borderColor: colors.semantic.danger,
-  },
-  errorText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.semantic.danger,
-    lineHeight: 12 * 1.4,
-  },
-});

@@ -1,5 +1,6 @@
 // CRITICAL-PATH: auth — pending expert review
 
+import { useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Pressable, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -10,7 +11,7 @@ import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { Input } from '@/components/primitives/Input';
 import { TopBar } from '@/components/composed/TopBar';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { signupSchema, type SignupFormValues } from '@/features/auth/schemas/signup';
@@ -20,10 +21,107 @@ function deviceLanguage(): 'sv' | 'en' {
   return tag.startsWith('sv') ? 'sv' : 'en';
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    backButton: {
+      padding: 8,
+    },
+    backArrow: {
+      fontSize: 20,
+      color: c.fg.primary,
+    },
+    scrollContent: {
+      paddingTop: 20,
+      paddingBottom: 40,
+      paddingHorizontal: 28,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 36,
+      lineHeight: 36 * 1.15,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      lineHeight: 14 * 1.5,
+      color: c.fg.secondary,
+      marginBottom: 32,
+    },
+    fields: {
+      gap: 20,
+    },
+    fieldError: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.semantic.danger,
+      marginTop: 4,
+    },
+    ageCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 14,
+      marginTop: 28,
+      padding: 16,
+      paddingHorizontal: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+      borderRadius: 4,
+      backgroundColor: c.bg.raised,
+    },
+    checkbox: {
+      width: 18,
+      height: 18,
+      borderWidth: 1.5,
+      borderColor: c.fg.tertiary,
+      borderRadius: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 1,
+    },
+    checkboxChecked: {
+      backgroundColor: c.brand.primary,
+      borderColor: c.brand.primary,
+    },
+    checkmark: {
+      color: c.fg.inverse,
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    ageTextCol: {
+      flex: 1,
+      gap: 4,
+    },
+    ageLabel: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 14,
+      color: c.fg.primary,
+    },
+    ageDesc: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.fg.secondary,
+      lineHeight: 12.5 * 1.45,
+    },
+    cta: {
+      marginTop: 32,
+    },
+  });
+}
+
 export default function SignupScreen() {
   const router = useRouter();
   const isLoading = useAuthStore((s) => s.isLoading);
   const storeError = useAuthStore((s) => s.error);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const {
     control,
@@ -204,96 +302,3 @@ export default function SignupScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backArrow: {
-    fontSize: 20,
-    color: colors.fg.primary,
-  },
-  scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 40,
-    paddingHorizontal: 28,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 36,
-    lineHeight: 36 * 1.15,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    lineHeight: 14 * 1.5,
-    color: colors.fg.secondary,
-    marginBottom: 32,
-  },
-  fields: {
-    gap: 20,
-  },
-  fieldError: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.semantic.danger,
-    marginTop: 4,
-  },
-  ageCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-    marginTop: 28,
-    padding: 16,
-    paddingHorizontal: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border.divider,
-    borderRadius: 4,
-    backgroundColor: colors.bg.raised,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderWidth: 1.5,
-    borderColor: colors.fg.tertiary,
-    borderRadius: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  checkboxChecked: {
-    backgroundColor: colors.brand.primary,
-    borderColor: colors.brand.primary,
-  },
-  checkmark: {
-    color: colors.fg.inverse,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  ageTextCol: {
-    flex: 1,
-    gap: 4,
-  },
-  ageLabel: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 14,
-    color: colors.fg.primary,
-  },
-  ageDesc: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.fg.secondary,
-    lineHeight: 12.5 * 1.45,
-  },
-  cta: {
-    marginTop: 32,
-  },
-});

@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 interface SpiceFlamesProps {
   level: number;
@@ -10,7 +10,8 @@ interface SpiceFlamesProps {
 }
 
 export function SpiceFlames({ level, max = 5, size = 12, color }: SpiceFlamesProps) {
-  const activeColor = color ?? colors.spice.color;
+  const c = useColorTokens();
+  const activeColor = color ?? c.spice.color;
 
   return (
     <View
@@ -33,6 +34,7 @@ interface FlameIconProps {
 }
 
 function FlameIcon({ size, isActive, activeColor }: FlameIconProps) {
+  const c = useColorTokens();
   return (
     <Svg
       width={size}
@@ -42,7 +44,7 @@ function FlameIcon({ size, isActive, activeColor }: FlameIconProps) {
     >
       <Path
         d="M7 1.5c.5 2 2.5 3 2.5 5.5 0 1.2-.5 2-1.2 2.4.4-.6.4-1.6 0-2.2-.4-.6-1-.8-1.3-1.5-.4 1-1.4 1.6-1.4 3 0 .9.4 1.6 1 2-.7-.2-2.5-1.4-2.5-3.8C4.1 4.6 6.5 4 7 1.5z"
-        fill={isActive ? activeColor : colors.fg.faint}
+        fill={isActive ? activeColor : c.fg.faint}
       />
     </Svg>
   );

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { IdentChip } from '@/components/composed/IdentChip';
 import { useRemoveParticipant, RemoveParticipantError } from '../api/useRemoveParticipant';
@@ -17,6 +17,96 @@ interface RemoveParticipantSheetProps {
   onClose: () => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.55)',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 22,
+      paddingTop: 12,
+      paddingBottom: 36,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: c.border.divider,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 22,
+      lineHeight: 22 * 1.25,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      lineHeight: 13.5 * 1.5,
+      color: c.fg.secondary,
+      marginBottom: 20,
+    },
+    empty: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.tertiary,
+      paddingVertical: 16,
+      textAlign: 'center',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+    },
+    rowBordered: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    removeLink: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.semantic.danger,
+    },
+    confirmButton: {
+      backgroundColor: c.semantic.danger,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginTop: 8,
+      marginBottom: 12,
+    },
+    confirmDisabled: {
+      opacity: 0.5,
+    },
+    confirmText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '500',
+      color: c.fg.inverse,
+    },
+    cancelButton: {
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    cancelText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+    },
+  });
+}
+
 /**
  * Two-step OP action: pick a participant, then confirm.
  *
@@ -30,6 +120,8 @@ export function RemoveParticipantSheet({
   participants,
   onClose,
 }: RemoveParticipantSheetProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const [selected, setSelected] = useState<RemovableParticipant | null>(null);
   const { mutate: removeParticipant, isPending } = useRemoveParticipant();
 
@@ -112,7 +204,7 @@ export function RemoveParticipantSheet({
               accessibilityState={{ disabled: isPending }}
             >
               {isPending ? (
-                <ActivityIndicator color={colors.fg.inverse} />
+                <ActivityIndicator color={c.fg.inverse} />
               ) : (
                 <Text style={styles.confirmText}>
                   {t('post.removeParticipant.confirm.cta', { name: selected.identifier })}
@@ -134,91 +226,3 @@ export function RemoveParticipantSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.55)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 36,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border.divider,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 22,
-    lineHeight: 22 * 1.25,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    lineHeight: 13.5 * 1.5,
-    color: colors.fg.secondary,
-    marginBottom: 20,
-  },
-  empty: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-    paddingVertical: 16,
-    textAlign: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-  },
-  rowBordered: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  removeLink: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.semantic.danger,
-  },
-  confirmButton: {
-    backgroundColor: colors.semantic.danger,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  confirmDisabled: {
-    opacity: 0.5,
-  },
-  confirmText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.fg.inverse,
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.secondary,
-  },
-});

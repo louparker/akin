@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { IdentChip } from './IdentChip';
 import { timeAgo } from '@/features/feed/api/timeAgo';
@@ -35,6 +35,137 @@ export interface CommentItemProps {
   onBlock: (authorId: string) => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      paddingHorizontal: 22,
+      paddingTop: 14,
+      paddingBottom: 18,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border.hairline,
+    },
+    containerPending: {
+      opacity: 0.55,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 8,
+    },
+    opBadge: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 10.5,
+      color: c.brand.primary,
+      textTransform: 'uppercase',
+    },
+    flex1: { flex: 1 },
+    menuBtn: { paddingHorizontal: 4 },
+    menuIcon: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.tertiary,
+    },
+    time: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.tertiary,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 14.5,
+      lineHeight: 14.5 * 1.55,
+      color: c.fg.secondary,
+    },
+    bodyMuted: {
+      fontStyle: 'italic',
+      color: c.fg.tertiary,
+    },
+    sendingText: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: c.fg.tertiary,
+      marginTop: 4,
+    },
+    // Inline edit
+    editInput: {
+      backgroundColor: c.bg.raised,
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      fontFamily: 'Inter',
+      fontSize: 14.5,
+      color: c.fg.primary,
+      minHeight: 80,
+      textAlignVertical: 'top',
+    },
+    editError: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.semantic.danger,
+      marginTop: 4,
+    },
+    editActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 8,
+      marginTop: 8,
+    },
+    editBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 8,
+    },
+    editBtnPrimary: {
+      backgroundColor: c.bg.inverse,
+      minWidth: 60,
+      alignItems: 'center',
+    },
+    editBtnSecondary: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      color: c.fg.secondary,
+    },
+    editBtnPrimaryText: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      fontWeight: '500',
+      color: c.fg.inverse,
+    },
+    // Action sheet modal
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.45)',
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingTop: 8,
+      paddingBottom: 40,
+    },
+    sheetItem: {
+      paddingVertical: 16,
+      paddingHorizontal: 22,
+    },
+    sheetItemText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+    },
+    danger: { color: c.semantic.danger },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border.hairline,
+      marginHorizontal: 22,
+    },
+  });
+}
+
 export const CommentItem = memo(function CommentItem({
   comment,
   postId,
@@ -44,6 +175,8 @@ export const CommentItem = memo(function CommentItem({
   onReportPerson,
   onBlock,
 }: CommentItemProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const [showMenu, setShowMenu] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editBody, setEditBody] = useState(comment.body);
@@ -184,7 +317,7 @@ export const CommentItem = memo(function CommentItem({
               style={[styles.editBtn, styles.editBtnPrimary]}
             >
               {isEditing ? (
-                <ActivityIndicator size="small" color={colors.fg.inverse} />
+                <ActivityIndicator size="small" color={c.fg.inverse} />
               ) : (
                 <Text style={styles.editBtnPrimaryText}>{t('comment.edit.save')}</Text>
               )}
@@ -296,133 +429,4 @@ export const CommentItem = memo(function CommentItem({
       </Modal>
     </View>
   );
-});
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 18,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.hairline,
-  },
-  containerPending: {
-    opacity: 0.55,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  opBadge: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10.5,
-    color: colors.brand.primary,
-    textTransform: 'uppercase',
-  },
-  flex1: { flex: 1 },
-  menuBtn: { paddingHorizontal: 4 },
-  menuIcon: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-  },
-  time: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.tertiary,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    lineHeight: 14.5 * 1.55,
-    color: colors.fg.secondary,
-  },
-  bodyMuted: {
-    fontStyle: 'italic',
-    color: colors.fg.tertiary,
-  },
-  sendingText: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    color: colors.fg.tertiary,
-    marginTop: 4,
-  },
-  // Inline edit
-  editInput: {
-    backgroundColor: colors.bg.raised,
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    color: colors.fg.primary,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  editError: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.semantic.danger,
-    marginTop: 4,
-  },
-  editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 8,
-  },
-  editBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  editBtnPrimary: {
-    backgroundColor: colors.bg.inverse,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  editBtnSecondary: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    color: colors.fg.secondary,
-  },
-  editBtnPrimaryText: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: colors.fg.inverse,
-  },
-  // Action sheet modal
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
-  sheetItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-  },
-  sheetItemText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-  },
-  danger: { color: colors.semantic.danger },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border.hairline,
-    marginHorizontal: 22,
-  },
 });
