@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { useModeratorQueue } from '@/features/moderation/api/useModeratorQueue';
@@ -28,6 +28,84 @@ const FILTERS: { label: string; value: ReasonFilter }[] = [
   { label: t('mod.queue.filter.threat'), value: 'threat' },
 ];
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    backIcon: { fontFamily: 'Inter', fontSize: 28, color: c.fg.primary, paddingHorizontal: 4 },
+    depthBadge: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.tertiary,
+    },
+    filterRow: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      gap: 8,
+    },
+    chip: {
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      backgroundColor: c.bg.raised,
+      borderWidth: 1,
+      borderColor: c.border.hairline,
+    },
+    chipActive: {
+      backgroundColor: c.bg.inverse,
+      borderColor: c.bg.inverse,
+    },
+    chipText: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.secondary,
+    },
+    chipTextActive: {
+      color: c.fg.inverse,
+    },
+    loader: {
+      marginTop: 40,
+    },
+    emptyText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.tertiary,
+      textAlign: 'center',
+      marginTop: 60,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 22,
+      paddingVertical: 16,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    rowMeta: {
+      gap: 3,
+    },
+    rowReason: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+      textTransform: 'capitalize',
+    },
+    rowTarget: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.fg.tertiary,
+    },
+    rowAge: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.fg.tertiary,
+    },
+  });
+}
+
 export default function ModeratorQueueScreen() {
   const [filter, setFilter] = useState<ReasonFilter>(null);
   const {
@@ -38,6 +116,9 @@ export default function ModeratorQueueScreen() {
   } = useModeratorQueue({
     reasonFilter: filter,
   });
+
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const openCount = reports?.length ?? 0;
 
@@ -83,7 +164,7 @@ export default function ModeratorQueueScreen() {
       </ScrollView>
 
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} color={colors.fg.tertiary} />
+        <ActivityIndicator style={styles.loader} color={c.fg.tertiary} />
       ) : (
         <FlashList
           data={reports ?? []}
@@ -91,7 +172,7 @@ export default function ModeratorQueueScreen() {
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} />
           }
-          renderItem={({ item }) => <ReportQueueRow report={item} />}
+          renderItem={({ item }) => <ReportQueueRow report={item} styles={styles} />}
           ListEmptyComponent={<Text style={styles.emptyText}>{t('mod.queue.empty')}</Text>}
         />
       )}
@@ -99,7 +180,13 @@ export default function ModeratorQueueScreen() {
   );
 }
 
-function ReportQueueRow({ report }: { report: ReportRow }) {
+function ReportQueueRow({
+  report,
+  styles,
+}: {
+  report: ReportRow;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   const targetLabel =
     report.target_type === 'post'
       ? t('mod.report.target.post')
@@ -122,79 +209,3 @@ function ReportQueueRow({ report }: { report: ReportRow }) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  backIcon: { fontFamily: 'Inter', fontSize: 28, color: colors.fg.primary, paddingHorizontal: 4 },
-  depthBadge: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.tertiary,
-  },
-  filterRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  chip: {
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: colors.bg.raised,
-    borderWidth: 1,
-    borderColor: colors.border.hairline,
-  },
-  chipActive: {
-    backgroundColor: colors.bg.inverse,
-    borderColor: colors.bg.inverse,
-  },
-  chipText: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.secondary,
-  },
-  chipTextActive: {
-    color: colors.fg.inverse,
-  },
-  loader: {
-    marginTop: 40,
-  },
-  emptyText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.tertiary,
-    textAlign: 'center',
-    marginTop: 60,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  rowMeta: {
-    gap: 3,
-  },
-  rowReason: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-    textTransform: 'capitalize',
-  },
-  rowTarget: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.fg.tertiary,
-  },
-  rowAge: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.fg.tertiary,
-  },
-});

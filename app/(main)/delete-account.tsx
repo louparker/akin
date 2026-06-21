@@ -1,22 +1,81 @@
 // CRITICAL-PATH: auth privacy — pending expert review
 // Multi-step account deletion: warning → phrase confirm → password re-entry.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 type Step = 1 | 2 | 3;
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg.base },
+    topBar: {
+      height: 52,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    backHit: { padding: 8 },
+    backArrow: { fontSize: 20, color: c.fg.primary },
+    topBarTitle: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: '500',
+      color: c.fg.primary,
+      marginLeft: 8,
+    },
+    scrollContent: { paddingHorizontal: 28, paddingTop: 32, paddingBottom: 48 },
+    sectionTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 24,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 16,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      lineHeight: 15 * 1.6,
+      color: c.fg.secondary,
+      marginBottom: 32,
+    },
+    phraseInput: {
+      backgroundColor: c.bg.sunken,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+      borderRadius: 4,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    errorText: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.semantic.danger,
+      marginBottom: 16,
+    },
+    actions: { marginTop: 24, gap: 12 },
+  });
+}
+
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const isLoading = useAuthStore((s) => s.isLoading);
   const storeError = useAuthStore((s) => s.error);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const [step, setStep] = useState<Step>(1);
   const [phrase, setPhrase] = useState('');
@@ -94,7 +153,7 @@ export default function DeleteAccountScreen() {
                 setPhraseError(false);
               }}
               placeholder={t('auth.delete.step2.placeholder')}
-              placeholderTextColor={colors.fg.faint}
+              placeholderTextColor={c.fg.faint}
               autoCapitalize="none"
               autoCorrect={false}
               accessibilityLabel={t('auth.delete.step2.label')}
@@ -133,7 +192,7 @@ export default function DeleteAccountScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor={colors.fg.faint}
+              placeholderTextColor={c.fg.faint}
               secureTextEntry
               accessibilityLabel={t('auth.delete.step3.label')}
             />
@@ -167,58 +226,3 @@ export default function DeleteAccountScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg.base },
-  topBar: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  backHit: { padding: 8 },
-  backArrow: { fontSize: 20, color: colors.fg.primary },
-  topBarTitle: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.fg.primary,
-    marginLeft: 8,
-  },
-  scrollContent: { paddingHorizontal: 28, paddingTop: 32, paddingBottom: 48 },
-  sectionTitle: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 24,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 16,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    lineHeight: 15 * 1.6,
-    color: colors.fg.secondary,
-    marginBottom: 32,
-  },
-  phraseInput: {
-    backgroundColor: colors.bg.sunken,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border.divider,
-    borderRadius: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.semantic.danger,
-    marginBottom: 16,
-  },
-  actions: { marginTop: 24, gap: 12 },
-});

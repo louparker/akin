@@ -1,5 +1,5 @@
 import { View, type ViewStyle, type StyleProp } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 interface SkeletonProps {
   width: number | string;
@@ -9,6 +9,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width, height, borderRadius = 4, style }: SkeletonProps) {
+  const c = useColorTokens();
   return (
     <View
       accessibilityRole="none"
@@ -18,7 +19,7 @@ export function Skeleton({ width, height, borderRadius = 4, style }: SkeletonPro
           width: width as number,
           height,
           borderRadius,
-          backgroundColor: colors.border.divider,
+          backgroundColor: c.border.divider,
         },
         style,
       ]}

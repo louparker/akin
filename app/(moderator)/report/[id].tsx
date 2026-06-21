@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { useModeratorReport } from '@/features/moderation/api/useModeratorReport';
@@ -40,6 +40,93 @@ function buildActions(reportedIdentifier: string | null): ActionConfig[] {
   ];
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg.base },
+    backIcon: { fontFamily: 'Inter', fontSize: 28, color: c.fg.primary, paddingHorizontal: 4 },
+    loader: { marginTop: 40 },
+    errorText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.tertiary,
+      textAlign: 'center',
+      marginTop: 40,
+    },
+    scroll: { paddingBottom: 60 },
+    section: { marginBottom: 24 },
+    metaRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 22,
+      paddingVertical: 13,
+      backgroundColor: c.bg.raised,
+    },
+    metaLabel: { fontFamily: 'Inter', fontSize: 14, color: c.fg.tertiary, flex: 1 },
+    metaValue: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.primary,
+      flex: 2,
+      textAlign: 'right',
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    actionRow: { paddingHorizontal: 22, paddingVertical: 16, backgroundColor: c.bg.raised },
+    actionLabel: { fontFamily: 'Inter', fontSize: 15, color: c.fg.primary },
+    actionDanger: { color: c.semantic.danger },
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(35,31,33,0.55)' },
+    modalSheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 22,
+      paddingTop: 20,
+      paddingBottom: 36,
+      gap: 12,
+    },
+    modalTitle: { fontFamily: 'Source Serif 4', fontSize: 22, color: c.fg.primary },
+    modalSubtitle: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.tertiary,
+      letterSpacing: 0.5,
+    },
+    reasonInput: {
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      borderRadius: 8,
+      padding: 12,
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.primary,
+      minHeight: 80,
+    },
+    reasonInputError: { borderColor: c.semantic.danger },
+    reasonErrorText: { fontFamily: 'Inter', fontSize: 13, color: c.semantic.danger },
+    modalButtons: { flexDirection: 'row', gap: 12 },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: 13,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      alignItems: 'center',
+    },
+    cancelText: { fontFamily: 'Inter', fontSize: 15, color: c.fg.secondary },
+    confirmButton: {
+      flex: 1,
+      paddingVertical: 13,
+      borderRadius: 8,
+      backgroundColor: c.semantic.danger,
+      alignItems: 'center',
+    },
+    confirmText: { fontFamily: 'Inter', fontSize: 15, fontWeight: '600', color: c.fg.inverse },
+  });
+}
+
 export default function ModeratorReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: report, isLoading, isError } = useModeratorReport(id ?? '');
@@ -48,6 +135,9 @@ export default function ModeratorReportScreen() {
   const [pendingAction, setPendingAction] = useState<ModerationAction | null>(null);
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState(false);
+
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   function handleActionPress(action: ModerationAction) {
     setReason('');
@@ -93,7 +183,7 @@ export default function ModeratorReportScreen() {
             </Pressable>
           }
         />
-        <ActivityIndicator style={styles.loader} color={colors.fg.tertiary} />
+        <ActivityIndicator style={styles.loader} color={c.fg.tertiary} />
       </View>
     );
   }
@@ -141,18 +231,33 @@ export default function ModeratorReportScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Report metadata */}
         <View style={styles.section}>
-          <Row label={t('mod.report.reason')} value={report.reason.replace('_', ' ')} />
-          <Row label="Target" value={`${targetLabel}: ${report.target_id}`} />
-          <Row label="Filed" value={timeAgo(report.created_at)} />
-          {report.notes ? <Row label={t('mod.report.notes')} value={report.notes} /> : null}
-          <Row label="Status" value={report.status} />
+          <Row
+            label={t('mod.report.reason')}
+            value={report.reason.replace('_', ' ')}
+            styles={styles}
+          />
+          <Row label="Target" value={`${targetLabel}: ${report.target_id}`} styles={styles} />
+          <Row label="Filed" value={timeAgo(report.created_at)} styles={styles} />
+          {report.notes ? (
+            <Row label={t('mod.report.notes')} value={report.notes} styles={styles} />
+          ) : null}
+          <Row label="Status" value={report.status} styles={styles} />
           {report.reporterIdentifier ? (
-            <Row label={t('mod.report.reporter')} value={report.reporterIdentifier} />
+            <Row
+              label={t('mod.report.reporter')}
+              value={report.reporterIdentifier}
+              styles={styles}
+            />
           ) : null}
           {report.reportedIdentifier ? (
-            <Row label={t('mod.report.against')} value={report.reportedIdentifier} isLast />
+            <Row
+              label={t('mod.report.against')}
+              value={report.reportedIdentifier}
+              isLast
+              styles={styles}
+            />
           ) : (
-            <Row label={t('mod.report.against')} value="—" isLast />
+            <Row label={t('mod.report.against')} value="—" isLast styles={styles} />
           )}
         </View>
 
@@ -191,7 +296,7 @@ export default function ModeratorReportScreen() {
           <TextInput
             style={[styles.reasonInput, reasonError && styles.reasonInputError]}
             placeholder={t('mod.action.confirm.reason.placeholder')}
-            placeholderTextColor={colors.fg.faint}
+            placeholderTextColor={c.fg.faint}
             value={reason}
             onChangeText={(v) => {
               setReason(v);
@@ -218,7 +323,7 @@ export default function ModeratorReportScreen() {
               accessibilityRole="button"
             >
               {isPending ? (
-                <ActivityIndicator color={colors.fg.inverse} size="small" />
+                <ActivityIndicator color={c.fg.inverse} size="small" />
               ) : (
                 <Text style={styles.confirmText}>{t('mod.action.confirm.cta')}</Text>
               )}
@@ -230,7 +335,17 @@ export default function ModeratorReportScreen() {
   );
 }
 
-function Row({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
+function Row({
+  label,
+  value,
+  isLast,
+  styles,
+}: {
+  label: string;
+  value: string;
+  isLast?: boolean;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
     <View style={[styles.metaRow, !isLast && styles.rowDivider]}>
       <Text style={styles.metaLabel}>{label}</Text>
@@ -238,88 +353,3 @@ function Row({ label, value, isLast }: { label: string; value: string; isLast?: 
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.base },
-  backIcon: { fontFamily: 'Inter', fontSize: 28, color: colors.fg.primary, paddingHorizontal: 4 },
-  loader: { marginTop: 40 },
-  errorText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.tertiary,
-    textAlign: 'center',
-    marginTop: 40,
-  },
-  scroll: { paddingBottom: 60 },
-  section: { marginBottom: 24 },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingVertical: 13,
-    backgroundColor: colors.bg.raised,
-  },
-  metaLabel: { fontFamily: 'Inter', fontSize: 14, color: colors.fg.tertiary, flex: 1 },
-  metaValue: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.primary,
-    flex: 2,
-    textAlign: 'right',
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  actionRow: { paddingHorizontal: 22, paddingVertical: 16, backgroundColor: colors.bg.raised },
-  actionLabel: { fontFamily: 'Inter', fontSize: 15, color: colors.fg.primary },
-  actionDanger: { color: colors.semantic.danger },
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(35,31,33,0.55)' },
-  modalSheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 22,
-    paddingTop: 20,
-    paddingBottom: 36,
-    gap: 12,
-  },
-  modalTitle: { fontFamily: 'Source Serif 4', fontSize: 22, color: colors.fg.primary },
-  modalSubtitle: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.tertiary,
-    letterSpacing: 0.5,
-  },
-  reasonInput: {
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.primary,
-    minHeight: 80,
-  },
-  reasonInputError: { borderColor: colors.semantic.danger },
-  reasonErrorText: { fontFamily: 'Inter', fontSize: 13, color: colors.semantic.danger },
-  modalButtons: { flexDirection: 'row', gap: 12 },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    alignItems: 'center',
-  },
-  cancelText: { fontFamily: 'Inter', fontSize: 15, color: colors.fg.secondary },
-  confirmButton: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 8,
-    backgroundColor: colors.semantic.danger,
-    alignItems: 'center',
-  },
-  confirmText: { fontFamily: 'Inter', fontSize: 15, fontWeight: '600', color: colors.fg.inverse },
-});

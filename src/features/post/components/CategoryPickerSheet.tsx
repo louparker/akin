@@ -1,6 +1,6 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Modal, View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { POST_CATEGORIES } from '@/features/post/schemas/createPost';
 import type { Enums } from '@/types/database';
@@ -14,12 +14,104 @@ interface CategoryPickerSheetProps {
   onClose: () => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    // eslint-disable-next-line react-native/no-color-literals -- overlay alpha
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(31,31,33,0.55)',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 22,
+      paddingTop: 12,
+      paddingBottom: 40,
+      maxHeight: '85%',
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: c.border.divider,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 24,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 16,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 24,
+      // Reserve room on the right for the selected-indicator dot, so when it
+      // appears the title/description don't reflow.
+      paddingRight: 22,
+      // Anchor for the absolutely-positioned checkAnchor below.
+      position: 'relative',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.border.divider,
+      marginTop: 12,
+      marginBottom: 12,
+    },
+    rowPressed: {
+      opacity: 0.7,
+    },
+    rowMain: {
+      flex: 1,
+    },
+    rowTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 19,
+      color: c.fg.primary,
+      marginBottom: 6,
+    },
+    rowTitleActive: {
+      color: c.brand.primary,
+    },
+    rowDesc: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.tertiary,
+      lineHeight: 13 * 1.5,
+    },
+    // checkAnchor is a full-height column anchored to the right edge of the row.
+    // justifyContent: 'center' inside it centres the dot vertically against the
+    // row's full height — independent of rowMain's content layout, font metrics,
+    // or whether the description wraps.
+    checkAnchor: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+      paddingRight: 4,
+    },
+    check: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: c.brand.primary,
+    },
+  });
+}
+
 export function CategoryPickerSheet({
   visible,
   selected,
   onSelect,
   onClose,
 }: CategoryPickerSheetProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <Modal
       visible={visible}
@@ -79,90 +171,3 @@ export function CategoryPickerSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // eslint-disable-next-line react-native/no-color-literals -- overlay alpha
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(31,31,33,0.55)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 40,
-    maxHeight: '85%',
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border.divider,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 24,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 24,
-    // Reserve room on the right for the selected-indicator dot, so when it
-    // appears the title/description don't reflow.
-    paddingRight: 22,
-    // Anchor for the absolutely-positioned checkAnchor below.
-    position: 'relative',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border.divider,
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  rowPressed: {
-    opacity: 0.7,
-  },
-  rowMain: {
-    flex: 1,
-  },
-  rowTitle: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 19,
-    color: colors.fg.primary,
-    marginBottom: 6,
-  },
-  rowTitleActive: {
-    color: colors.brand.primary,
-  },
-  rowDesc: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.tertiary,
-    lineHeight: 13 * 1.5,
-  },
-  // checkAnchor is a full-height column anchored to the right edge of the row.
-  // justifyContent: 'center' inside it centres the dot vertically against the
-  // row's full height — independent of rowMain's content layout, font metrics,
-  // or whether the description wraps.
-  checkAnchor: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    paddingRight: 4,
-  },
-  check: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.brand.primary,
-  },
-});

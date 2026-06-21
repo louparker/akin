@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Modal, View, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/primitives/Button';
 import type { SortOrder } from '../store/useFeedStore';
@@ -29,6 +30,113 @@ const SPICE_OPTIONS: { value: number; label: string }[] = [
   { value: 5, label: '5+' },
 ];
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.4)',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingTop: 14,
+      paddingBottom: 36,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.border.divider,
+      alignSelf: 'center',
+      marginBottom: 18,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 22,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      paddingHorizontal: 24,
+      paddingBottom: 18,
+    },
+    titleDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border.hairline,
+    },
+    section: {
+      paddingHorizontal: 24,
+      paddingTop: 18,
+      paddingBottom: 8,
+    },
+    eyebrow: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 10.5,
+      color: c.fg.secondary,
+      letterSpacing: 1.2,
+      marginBottom: 10,
+    },
+    sortRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+    },
+    sortRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    sortLabel: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+    },
+    checkmark: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.fg.primary,
+    },
+    spiceSection: {
+      paddingHorizontal: 24,
+      paddingTop: 18,
+    },
+    spiceChips: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingBottom: 4,
+    },
+    spiceChip: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      alignItems: 'center',
+      minWidth: 44,
+    },
+    spiceChipActive: {
+      borderColor: c.fg.primary,
+      backgroundColor: c.bg.raised,
+    },
+    spiceChipLabel: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.secondary,
+      textAlign: 'center',
+    },
+    spiceChipLabelActive: {
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+    applyContainer: {
+      paddingHorizontal: 24,
+      paddingTop: 24,
+    },
+  });
+}
+
 export function FilterSheet({
   visible,
   sort,
@@ -38,6 +146,9 @@ export function FilterSheet({
   onApply,
   onClose,
 }: FilterSheetProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <Modal
       visible={visible}
@@ -114,108 +225,3 @@ export function FilterSheet({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.4)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 14,
-    paddingBottom: 36,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border.divider,
-    alignSelf: 'center',
-    marginBottom: 18,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 22,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    paddingHorizontal: 24,
-    paddingBottom: 18,
-  },
-  titleDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border.hairline,
-  },
-  section: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 8,
-  },
-  eyebrow: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10.5,
-    color: colors.fg.secondary,
-    letterSpacing: 1.2,
-    marginBottom: 10,
-  },
-  sortRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  sortRowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  sortLabel: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-  },
-  checkmark: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.fg.primary,
-  },
-  spiceSection: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-  },
-  spiceChips: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 4,
-  },
-  spiceChip: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    alignItems: 'center',
-    minWidth: 44,
-  },
-  spiceChipActive: {
-    borderColor: colors.fg.primary,
-    backgroundColor: colors.bg.raised,
-  },
-  spiceChipLabel: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.secondary,
-    textAlign: 'center',
-  },
-  spiceChipLabelActive: {
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-  applyContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-});

@@ -13,7 +13,7 @@
  * CRITICAL-PATH: error recovery surface — review before production.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { ErrorBoundary as RebErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { Button } from '@/components/primitives/Button';
@@ -21,7 +21,7 @@ import { Text } from '@/components/primitives/Text';
 import { logger } from '@/lib/logger';
 import { Sentry } from '@/lib/sentry';
 import { t } from '@/lib/i18n';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 // ── Error code (opaque, safe to show, not PII) ────────────────────────────────
 
@@ -39,7 +39,38 @@ interface ErrorScreenProps extends FallbackProps {
   errorCode: string;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.bg.base,
+      padding: 32,
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    body: {
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    code: {
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    actions: {
+      width: '100%',
+      gap: 12,
+    },
+  });
+}
+
 function ErrorScreen({ resetErrorBoundary, feedbackEmail, errorCode }: ErrorScreenProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   function handleFeedback() {
     const subject = encodeURIComponent(`Akin app error — ${errorCode}`);
     const body = encodeURIComponent(
@@ -112,31 +143,3 @@ export function ErrorBoundary({
     </RebErrorBoundary>
   );
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg.base,
-    padding: 32,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  body: {
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  code: {
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  actions: {
-    width: '100%',
-    gap: 12,
-  },
-});

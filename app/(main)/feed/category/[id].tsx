@@ -1,10 +1,10 @@
+import { useMemo, useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, router } from 'expo-router';
 
-import { useCallback, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { PostCard } from '@/components/composed/PostCard';
 import { Skeleton } from '@/components/composed/Skeleton';
@@ -34,32 +34,132 @@ function isValidCategory(id: string): id is PostCategory {
   return (ALL_CATEGORIES as string[]).includes(id);
 }
 
-function BackButton() {
-  return (
-    <Pressable
-      onPress={() => router.back()}
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      style={backStyles.button}
-    >
-      <Text style={backStyles.arrow}>‹</Text>
-    </Pressable>
-  );
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    backButton: {
+      padding: 8,
+    },
+    backArrow: {
+      fontFamily: 'Inter',
+      fontSize: 22,
+      color: c.fg.primary,
+      lineHeight: 26,
+    },
+    categoryHeader: {
+      paddingTop: 8,
+      paddingHorizontal: 22,
+      paddingBottom: 18,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    eyebrow: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11,
+      color: c.fg.secondary,
+      letterSpacing: 1.4,
+      marginBottom: 8,
+    },
+    categoryTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 32,
+      lineHeight: 32 * 1.05,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    categoryDesc: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+      lineHeight: 14 * 1.5,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 16,
+    },
+    filterChip: {
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      borderRadius: 4,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+    },
+    filterChipText: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.fg.secondary,
+    },
+    skeletonItem: {
+      paddingHorizontal: 22,
+      paddingTop: 28,
+      paddingBottom: 36,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border.divider,
+      gap: 10,
+    },
+    skeletonMeta: {
+      marginBottom: 2,
+    },
+    skeletonTitle: {
+      marginBottom: 4,
+    },
+    skeletonLine: {},
+    centeredState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      gap: 12,
+    },
+    stateTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 20,
+      color: c.fg.primary,
+      textAlign: 'center',
+      lineHeight: 26,
+      letterSpacing: -0.2,
+    },
+    stateBody: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+      textAlign: 'center',
+      lineHeight: 14 * 1.5,
+    },
+    retryButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: c.fg.primary,
+    },
+    retryText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+    ctaButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 4,
+      backgroundColor: c.bg.inverse,
+    },
+    ctaText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '500',
+      color: c.fg.inverse,
+    },
+  });
 }
 
-const backStyles = StyleSheet.create({
-  button: {
-    padding: 8,
-  },
-  arrow: {
-    fontFamily: 'Inter',
-    fontSize: 22,
-    color: colors.fg.primary,
-    lineHeight: 26,
-  },
-});
-
-function PostSkeleton() {
+function PostSkeleton({ styles }: { styles: ReturnType<typeof makeStyles> }) {
   return (
     <View style={styles.skeletonItem}>
       <Skeleton width={80} height={14} borderRadius={3} style={styles.skeletonMeta} />
@@ -74,6 +174,8 @@ export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [filterVisible, setFilterVisible] = useState(false);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand store actions are arrow-function closures, not this-bound methods
   const { sort, minSpice, setSort, setMinSpice } = useFeedStore();
@@ -126,6 +228,19 @@ export default function CategoryDetailScreen() {
         : t('feed.sort.spice');
   const spiceLabel = minSpice > 0 ? `${minSpice}+ flames` : t('feed.filter.minSpice.any');
 
+  function BackButton() {
+    return (
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        style={styles.backButton}
+      >
+        <Text style={styles.backArrow}>‹</Text>
+      </Pressable>
+    );
+  }
+
   const renderHeader = () => (
     <View style={styles.categoryHeader}>
       <Text style={styles.eyebrow}>{t('category.detail.filterLabel').toUpperCase()}</Text>
@@ -157,10 +272,10 @@ export default function CategoryDetailScreen() {
       <View style={styles.container}>
         <TopBar left={<BackButton />} />
         {renderHeader()}
-        <PostSkeleton />
-        <PostSkeleton />
-        <PostSkeleton />
-        <PostSkeleton />
+        <PostSkeleton styles={styles} />
+        <PostSkeleton styles={styles} />
+        <PostSkeleton styles={styles} />
+        <PostSkeleton styles={styles} />
       </View>
     );
   }
@@ -239,117 +354,3 @@ export default function CategoryDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  categoryHeader: {
-    paddingTop: 8,
-    paddingHorizontal: 22,
-    paddingBottom: 18,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  eyebrow: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    color: colors.fg.secondary,
-    letterSpacing: 1.4,
-    marginBottom: 8,
-  },
-  categoryTitle: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 32,
-    lineHeight: 32 * 1.05,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  categoryDesc: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.secondary,
-    lineHeight: 14 * 1.5,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
-  },
-  filterChip: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border.divider,
-  },
-  filterChipText: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.fg.secondary,
-  },
-  skeletonItem: {
-    paddingHorizontal: 22,
-    paddingTop: 28,
-    paddingBottom: 36,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.divider,
-    gap: 10,
-  },
-  skeletonMeta: {
-    marginBottom: 2,
-  },
-  skeletonTitle: {
-    marginBottom: 4,
-  },
-  skeletonLine: {},
-  centeredState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
-  },
-  stateTitle: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 20,
-    color: colors.fg.primary,
-    textAlign: 'center',
-    lineHeight: 26,
-    letterSpacing: -0.2,
-  },
-  stateBody: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.secondary,
-    textAlign: 'center',
-    lineHeight: 14 * 1.5,
-  },
-  retryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.fg.primary,
-  },
-  retryText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-  ctaButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 4,
-    backgroundColor: colors.bg.inverse,
-  },
-  ctaText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.fg.inverse,
-  },
-});

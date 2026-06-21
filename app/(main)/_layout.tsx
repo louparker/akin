@@ -4,12 +4,13 @@
 // Inactive state: fg.faint color + regular label.
 // Bottom padding accounts for home indicator on modern iPhones via useSafeAreaInsets.
 
+import { useMemo } from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { IconSettings } from '@/components/composed/icons/IconSettings';
 
@@ -45,12 +46,14 @@ function TabButton({
 
 // Stroked SVG icons — hairline (1.5px) with rounded caps per the design language.
 // Tint flips between fg.primary (active) and fg.faint (inactive).
+// Each icon uses `tok` for the token object and `c` for the resolved color string.
 
 const ICON_SIZE = 24;
 const STROKE_WIDTH = 1.5;
 
 function IconFeed({ active }: { active: boolean }) {
-  const c = active ? colors.fg.primary : colors.fg.faint;
+  const tok = useColorTokens();
+  const c = active ? tok.fg.primary : tok.fg.faint;
   return (
     <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
       <Path d="M4 6.5h16" stroke={c} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
@@ -61,7 +64,8 @@ function IconFeed({ active }: { active: boolean }) {
 }
 
 function IconPencil({ active }: { active: boolean }) {
-  const c = active ? colors.fg.primary : colors.fg.faint;
+  const tok = useColorTokens();
+  const c = active ? tok.fg.primary : tok.fg.faint;
   return (
     <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
       {/* Pencil outline: eraser end top-right, tip bottom-left */}
@@ -79,7 +83,8 @@ function IconPencil({ active }: { active: boolean }) {
 }
 
 function IconUser({ active }: { active: boolean }) {
-  const c = active ? colors.fg.primary : colors.fg.faint;
+  const tok = useColorTokens();
+  const c = active ? tok.fg.primary : tok.fg.faint;
   return (
     <Svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none">
       {/* Head */}
@@ -95,7 +100,49 @@ function IconUser({ active }: { active: boolean }) {
   );
 }
 
+function makeTabStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    item: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    iconWrapper: {
+      position: 'relative',
+    },
+    labelBase: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      letterSpacing: 0.1,
+      marginTop: 2,
+    },
+    labelActive: {
+      fontWeight: '600',
+      color: c.fg.primary,
+    },
+    labelInactive: {
+      fontWeight: '400',
+      color: c.fg.faint,
+    },
+  });
+}
+
+function makeTabBarStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    bar: {
+      backgroundColor: c.bg.base,
+      borderTopColor: c.border.hairline,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      paddingTop: 8,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
+  });
+}
+
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
+  const c = useColorTokens();
+  const tabStyles = useMemo(() => makeTabStyles(c), [c]);
   return (
     <Text
       // Keep every tab label on a single line. Without these, "Settings" (and
@@ -122,6 +169,8 @@ function TabItem({
   focused: boolean;
   label: string;
 }) {
+  const c = useColorTokens();
+  const tabStyles = useMemo(() => makeTabStyles(c), [c]);
   return (
     <View style={tabStyles.item}>
       <View style={tabStyles.iconWrapper}>
@@ -138,6 +187,8 @@ function TabItem({
 export default function MainLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 20);
+  const c = useColorTokens();
+  const tabBarStyles = useMemo(() => makeTabBarStyles(c), [c]);
 
   return (
     <Tabs
@@ -217,41 +268,3 @@ export default function MainLayout() {
     </Tabs>
   );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const tabStyles = StyleSheet.create({
-  item: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  iconWrapper: {
-    position: 'relative',
-  },
-  labelBase: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    letterSpacing: 0.1,
-    marginTop: 2,
-  },
-  labelActive: {
-    fontWeight: '600',
-    color: colors.fg.primary,
-  },
-  labelInactive: {
-    fontWeight: '400',
-    color: colors.fg.faint,
-  },
-});
-
-const tabBarStyles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.bg.base,
-    borderTopColor: colors.border.hairline,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 8,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-});

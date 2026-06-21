@@ -1,8 +1,9 @@
 // Segmented control row used in Settings (Language, Appearance).
 // Three-option pill row matching the existing Settings list aesthetic.
 
+import { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 export interface SegmentedOption<T extends string> {
   value: T;
@@ -17,12 +18,51 @@ export interface SegmentedRowProps<T extends string> {
   testID?: string;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      backgroundColor: c.bg.raised,
+      borderRadius: 10,
+      padding: 4,
+      marginHorizontal: 22,
+      gap: 4,
+    },
+    segment: {
+      flex: 1,
+      paddingVertical: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+    },
+    segmentSelected: {
+      backgroundColor: c.bg.base,
+    },
+    segmentPressed: {
+      opacity: 0.7,
+    },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.tertiary,
+    },
+    labelSelected: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+  });
+}
+
 export function SegmentedRow<T extends string>({
   options,
   value,
   onChange,
   testID,
 }: SegmentedRowProps<T>) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <View style={styles.row} accessibilityRole="radiogroup" testID={testID}>
       {options.map((opt) => {
@@ -48,37 +88,3 @@ export function SegmentedRow<T extends string>({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    backgroundColor: colors.bg.raised,
-    borderRadius: 10,
-    padding: 4,
-    marginHorizontal: 22,
-    gap: 4,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  segmentSelected: {
-    backgroundColor: colors.bg.base,
-  },
-  segmentPressed: {
-    opacity: 0.7,
-  },
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.tertiary,
-  },
-  labelSelected: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-});
