@@ -231,7 +231,9 @@ export default function SettingsScreen() {
 
         {/* Language ────────────────────────────────────────────────────────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.section.language').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            {t('settings.section.language').toUpperCase()}
+          </Text>
           <SegmentedRow<LocalePreference>
             testID="settings-language"
             options={languageOptions}
@@ -242,7 +244,9 @@ export default function SettingsScreen() {
 
         {/* Appearance ──────────────────────────────────────────────────────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.section.appearance').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            {t('settings.section.appearance').toUpperCase()}
+          </Text>
           <SegmentedRow<ThemePreference>
             testID="settings-appearance"
             options={appearanceOptions}
@@ -358,7 +362,9 @@ interface SectionProps {
 function Section({ titleKey, children, styles }: SectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{t(titleKey).toUpperCase()}</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">
+        {t(titleKey).toUpperCase()}
+      </Text>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );

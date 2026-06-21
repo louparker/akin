@@ -427,6 +427,7 @@ export const sv: TranslationDict = {
   'common.ok': 'OK',
   'common.loading': 'Laddar…',
   'common.cancel': 'Avbryt',
+  'common.moreOptions': 'Fler alternativ',
 
   // ── Profile (You tab) ────────────────────────────────────────────────────────
   'profile.title': 'Du',

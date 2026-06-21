@@ -562,7 +562,7 @@ export default function PostDetailScreen() {
           <Pressable
             onPress={handleMoreMenu}
             accessibilityRole="button"
-            accessibilityLabel="More options"
+            accessibilityLabel={t('common.moreOptions')}
           >
             <Text style={styles.moreIcon}>⋯</Text>
           </Pressable>
@@ -711,6 +711,7 @@ export default function PostDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('post.send.label')}
               accessibilityState={{ disabled: !replyText.trim() || !canReply || isSubmitting }}
+              hitSlop={4}
               testID="post-send-button"
             >
               {isSubmitting ? (
@@ -763,6 +764,7 @@ export default function PostDetailScreen() {
         <Pressable
           style={styles.menuOverlay}
           onPress={() => setShowMoreMenu(false)}
+          accessibilityRole="button"
           accessibilityLabel={t('common.close')}
         >
           <View style={styles.menuSheet}>

@@ -6,6 +6,7 @@
 
 import { render, fireEvent } from '@testing-library/react-native';
 import * as ReactNative from 'react-native';
+import { a11yCheck } from '@/lib/test-utils';
 import SettingsScreen from '../index';
 
 jest.mock('@/lib/appConfig', () => ({
@@ -203,5 +204,24 @@ describe('SettingsScreen — Legal + Support sections', () => {
   it('displays the app version string', () => {
     const { getByText } = render(<SettingsScreen />);
     expect(getByText('1.2.3')).toBeOnTheScreen();
+  });
+});
+
+describe('SettingsScreen — accessibility', () => {
+  it('passes a11y checks with no blocked users', () => {
+    const { root } = render(<SettingsScreen />);
+    expect(a11yCheck(root)).toEqual([]);
+  });
+
+  it('passes a11y checks with blocked users present', () => {
+    mockBlocks = [{ blocked_id: 'u2', blocked_identifier: 'BlueFox11', created_at: '2026-01-01' }];
+    const { root } = render(<SettingsScreen />);
+    expect(a11yCheck(root)).toEqual([]);
+  });
+
+  it('section titles are announced as headings', () => {
+    const { getAllByRole } = render(<SettingsScreen />);
+    const headings = getAllByRole('header');
+    expect(headings.length).toBeGreaterThanOrEqual(4);
   });
 });

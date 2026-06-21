@@ -424,6 +424,7 @@ export const en = {
   'common.ok': 'OK',
   'common.loading': 'Loading…',
   'common.cancel': 'Cancel',
+  'common.moreOptions': 'More options',
 
   // ── Profile (You tab) ────────────────────────────────────────────────────────
   'profile.title': 'You',

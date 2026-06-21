@@ -305,6 +305,7 @@ export const CommentItem = memo(function CommentItem({
               testID="comment-edit-cancel"
               onPress={handleEditCancel}
               accessibilityRole="button"
+              accessibilityLabel={t('comment.edit.cancel')}
               style={styles.editBtn}
             >
               <Text style={styles.editBtnSecondary}>{t('comment.edit.cancel')}</Text>
@@ -314,6 +315,8 @@ export const CommentItem = memo(function CommentItem({
               onPress={handleEditSave}
               disabled={!editBody.trim() || isEditing}
               accessibilityRole="button"
+              accessibilityLabel={t('comment.edit.save')}
+              accessibilityState={{ disabled: !editBody.trim() || isEditing }}
               style={[styles.editBtn, styles.editBtnPrimary]}
             >
               {isEditing ? (
@@ -345,6 +348,7 @@ export const CommentItem = memo(function CommentItem({
             onPress={handleMenuPress}
             accessibilityRole="button"
             accessibilityLabel={t('comment.menu.report')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             style={styles.menuBtn}
           >
             <Text style={styles.menuIcon}>⋯</Text>
@@ -371,6 +375,7 @@ export const CommentItem = memo(function CommentItem({
         <Pressable
           style={styles.overlay}
           onPress={() => setShowMenu(false)}
+          accessibilityRole="button"
           accessibilityLabel={t('common.close')}
         >
           <View style={styles.sheet}>

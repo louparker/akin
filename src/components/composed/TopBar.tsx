@@ -60,7 +60,7 @@ export function TopBar({ left, title, right, bordered = true, serif = false, sty
   const styles = useMemo(() => makeStyles(c), [c]);
   // Top safe-area inset is applied once at the root layout — do not add it here.
   return (
-    <View style={[styles.container, bordered && styles.bordered, style]} accessibilityRole="header">
+    <View style={[styles.container, bordered && styles.bordered, style]}>
       <View style={styles.slot}>{left ?? null}</View>
 
       {title ? (
