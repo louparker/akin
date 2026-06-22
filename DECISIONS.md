@@ -29,6 +29,91 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-021 — Phase 8.2: Auth emails via a Send Email Hook (bilingual, Resend)
+
+Date: 2026-06-22
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+The signup-confirmation, password-reset, and email-change flows already had
+working client screens (`verify.tsx`, `reset-password.tsx`, `reset-confirm.tsx`)
+and triggered the correct Supabase Auth events. But the emails themselves were
+sent by Supabase Auth's built-in sender, which is unusable in production:
+
+- Rate-limited to a few emails/hour (a testing-only shared SMTP).
+- Sends from a `supabase.co` address, not `ourakin.com`.
+- A single default template — single language — which violates the
+  bilingual-from-day-one non-negotiable (CLAUDE.md §2.5).
+
+Resend was wired and domain-verified during Phase 8.1, so the delivery channel
+existed; the gap was routing auth emails through it with bilingual templates.
+
+### Options considered
+
+1. **Custom SMTP only** — point Supabase Auth at Resend's SMTP endpoint and
+   customise the single built-in template per type. Fast; fixes the rate limit
+   and sender domain. But the built-in templates are single-language, so this
+   could not satisfy the bilingual rule without the hook anyway. Stopgap.
+2. **Send Email Hook (chosen)** — Supabase Auth POSTs each transactional email
+   to an Edge Function, which renders a bilingual branded template (language
+   from `user.user_metadata.language`, set at signup) and sends via the Resend
+   API. No SMTP config; the hook fully owns sending. Reuses the exact Resend
+   pattern from `notify-moderation`/`report-csam` (ADR-020).
+3. **pg_net from an auth trigger** — not supported for auth emails; rejected.
+
+### Decision
+
+Option 2. The `send-auth-email` Edge Function:
+
+- Verifies the request with Standard Webhooks (`SEND_EMAIL_HOOK_SECRET`) before
+  trusting any field — the function is internet-exposed, so signature
+  verification is the auth boundary.
+- Reads language from user metadata (default `sv`), builds the Supabase
+  `/auth/v1/verify` URL from `email_data`, renders the template, sends via Resend.
+- Pure template + URL logic lives in `templates.ts` (no Deno/remote imports) so
+  it is unit-tested with Jest (14 tests); the `index.ts` entry stays thin and is
+  validated by the Supabase CLI on deploy. Swedish copy is marked
+  `// TODO i18n review:` for native sign-off.
+
+Client screens and the `signUp` / `resetPasswordForEmail` calls are unchanged.
+
+### Manual configuration (founder, before this works in production)
+
+These cannot be done from code — they live in the Supabase Dashboard / CLI:
+
+1. **Deploy the function:** `supabase functions deploy send-auth-email`.
+2. **Enable the hook:** Dashboard → Authentication → Hooks → "Send Email" →
+   point to the deployed `send-auth-email` function. Copy the generated secret.
+3. **Set the secret:** `supabase secrets set SEND_EMAIL_HOOK_SECRET=v1,whsec_...`
+   (the function strips the `v1,whsec_` prefix before verifying).
+4. **Redirect allow-list:** Dashboard → Authentication → URL Configuration →
+   add `akin://reset-confirm` (and the signup redirect, if any) to the allowed
+   redirect URLs, so the email links resolve back into the app.
+5. `RESEND_API_KEY` is already set (shared with ADR-020 functions).
+
+### Consequences
+
+- Auth emails now come from `ourakin.com` via Resend, with no built-in rate
+  limit, in the user's language. Satisfies the bilingual non-negotiable.
+- Once the hook is enabled, Supabase Auth no longer sends via its built-in SMTP
+  for these emails — if the hook errors, the user gets no email, so the function
+  returns the Supabase error envelope and failures must be monitored (Sentry on
+  the Edge Function logs is a Phase 8 ops item).
+- A new secret (`SEND_EMAIL_HOOK_SECRET`) is required. The hook is a
+  CRITICAL-PATH: auth surface and needs expert review before production.
+- The OTP `token` is included in the email as a fallback code; the primary CTA
+  is the verify link the existing poll-based `verify.tsx` flow depends on.
+
+### Related work
+
+Function: `supabase/functions/send-auth-email/{index.ts,templates.ts}`.
+Tests: `supabase/functions/send-auth-email/__tests__/templates.test.ts`.
+Builds on ADR-020 (Resend pattern). Skills: `security`, `i18n`, `testing`.
+
+---
+
 ## ADR-020 — Phase 8.1: T&S hardening — email notifications, Warn label, CSAM evidence export
 
 Date: 2026-06-21
