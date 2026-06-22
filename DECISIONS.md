@@ -29,6 +29,70 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-020 — Phase 8.1: T&S hardening — email notifications, Warn label, CSAM evidence export
+
+Date: 2026-06-21
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 7 left four explicit deferrals documented in ADR-019:
+
+1. Resend email templates for suspend/ban notifications (Resend client existed, no templates).
+2. Mod action button labelling (Warn silently triggered auto-ban at strike 2 — opaque to moderators).
+3. `report-csam` Edge Function (spec deferred; founder was forwarding manually from audit log).
+4. ECPAT Sweden / NCMEC engagement (hard gate before public launch).
+
+Phase 8.1 closes all four.
+
+### Options considered
+
+**Email delivery channel:**
+
+1. **pg_net from within `moderate_report()`** — transactional guarantee, but adds pg_net setup complexity and makes the PL/pgSQL function harder to test.
+2. **Client-side invocation from `useModerateReport` `onSuccess`** — fire-and-forget, simpler, testable with Jest mock. Email failure never rolls back the moderation action (intentional — email is best-effort).
+3. **Database trigger + pg_net** — strongest guarantee, hardest to maintain.
+
+Chose option 2. Rationale: moderation email is a notification, not a commitment. If the Edge Function fails, the audit log is the authoritative record. Adding pg_net just to send a "you've been warned" email is over-engineering.
+
+**Warn label escalation display:**
+The Warn button previously showed "Warn user (CrimsonFox42)". At strike 2, pressing it auto-bans; at strike 1, it auto-suspends. A moderator who doesn't know the user's strike count cannot predict the consequence. Options: tooltip, separate confirmation step, or inline label suffix.
+
+Chose inline label suffix: "→ Strike 2 of 3 (will auto-suspend 7 days)". Reasons: (a) inline is impossible to miss, (b) no extra tap or hover required, (c) the confirmation modal is still there as a second gate. The `buildActions` function is extracted to a testable utility to enable coverage of the three strike-count branches.
+
+**CSAM evidence export:**
+Options were: (a) export on-demand from audit log (cheapest, but requires manual SQL), (b) write to Supabase Storage bucket (structured, auditable, survives schema changes), (c) push to S3 (unnecessary vendor add). Chose (b). The export JSON is structured to match NCMEC CyberTipline format so that when the API integration is added pre-launch, the payload is already correct.
+
+### Decision
+
+1. **`notify-moderation` Edge Function** — called from `useModerateReport` `onSuccess` for warn/suspend/ban actions. Reads report → resolves target user → fetches email via admin API → sends bilingual HTML email via Resend. Runs as moderator's session (JWT forwarded); verifies moderator role internally. Swedish copy marked `// TODO i18n review:` pending native sign-off.
+
+2. **Warn label polish** — `buildActions` extracted to `src/features/moderation/utils/buildActions.ts`. Accepts `strikeCount: number`. Label reads "Warn user (u) — → Strike N of 3 (…)". `useModeratorReport` extended to fetch `targetStrikeCount` from `profiles` for the resolved target user.
+
+3. **`report-csam` Edge Function** — invoked from `useModerateReport` `onSuccess` for the csam action only. Writes a structured JSON export to the private `csam-reports` Storage bucket (NCMEC CyberTipline format). Emails founder with case reference and manual submission checklist. Direct ECPAT/NCMEC API integration is deferred to Phase 8.9 (see docs/csam-compliance.md).
+
+4. **`docs/csam-compliance.md`** — structured pre-launch compliance checklist covering: Storage bucket setup, ECPAT Sweden engagement steps, NCMEC CyberTipline registration, internal SLA, completion record template, and post-incident record template.
+
+### Consequences
+
+- Moderators now see the real consequence of every Warn action before confirming. The auto-escalation introduced in ADR-019 migration 0023 is no longer opaque.
+- Affected users receive a bilingual email within minutes of a warn/suspend/ban action. Swedish copy needs a native UX writer review before launch (`grep -r "TODO i18n review:"` surfaces it).
+- CSAM cases produce an evidence export file automatically. The founder still submits manually to ECPAT/NCMEC for v1, but the export is in the right format for the API integration that will replace manual submission pre-launch.
+- Two new secrets are required: `FOUNDER_EMAIL` (report-csam) and `RESEND_API_KEY` (both functions, may already be set). Add to `supabase secrets set` before deploying.
+- The `csam-reports` Storage bucket must be created manually in the Supabase Dashboard before the first production deployment. It must be **private, no lifecycle auto-delete**. See docs/csam-compliance.md §2.2.
+- The ECPAT/NCMEC engagement checklist (docs/csam-compliance.md) is a hard gate before public launch — not before App Review.
+
+### Related work
+
+Functions: `supabase/functions/notify-moderation/index.ts`, `supabase/functions/report-csam/index.ts`.
+Util: `src/features/moderation/utils/buildActions.ts`.
+Tests: `src/features/moderation/__tests__/buildActions.test.ts`, `src/features/moderation/__tests__/useModerateReport.test.ts`.
+Checklist: `docs/csam-compliance.md`.
+Skills: `.claude/skills/moderation/SKILL.md`, `security`, `i18n`, `testing`.
+
+---
+
 ## ADR-019 — Phase 7 sign-off: trust & safety choices
 
 Date: 2026-06-19

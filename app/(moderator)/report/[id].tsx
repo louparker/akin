@@ -20,25 +20,8 @@ import {
   ModerateReportError,
   type ModerationAction,
 } from '@/features/moderation/api/useModerateReport';
+import { buildActions } from '@/features/moderation/utils/buildActions';
 import { timeAgo } from '@/features/feed/api/timeAgo';
-
-interface ActionConfig {
-  action: ModerationAction;
-  label: string;
-  destructive?: boolean;
-}
-
-function buildActions(reportedIdentifier: string | null): ActionConfig[] {
-  const u = reportedIdentifier ?? '…';
-  return [
-    { action: 'dismiss', label: t('mod.action.dismiss') },
-    { action: 'hide', label: t('mod.action.hide'), destructive: true },
-    { action: 'warn', label: `${t('mod.action.warn')} (${u})`, destructive: true },
-    { action: 'suspend', label: `${t('mod.action.suspend')} (${u})`, destructive: true },
-    { action: 'ban', label: `${t('mod.action.ban')} (${u})`, destructive: true },
-    { action: 'csam', label: `${t('mod.action.csam')} (${u})`, destructive: true },
-  ];
-}
 
 export default function ModeratorReportScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -121,7 +104,7 @@ export default function ModeratorReportScreen() {
         ? t('mod.report.target.comment')
         : t('mod.report.target.user');
 
-  const actions = buildActions(report.reportedIdentifier);
+  const actions = buildActions(report.reportedIdentifier, report.targetStrikeCount);
 
   return (
     <View style={styles.container}>

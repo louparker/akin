@@ -362,6 +362,10 @@ export const sv: TranslationDict = {
   'mod.action.dismiss': 'Avfärda',
   'mod.action.hide': 'Dölj innehåll',
   'mod.action.warn': 'Varna användare',
+  // TODO i18n review: Swedish phrasing, needs native UX review before launch
+  'mod.action.warnEffect.strike1': '→ Varning 1 av 3',
+  'mod.action.warnEffect.strike2': '→ Varning 2 av 3 (automatisk avstängning 7 dagar)',
+  'mod.action.warnEffect.strike3': '→ Varning 3 av 3 (automatisk permanent bannlysning)',
   'mod.action.suspend': 'Stäng av 7 dagar',
   'mod.action.ban': 'Bannlys permanent',
   'mod.action.csam': 'CSAM — nolltolerans',
