@@ -29,7 +29,230 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
-## ADR-021 — Phase 8.4 accessibility audit: a11yCheck helper, tap-target fixes, ARIA roles
+## ADR-022 — Phase 8.3: Email confirmation via OTP code + token_hash deep link
+
+Date: 2026-06-23
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+After ADR-021 the signup confirmation email rendered and sent correctly, but
+two problems surfaced in real testing:
+
+1. **The "Confirm email" link returned `{"message":"No API key found..."}`.**
+   The Supabase web verify endpoint (`/auth/v1/verify`) works without an apikey,
+   but it then 303-redirects to `redirect_to`. Signup never set `emailRedirectTo`,
+   so `redirect_to` fell back to the project Site URL, which resolved to the
+   Supabase API domain — and landing on that gateway without an apikey produces
+   the error. (Verified empirically: the verify endpoint itself returned a clean
+   303; the error came from the post-verify redirect target.)
+2. **No way to confirm cross-device.** The verify screen only _polled_ for the
+   link to be clicked. A magic link can only re-open the app when the email is
+   opened on the same phone with the app installed — fragile for a mobile app.
+
+### Options considered
+
+1. **Fix the link redirect only** — set `emailRedirectTo` to an app deep link and
+   handle the returned tokens/code in a confirm route. Still leaves cross-device
+   confirmation impossible and requires fragment/PKCE handling on native.
+2. **OTP code entry as the primary path + a direct token_hash deep link
+   (chosen)** — the email shows a code the user types into the app, and the
+   "Confirm" button is a direct `akin://confirm?token_hash=…&type=signup` deep
+   link the app verifies with `verifyOtp({ token_hash })`. No Supabase web
+   redirect, so the apikey error disappears, and the code works on any device.
+
+### Decision
+
+- **Code entry (primary).** `verifyEmailOtp(email, token)` on the auth store calls
+  `verifyOtp({ email, token, type: 'signup' })`, fetches the profile, and routes
+  via the existing `routeAfterSignIn`. `verify.tsx` gains a numeric code input
+  (`oneTimeCode` autofill) and an "Open email app" button (`message://` on iOS,
+  `mailto:` fallback). The existing confirmation poll stays as a fallback.
+- **Deep link (secondary).** `buildConfirmationUrl` now emits
+  `akin://confirm?token_hash=…&type=signup` for signup only. A new
+  `app/(auth)/confirm.tsx` reads the params and calls `confirmFromDeepLink`,
+  which runs `verifyOtp({ token_hash, type })` and routes (recovery →
+  reset-confirm; everything else → `routeAfterSignIn`). A `ran` ref guards the
+  single-use token against a double-invoke on re-render.
+- **Recovery / email_change unchanged.** They keep the Supabase verify URL (their
+  `redirect_to` is already an app deep link), so this change doesn't touch that
+  flow. The `confirmFromDeepLink` recovery branch exists so the generic confirm
+  route is correct if those are migrated later.
+
+### Consequences
+
+- Signup confirmation now works on any device: type the code, or tap the link on
+  the same phone. The apikey error is gone because there is no web redirect.
+- No dashboard redirect allow-list entry is needed for signup (the deep link
+  never round-trips through Supabase). Recovery still relies on its existing
+  `akin://reset-confirm` allow-list entry.
+- Custom-scheme links (`akin://…`) won't open from a desktop browser — that's by
+  design; the code covers the cross-device case.
+- New store surface (`verifyEmailOtp`, `confirmFromDeepLink`) and a new route are
+  CRITICAL-PATH: auth and need expert review before production.
+
+### Related work
+
+Store: `src/features/auth/store/useAuthStore.ts` (+ tests).
+Screens: `app/(auth)/verify.tsx`, `app/(auth)/confirm.tsx`, `_layout.tsx`.
+Hook template: `supabase/functions/send-auth-email/templates.ts` (+ tests).
+Builds on ADR-021. Skills: `security`, `i18n`, `testing`.
+
+---
+
+## ADR-021 — Phase 8.2: Auth emails via a Send Email Hook (bilingual, Resend)
+
+Date: 2026-06-22
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+The signup-confirmation, password-reset, and email-change flows already had
+working client screens (`verify.tsx`, `reset-password.tsx`, `reset-confirm.tsx`)
+and triggered the correct Supabase Auth events. But the emails themselves were
+sent by Supabase Auth's built-in sender, which is unusable in production:
+
+- Rate-limited to a few emails/hour (a testing-only shared SMTP).
+- Sends from a `supabase.co` address, not `ourakin.com`.
+- A single default template — single language — which violates the
+  bilingual-from-day-one non-negotiable (CLAUDE.md §2.5).
+
+Resend was wired and domain-verified during Phase 8.1, so the delivery channel
+existed; the gap was routing auth emails through it with bilingual templates.
+
+### Options considered
+
+1. **Custom SMTP only** — point Supabase Auth at Resend's SMTP endpoint and
+   customise the single built-in template per type. Fast; fixes the rate limit
+   and sender domain. But the built-in templates are single-language, so this
+   could not satisfy the bilingual rule without the hook anyway. Stopgap.
+2. **Send Email Hook (chosen)** — Supabase Auth POSTs each transactional email
+   to an Edge Function, which renders a bilingual branded template (language
+   from `user.user_metadata.language`, set at signup) and sends via the Resend
+   API. No SMTP config; the hook fully owns sending. Reuses the exact Resend
+   pattern from `notify-moderation`/`report-csam` (ADR-020).
+3. **pg_net from an auth trigger** — not supported for auth emails; rejected.
+
+### Decision
+
+Option 2. The `send-auth-email` Edge Function:
+
+- Verifies the request with Standard Webhooks (`SEND_EMAIL_HOOK_SECRET`) before
+  trusting any field — the function is internet-exposed, so signature
+  verification is the auth boundary.
+- Reads language from user metadata (default `sv`), builds the Supabase
+  `/auth/v1/verify` URL from `email_data`, renders the template, sends via Resend.
+- Pure template + URL logic lives in `templates.ts` (no Deno/remote imports) so
+  it is unit-tested with Jest (14 tests); the `index.ts` entry stays thin and is
+  validated by the Supabase CLI on deploy. Swedish copy is marked
+  `// TODO i18n review:` for native sign-off.
+
+Client screens and the `signUp` / `resetPasswordForEmail` calls are unchanged.
+
+### Manual configuration (founder, before this works in production)
+
+These cannot be done from code — they live in the Supabase Dashboard / CLI:
+
+1. **Deploy the function:** `supabase functions deploy send-auth-email`.
+2. **Enable the hook:** Dashboard → Authentication → Hooks → "Send Email" →
+   point to the deployed `send-auth-email` function. Copy the generated secret.
+3. **Set the secret:** `supabase secrets set SEND_EMAIL_HOOK_SECRET=v1,whsec_...`
+   (the function strips the `v1,whsec_` prefix before verifying).
+4. **Redirect allow-list:** Dashboard → Authentication → URL Configuration →
+   add `akin://reset-confirm` (and the signup redirect, if any) to the allowed
+   redirect URLs, so the email links resolve back into the app.
+5. `RESEND_API_KEY` is already set (shared with ADR-020 functions).
+
+### Consequences
+
+- Auth emails now come from `ourakin.com` via Resend, with no built-in rate
+  limit, in the user's language. Satisfies the bilingual non-negotiable.
+- Once the hook is enabled, Supabase Auth no longer sends via its built-in SMTP
+  for these emails — if the hook errors, the user gets no email, so the function
+  returns the Supabase error envelope and failures must be monitored (Sentry on
+  the Edge Function logs is a Phase 8 ops item).
+- A new secret (`SEND_EMAIL_HOOK_SECRET`) is required. The hook is a
+  CRITICAL-PATH: auth surface and needs expert review before production.
+- The OTP `token` is included in the email as a fallback code; the primary CTA
+  is the verify link the existing poll-based `verify.tsx` flow depends on.
+
+### Related work
+
+Function: `supabase/functions/send-auth-email/{index.ts,templates.ts}`.
+Tests: `supabase/functions/send-auth-email/__tests__/templates.test.ts`.
+Builds on ADR-020 (Resend pattern). Skills: `security`, `i18n`, `testing`.
+
+---
+
+## ADR-020 — Phase 8.1: T&S hardening — email notifications, Warn label, CSAM evidence export
+
+Date: 2026-06-21
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 7 left four explicit deferrals documented in ADR-019:
+
+1. Resend email templates for suspend/ban notifications (Resend client existed, no templates).
+2. Mod action button labelling (Warn silently triggered auto-ban at strike 2 — opaque to moderators).
+3. `report-csam` Edge Function (spec deferred; founder was forwarding manually from audit log).
+4. ECPAT Sweden / NCMEC engagement (hard gate before public launch).
+
+Phase 8.1 closes all four.
+
+### Options considered
+
+**Email delivery channel:**
+
+1. **pg_net from within `moderate_report()`** — transactional guarantee, but adds pg_net setup complexity and makes the PL/pgSQL function harder to test.
+2. **Client-side invocation from `useModerateReport` `onSuccess`** — fire-and-forget, simpler, testable with Jest mock. Email failure never rolls back the moderation action (intentional — email is best-effort).
+3. **Database trigger + pg_net** — strongest guarantee, hardest to maintain.
+
+Chose option 2. Rationale: moderation email is a notification, not a commitment. If the Edge Function fails, the audit log is the authoritative record. Adding pg_net just to send a "you've been warned" email is over-engineering.
+
+**Warn label escalation display:**
+The Warn button previously showed "Warn user (CrimsonFox42)". At strike 2, pressing it auto-bans; at strike 1, it auto-suspends. A moderator who doesn't know the user's strike count cannot predict the consequence. Options: tooltip, separate confirmation step, or inline label suffix.
+
+Chose inline label suffix: "→ Strike 2 of 3 (will auto-suspend 7 days)". Reasons: (a) inline is impossible to miss, (b) no extra tap or hover required, (c) the confirmation modal is still there as a second gate. The `buildActions` function is extracted to a testable utility to enable coverage of the three strike-count branches.
+
+**CSAM evidence export:**
+Options were: (a) export on-demand from audit log (cheapest, but requires manual SQL), (b) write to Supabase Storage bucket (structured, auditable, survives schema changes), (c) push to S3 (unnecessary vendor add). Chose (b). The export JSON is structured to match NCMEC CyberTipline format so that when the API integration is added pre-launch, the payload is already correct.
+
+### Decision
+
+1. **`notify-moderation` Edge Function** — called from `useModerateReport` `onSuccess` for warn/suspend/ban actions. Reads report → resolves target user → fetches email via admin API → sends bilingual HTML email via Resend. Runs as moderator's session (JWT forwarded); verifies moderator role internally. Swedish copy marked `// TODO i18n review:` pending native sign-off.
+
+2. **Warn label polish** — `buildActions` extracted to `src/features/moderation/utils/buildActions.ts`. Accepts `strikeCount: number`. Label reads "Warn user (u) — → Strike N of 3 (…)". `useModeratorReport` extended to fetch `targetStrikeCount` from `profiles` for the resolved target user.
+
+3. **`report-csam` Edge Function** — invoked from `useModerateReport` `onSuccess` for the csam action only. Writes a structured JSON export to the private `csam-reports` Storage bucket (NCMEC CyberTipline format). Emails founder with case reference and manual submission checklist. Direct ECPAT/NCMEC API integration is deferred to Phase 8.9 (see docs/csam-compliance.md).
+
+4. **`docs/csam-compliance.md`** — structured pre-launch compliance checklist covering: Storage bucket setup, ECPAT Sweden engagement steps, NCMEC CyberTipline registration, internal SLA, completion record template, and post-incident record template.
+
+### Consequences
+
+- Moderators now see the real consequence of every Warn action before confirming. The auto-escalation introduced in ADR-019 migration 0023 is no longer opaque.
+- Affected users receive a bilingual email within minutes of a warn/suspend/ban action. Swedish copy needs a native UX writer review before launch (`grep -r "TODO i18n review:"` surfaces it).
+- CSAM cases produce an evidence export file automatically. The founder still submits manually to ECPAT/NCMEC for v1, but the export is in the right format for the API integration that will replace manual submission pre-launch.
+- Two new secrets are required: `FOUNDER_EMAIL` (report-csam) and `RESEND_API_KEY` (both functions, may already be set). Add to `supabase secrets set` before deploying.
+- The `csam-reports` Storage bucket must be created manually in the Supabase Dashboard before the first production deployment. It must be **private, no lifecycle auto-delete**. See docs/csam-compliance.md §2.2.
+- The ECPAT/NCMEC engagement checklist (docs/csam-compliance.md) is a hard gate before public launch — not before App Review.
+
+### Related work
+
+Functions: `supabase/functions/notify-moderation/index.ts`, `supabase/functions/report-csam/index.ts`.
+Util: `src/features/moderation/utils/buildActions.ts`.
+Tests: `src/features/moderation/__tests__/buildActions.test.ts`, `src/features/moderation/__tests__/useModerateReport.test.ts`.
+Checklist: `docs/csam-compliance.md`.
+Skills: `.claude/skills/moderation/SKILL.md`, `security`, `i18n`, `testing`.
+
+---
+
+## ADR-024 — Phase 8.4 accessibility audit: a11yCheck helper, tap-target fixes, ARIA roles
+
+> Renumbered from ADR-021 during the Phase 8 branch merge — ADR-021 here is the auth-email decision. This work landed in parallel on `claude/phase-8-settings-completion`.
 
 Date: 2026-06-21
 Status: Accepted
@@ -80,7 +303,9 @@ Phase 8.4 performed a full WCAG 2.2 AA accessibility audit across all screens an
 
 ---
 
-## ADR-020 — Phase 8 settings: locale store, blocked_identifier, appConfig
+## ADR-023 — Phase 8 settings: locale store, blocked_identifier, appConfig
+
+> Renumbered from ADR-020 during the Phase 8 branch merge — ADR-020 here is the T&S-hardening decision. This work landed in parallel on `claude/phase-8-settings-completion`.
 
 Date: 2026-06-20
 Status: Accepted

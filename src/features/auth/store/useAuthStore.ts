@@ -2,7 +2,7 @@
 // Session management, sign-up/sign-in, identifier onboarding, account deletion.
 
 import { create } from 'zustand';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, EmailOtpType } from '@supabase/supabase-js';
 import { router } from 'expo-router';
 
 import { supabase } from '@/lib/supabase';
@@ -24,8 +24,11 @@ export interface AuthState {
 
 export interface AuthActions {
   signUp(email: string, password: string, language?: string): Promise<void>;
+  verifyEmailOtp(email: string, token: string): Promise<void>;
+  confirmFromDeepLink(tokenHash: string, type: EmailOtpType): Promise<boolean>;
   signIn(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
+  refreshProfile(): Promise<void>;
   generateIdentifier(options?: { force?: boolean }): Promise<void>;
   confirmIdentifier(): Promise<void>;
   completeOnboarding(): Promise<void>;
@@ -156,6 +159,62 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
+  // Code-entry confirmation: the user types the OTP from the email.
+  // verifyOtp confirms the address and returns a session in one step.
+  async verifyEmailOtp(email, token) {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup',
+      });
+      if (error) {
+        set({ error: error.message, isLoading: false });
+        return;
+      }
+      const profile = data.session ? await fetchProfile(data.session.user.id) : null;
+      set({ session: data.session, profile, isLoading: false });
+      routeAfterSignIn(profile);
+    } catch (err) {
+      logger.error(err instanceof Error ? err : new Error(String(err)), {
+        action: 'verifyEmailOtp',
+      });
+      set({ error: 'Unknown error', isLoading: false });
+    }
+  },
+
+  // Deep-link confirmation: the email's "Confirm" button opens akin://confirm
+  // carrying the single-use token_hash. Returns true on success so the confirm
+  // screen can show an error state without a thrown exception.
+  async confirmFromDeepLink(tokenHash, type) {
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+      if (error) {
+        set({ error: error.message, isLoading: false });
+        return false;
+      }
+      const profile = data.session ? await fetchProfile(data.session.user.id) : null;
+      set({ session: data.session, profile, isLoading: false });
+
+      // Recovery links land the user on the password form with a live session;
+      // everything else (signup/email change) follows the normal post-sign-in route.
+      if (type === 'recovery') {
+        router.replace('/(auth)/reset-confirm');
+      } else {
+        routeAfterSignIn(profile);
+      }
+      return true;
+    } catch (err) {
+      logger.error(err instanceof Error ? err : new Error(String(err)), {
+        action: 'confirmFromDeepLink',
+      });
+      set({ error: 'Unknown error', isLoading: false });
+      return false;
+    }
+  },
+
   async signIn(email, password) {
     set({ isLoading: true, error: null });
     try {
@@ -198,6 +257,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       logger.error(err instanceof Error ? err : new Error(String(err)), { action: 'signOut' });
       set({ error: 'Unknown error', isLoading: false });
     }
+  },
+
+  // Re-fetch the profile from the server. Used after writes that mutate
+  // server-side profile state via triggers (e.g. active_post_count on post
+  // creation), since the local store would otherwise show a stale value.
+  async refreshProfile() {
+    const { session } = get();
+    if (!session) return;
+    const profile = await fetchProfile(session.user.id);
+    if (profile) set({ profile });
   },
 
   async generateIdentifier(options) {

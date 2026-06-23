@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 const ERR_FORBIDDEN = 'P0401';
 const ERR_NOT_FOUND = 'P0404';
 const ERR_INVALID_ACTION = 'P0400';
+
+const NOTIFIABLE_ACTIONS = new Set<ModerationAction>(['warn', 'suspend', 'ban']);
 
 export type ModerationAction = 'dismiss' | 'hide' | 'warn' | 'suspend' | 'ban' | 'csam';
 
@@ -71,9 +74,32 @@ export function useModerateReport(): UseMutationResult<
         throw new ModerateReportError('unknown', error.message);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { reportId, action }) => {
       void queryClient.invalidateQueries({ queryKey: ['moderation', 'queue'] });
       void queryClient.invalidateQueries({ queryKey: ['moderation', 'audit'] });
+
+      // Fire-and-forget: email the affected user for warn/suspend/ban.
+      // Failures are logged but do not roll back the moderation action.
+      if (NOTIFIABLE_ACTIONS.has(action)) {
+        void supabase.functions
+          .invoke('notify-moderation', { body: { reportId, action } })
+          .then(({ error: fnError }) => {
+            if (fnError) {
+              logger.warn('notify-moderation invocation failed', { action });
+            }
+          });
+      }
+
+      // Fire-and-forget: export CSAM evidence to secure audit bucket and email founder.
+      if (action === 'csam') {
+        void supabase.functions
+          .invoke('report-csam', { body: { reportId } })
+          .then(({ error: fnError }) => {
+            if (fnError) {
+              logger.warn('report-csam invocation failed', { reportId });
+            }
+          });
+      }
     },
   });
 }

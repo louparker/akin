@@ -25,6 +25,7 @@ import { GuidelinesSheet } from '@/features/post/components/GuidelinesSheet';
 import { createPostSchema, TITLE_MAX, BODY_MAX } from '@/features/post/schemas/createPost';
 import { useCreatePost, CreatePostError } from '@/features/post/api/useCreatePost';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useFeedStore } from '@/features/feed/store/useFeedStore';
 import { useUiPrefsStore } from '@/lib/uiPrefs';
 import type { Enums } from '@/types/database';
 
@@ -199,6 +200,15 @@ export default function CreateScreen() {
         body: body.trim(),
         category,
       });
+      // Reset to a blank slate: the Write tab stays mounted, so without this the
+      // just-posted draft would still be here on the next visit.
+      setTitle('');
+      setBody('');
+      setCategory(null);
+      // Flag the new post so the feed animates it in, and refresh the profile so
+      // the active-conversations count reflects the trigger-incremented value.
+      useFeedStore.getState().setHighlightPostId(result.id);
+      void useAuthStore.getState().refreshProfile();
       router.replace(`/(main)/post/${result.id}`);
     } catch (err) {
       const i18nKey = err instanceof CreatePostError ? err.i18nKey : 'error.generic';

@@ -78,13 +78,21 @@ export const en = {
   // ── Auth — Verify Email ──────────────────────────────────────────────────────
   'auth.verify.title': 'Check your email',
   'auth.verify.body':
-    "We've sent a confirmation link to {{email}}. Open it to activate your account.",
+    "We've sent a confirmation code to {{email}}. Enter it below, or tap the link in the email.",
+  'auth.verify.code.label': 'Confirmation code',
+  'auth.verify.code.cta': 'Confirm',
+  'auth.verify.code.error': 'That code is incorrect or has expired. Check the email or resend.',
+  'auth.verify.openMail': 'Open email app',
   'auth.verify.resend': 'Resend email',
   'auth.verify.resend.sent': 'Sent.',
   'auth.verify.resend.countdown': 'Resend in {{n}}s',
   'auth.verify.spam': "Check your spam folder if it doesn't arrive.",
   'auth.verify.wrongEmail': 'Wrong email?',
   'auth.verify.signOut': 'Use a different email',
+  'auth.confirm.title': 'Confirming…',
+  'auth.confirm.error.title': 'Link expired',
+  'auth.confirm.error.body': 'This confirmation link is invalid or has expired. Request a new one.',
+  'auth.confirm.error.cta': 'Back to sign in',
 
   // ── Auth — Identifier Reveal ─────────────────────────────────────────────────
   'auth.identifier.eyebrow': "This is who you'll be here",
@@ -359,6 +367,9 @@ export const en = {
   'mod.action.dismiss': 'Dismiss',
   'mod.action.hide': 'Hide content',
   'mod.action.warn': 'Warn user',
+  'mod.action.warnEffect.strike1': '→ Strike 1 of 3 (warning)',
+  'mod.action.warnEffect.strike2': '→ Strike 2 of 3 (will auto-suspend 7 days)',
+  'mod.action.warnEffect.strike3': '→ Strike 3 of 3 (will auto-ban permanently)',
   'mod.action.suspend': 'Suspend 7 days',
   'mod.action.ban': 'Ban permanently',
   'mod.action.csam': 'CSAM — zero tolerance',

@@ -1,7 +1,7 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorTokens } from '@/theme/useColorTokens';
@@ -106,12 +106,35 @@ export default function FeedScreen() {
   const styles = useMemo(() => makeStyles(c), [c]);
 
   // eslint-disable-next-line @typescript-eslint/unbound-method -- Zustand store actions are arrow-function closures, not this-bound methods
-  const { sort, minSpice, setSort, setMinSpice } = useFeedStore();
+  const { sort, minSpice, setSort, setMinSpice, highlightPostId } = useFeedStore();
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useFeed({ sort, minSpice });
 
   const posts = data?.pages.flatMap((p) => p.data) ?? [];
+
+  // Pull fresh data whenever the feed regains focus (e.g. after posting), so a
+  // new post shows up without a manual pull-to-refresh. Skip the very first
+  // focus — the query already fetched on mount.
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      void refetch();
+    }, [refetch]),
+  );
+
+  // Once the highlighted (just-created) post is in view, let its entrance
+  // animation play, then clear the flag so it doesn't re-animate on return.
+  const highlightPresent = !!highlightPostId && posts.some((p) => p.id === highlightPostId);
+  useEffect(() => {
+    if (!highlightPresent) return;
+    const id = setTimeout(() => useFeedStore.getState().setHighlightPostId(null), 1200);
+    return () => clearTimeout(id);
+  }, [highlightPresent]);
 
   const handleEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -131,10 +154,11 @@ export default function FeedScreen() {
         participantCount={item.participant_count}
         isFull={item.is_full}
         spiceLevel={item.average_spice_level ?? undefined}
+        animateIn={item.id === highlightPostId}
         onPress={() => router.push(`/(main)/post/${item.id}`)}
       />
     ),
-    [],
+    [highlightPostId],
   );
 
   const keyExtractor = useCallback((item: PostRow) => item.id, []);
