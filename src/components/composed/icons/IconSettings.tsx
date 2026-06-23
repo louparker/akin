@@ -1,5 +1,5 @@
 import Svg, { Path, Circle } from 'react-native-svg';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 interface IconSettingsProps {
   /** Active tint when true, faint tint when false. Defaults to fg.primary. */
@@ -22,7 +22,8 @@ interface IconSettingsProps {
  *   2. Top-right affordance on the You screen header (see (main)/you/index.tsx)
  */
 export function IconSettings({ active = true, size = 24 }: IconSettingsProps) {
-  const c = active ? colors.fg.primary : colors.fg.faint;
+  const tok = useColorTokens();
+  const c = active ? tok.fg.primary : tok.fg.faint;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {/* 8-tooth gear silhouette: based on the Lucide "settings" mark, adapted to

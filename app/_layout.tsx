@@ -4,7 +4,7 @@
 
 import '../global.css';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFonts } from 'expo-font';
 import { Slot, SplashScreen } from 'expo-router';
 import {
@@ -27,7 +27,7 @@ import SuspendedScreen from '@/components/composed/SuspendedScreen';
 import { track } from '@/lib/analytics';
 import { initSentry } from '@/lib/sentry';
 import { Text } from '@/components/primitives/Text';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 // Initialise Sentry as early as possible — before the first component render.
 initSentry({
@@ -82,9 +82,42 @@ interface InAppSplashProps {
   visible: boolean;
 }
 
+function makeSplashStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    splash: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: c.bg.base,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999,
+    },
+    splashInner: {
+      alignItems: 'center',
+    },
+    wordmark: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 44,
+      // lineHeight intentionally omitted: <Text variant="display"> auto-scales
+      // its lineHeight from the variant's 1.10 ratio when fontSize is overridden.
+      // See src/components/primitives/Text.tsx deriveLineHeightOverride().
+      letterSpacing: -0.8,
+      color: c.fg.primary,
+    },
+  });
+}
+
+function makeRootStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    root: { flex: 1 },
+    safeRoot: { flex: 1, backgroundColor: c.bg.base },
+  });
+}
+
 function InAppSplash({ visible }: InAppSplashProps) {
   const opacity = useRef(new Animated.Value(1)).current;
   const reducedMotion = useRef(false);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeSplashStyles(c), [c]);
 
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then((v) => {
@@ -119,6 +152,8 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONTS);
   const isLoading = useAuthStore((s) => s.isLoading);
   const profile = useAuthStore((s) => s.profile);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeRootStyles(c), [c]);
 
   // initialize() is idempotent — safe to call on every mount.
   // We need the action at mount time only, so we grab it once via an arrow wrapper
@@ -206,27 +241,3 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  safeRoot: { flex: 1, backgroundColor: colors.bg.base },
-  splash: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bg.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-  },
-  splashInner: {
-    alignItems: 'center',
-  },
-  wordmark: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 44,
-    // lineHeight intentionally omitted: <Text variant="display"> auto-scales
-    // its lineHeight from the variant's 1.10 ratio when fontSize is overridden.
-    // See src/components/primitives/Text.tsx deriveLineHeightOverride().
-    letterSpacing: -0.8,
-    color: colors.fg.primary,
-  },
-});

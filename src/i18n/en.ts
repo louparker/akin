@@ -435,6 +435,7 @@ export const en = {
   'common.ok': 'OK',
   'common.loading': 'Loading…',
   'common.cancel': 'Cancel',
+  'common.moreOptions': 'More options',
 
   // ── Profile (You tab) ────────────────────────────────────────────────────────
   'profile.title': 'You',
@@ -450,6 +451,12 @@ export const en = {
   'settings.section.notifications': 'Notifications',
   'settings.section.blocked': 'Blocked users',
   'settings.placeholder.comingNext': 'Coming next',
+  'settings.language.system': 'System',
+  'settings.language.sv': 'Svenska',
+  'settings.language.en': 'English',
+  'settings.appearance.system': 'System',
+  'settings.appearance.light': 'Light',
+  'settings.appearance.dark': 'Dark',
   'settings.signOut.confirm.title': 'Sign out?',
   'settings.signOut.confirm.body':
     'You can sign back in any time with the same email. Your posts and identifier stay put.',

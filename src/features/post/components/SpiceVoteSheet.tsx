@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { SpiceFlames } from '@/components/composed/SpiceFlames';
 import { useVoteSpice } from '../api/useVoteSpice';
@@ -25,7 +26,87 @@ interface SpiceVoteSheetProps {
   onClose: () => void;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.55)',
+    },
+    sheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 36,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: c.border.divider,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 20,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 22,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      lineHeight: 13.5 * 1.5,
+      color: c.fg.secondary,
+      marginBottom: 22,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 4,
+      borderWidth: 1,
+      marginBottom: 8,
+      gap: 12,
+    },
+    rowSelected: {
+      borderColor: c.fg.primary,
+      backgroundColor: c.bg.raised,
+    },
+    rowUnselected: {
+      borderColor: c.border.hairline,
+    },
+    rowText: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontFamily: 'Inter',
+      fontSize: 14.5,
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+    rowDesc: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.fg.secondary,
+      marginTop: 1,
+    },
+    checkmark: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.primary,
+      fontWeight: '600',
+    },
+  });
+}
+
 export function SpiceVoteSheet({ postId, visible, userVote, onClose }: SpiceVoteSheetProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const { mutate: voteSpice, isPending } = useVoteSpice(postId);
   const readOnly = userVote !== null;
 
@@ -73,79 +154,3 @@ export function SpiceVoteSheet({ postId, visible, userVote, onClose }: SpiceVote
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.55)',
-  },
-  sheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 36,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border.divider,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 22,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    lineHeight: 13.5 * 1.5,
-    color: colors.fg.secondary,
-    marginBottom: 22,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    borderWidth: 1,
-    marginBottom: 8,
-    gap: 12,
-  },
-  rowSelected: {
-    borderColor: colors.fg.primary,
-    backgroundColor: colors.bg.raised,
-  },
-  rowUnselected: {
-    borderColor: colors.border.hairline,
-  },
-  rowText: {
-    flex: 1,
-  },
-  rowLabel: {
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-  rowDesc: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.fg.secondary,
-    marginTop: 1,
-  },
-  checkmark: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.primary,
-    fontWeight: '600',
-  },
-});

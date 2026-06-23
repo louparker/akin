@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { CommentItem } from '../CommentItem';
 import { EditCommentError } from '@/features/post/api/useEditComment';
+import { a11yCheck } from '@/lib/test-utils';
 import type { Tables } from '@/types/database';
 
 type CommentRow = Tables<'comments'>;
@@ -341,5 +342,32 @@ describe('CommentItem', () => {
       await waitFor(() => screen.getByText('Edit'));
       expect(screen.queryByTestId('comment-menu-report-person')).toBeNull();
     });
+  });
+});
+
+describe('CommentItem — accessibility', () => {
+  it('passes a11y checks for an other-user comment', () => {
+    const { root } = render(<CommentItem comment={aComment()} {...defaultProps} />, {
+      wrapper: makeWrapper(),
+    });
+    expect(a11yCheck(root)).toEqual([]);
+  });
+
+  it("passes a11y checks for the current user's own comment", () => {
+    const { root } = render(
+      <CommentItem comment={aComment({ author_id: 'user-99' })} {...defaultProps} />,
+      { wrapper: makeWrapper() },
+    );
+    expect(a11yCheck(root)).toEqual([]);
+  });
+
+  it('menu button has a label and meets tap-target extension via hitSlop', () => {
+    const { getByTestId } = render(<CommentItem comment={aComment()} {...defaultProps} />, {
+      wrapper: makeWrapper(),
+    });
+    const menuBtn = getByTestId('comment-menu-btn');
+    expect(menuBtn.props.accessibilityLabel).toBeTruthy();
+    expect(menuBtn.props.accessibilityRole).toBe('button');
+    expect(menuBtn.props.hitSlop).toMatchObject({ top: 12, bottom: 12, left: 12, right: 12 });
   });
 });

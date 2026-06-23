@@ -1,14 +1,100 @@
+import { useMemo } from 'react';
 import { View, Pressable, Text as RNText, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/primitives/Text';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
+
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    top: {
+      flex: 1,
+      paddingTop: 100,
+      paddingHorizontal: 32,
+    },
+    wordmark: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11,
+      textTransform: 'uppercase',
+      letterSpacing: 2,
+      color: c.fg.faint,
+      marginBottom: 28,
+    },
+    headline: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 44,
+      lineHeight: 44 * 1.05,
+      letterSpacing: -0.8,
+      color: c.fg.primary,
+      marginBottom: 20,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      lineHeight: 16 * 1.55,
+      color: c.fg.secondary,
+      maxWidth: 290,
+    },
+    bottom: {
+      paddingHorizontal: 24,
+    },
+    btnPrimary: {
+      width: '100%',
+      height: 54,
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.bg.inverse,
+      marginBottom: 12,
+    },
+    btnGhost: {
+      width: '100%',
+      height: 48,
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    btnTextPrimary: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 16,
+      letterSpacing: -0.1,
+      color: c.fg.inverse,
+    },
+    btnTextGhost: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 15,
+      letterSpacing: -0.1,
+      color: c.fg.secondary,
+    },
+    tosText: {
+      fontFamily: 'Inter',
+      fontSize: 11.5,
+      lineHeight: 16,
+      color: c.fg.faint,
+      textAlign: 'center',
+      marginTop: 12,
+    },
+    tosLink: {
+      color: c.fg.tertiary,
+      textDecorationLine: 'underline',
+    },
+  });
+}
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   return (
     <View style={styles.screen}>
@@ -64,84 +150,3 @@ export default function WelcomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  top: {
-    flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 32,
-  },
-  wordmark: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    color: colors.fg.faint,
-    marginBottom: 28,
-  },
-  headline: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 44,
-    lineHeight: 44 * 1.05,
-    letterSpacing: -0.8,
-    color: colors.fg.primary,
-    marginBottom: 20,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    lineHeight: 16 * 1.55,
-    color: colors.fg.secondary,
-    maxWidth: 290,
-  },
-  bottom: {
-    paddingHorizontal: 24,
-  },
-  btnPrimary: {
-    width: '100%',
-    height: 54,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg.inverse,
-    marginBottom: 12,
-  },
-  btnGhost: {
-    width: '100%',
-    height: 48,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  btnTextPrimary: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 16,
-    letterSpacing: -0.1,
-    color: colors.fg.inverse,
-  },
-  btnTextGhost: {
-    fontFamily: 'Inter Medium',
-    fontWeight: '500',
-    fontSize: 15,
-    letterSpacing: -0.1,
-    color: colors.fg.secondary,
-  },
-  tosText: {
-    fontFamily: 'Inter',
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: colors.fg.faint,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  tosLink: {
-    color: colors.fg.tertiary,
-    textDecorationLine: 'underline',
-  },
-});

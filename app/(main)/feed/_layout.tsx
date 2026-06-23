@@ -1,12 +1,14 @@
 import { Stack } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 export default function FeedLayout() {
+  const c = useColorTokens();
+
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.bg.base },
+        contentStyle: { backgroundColor: c.bg.base },
         animation: 'slide_from_right',
       }}
     >

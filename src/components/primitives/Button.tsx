@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   Text,
@@ -10,7 +10,7 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 export type ButtonKind = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -26,34 +26,34 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   style?: StyleProp<ViewStyle>;
 }
 
-// Plain objects (not StyleSheet.create) to avoid false-positive no-unused-styles errors.
-// security/detect-object-injection is suppressed: keys are ButtonKind/ButtonSize union literals.
-const containerByKind: Record<ButtonKind, ViewStyle> = {
-  primary: { backgroundColor: colors.bg.inverse },
-  secondary: {
-    // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.fg.primary,
-  },
-  ghost: {
-    // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
-    backgroundColor: 'transparent',
-  },
-  danger: {
-    // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.semantic.danger,
-  },
-};
-
-const textColorByKind: Record<ButtonKind, TextStyle> = {
-  primary: { color: colors.fg.inverse },
-  secondary: { color: colors.fg.primary },
-  ghost: { color: colors.fg.secondary },
-  danger: { color: colors.semantic.danger },
-};
+function makeButtonColors(c: ReturnType<typeof useColorTokens>) {
+  const containerByKind: Record<ButtonKind, ViewStyle> = {
+    primary: { backgroundColor: c.bg.inverse },
+    secondary: {
+      // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: c.fg.primary,
+    },
+    ghost: {
+      // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
+      backgroundColor: 'transparent',
+    },
+    danger: {
+      // eslint-disable-next-line react-native/no-color-literals -- 'transparent' is not a design token; it means no fill
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: c.semantic.danger,
+    },
+  };
+  const textColorByKind: Record<ButtonKind, TextStyle> = {
+    primary: { color: c.fg.inverse },
+    secondary: { color: c.fg.primary },
+    ghost: { color: c.fg.secondary },
+    danger: { color: c.semantic.danger },
+  };
+  return { containerByKind, textColorByKind };
+}
 
 const sizeContainer: Record<ButtonSize, ViewStyle> = {
   sm: { height: 36, paddingHorizontal: 14 },
@@ -78,6 +78,8 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
+  const c = useColorTokens();
+  const { containerByKind, textColorByKind } = useMemo(() => makeButtonColors(c), [c]);
   const isInert = disabled || loading;
   const [pressed, setPressed] = useState(false);
   // eslint-disable-next-line security/detect-object-injection -- kind and size are union literals; no user input

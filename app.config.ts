@@ -32,6 +32,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
       posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
+      // FIXME: replace with real URLs before first public release.
+      // Files to update: app.config.ts (this file) — search for extras.legal / extras.support.
+      legal: {
+        privacyUrl: 'https://ourakin.com/privacy',
+        termsUrl: 'https://ourakin.com/terms',
+        guidelinesUrl: 'https://ourakin.com/guidelines',
+      },
+      support: {
+        feedbackEmail: 'feedback@ourakin.com',
+      },
     },
   };
 };

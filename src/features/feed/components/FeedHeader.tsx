@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import type { SortOrder } from '../store/useFeedStore';
 
@@ -17,12 +18,62 @@ function sortLabel(sort: SortOrder): string {
   return t('feed.sort.spice');
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      paddingTop: 20,
+      paddingHorizontal: 22,
+      paddingBottom: 14,
+      backgroundColor: c.bg.base,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    wordmark: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 30,
+      lineHeight: 30 * 1.1,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 10,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 18,
+    },
+    tab: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      color: c.fg.secondary,
+      paddingBottom: 4,
+    },
+    tabActive: {
+      fontWeight: '500',
+      color: c.fg.primary,
+      borderBottomWidth: 1.5,
+      borderBottomColor: c.fg.primary,
+    },
+    sortButton: {
+      marginLeft: 'auto',
+    },
+    sortLabel: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      color: c.fg.secondary,
+    },
+  });
+}
+
 export function FeedHeader({ tab, sort, onSortPress }: FeedHeaderProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const title = tab === 'all' ? 'akin' : t('feed.tab.categories');
 
   return (
     <View style={styles.container}>
-      <Text style={styles.wordmark}>{title}</Text>
+      <Text style={styles.wordmark} accessibilityRole="header">
+        {title}
+      </Text>
       <View style={styles.row}>
         <Pressable
           onPress={() => router.navigate('/(main)/feed')}
@@ -56,47 +107,3 @@ export function FeedHeader({ tab, sort, onSortPress }: FeedHeaderProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingTop: 20,
-    paddingHorizontal: 22,
-    paddingBottom: 14,
-    backgroundColor: colors.bg.base,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  wordmark: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 30,
-    lineHeight: 30 * 1.1,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 10,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-  },
-  tab: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    color: colors.fg.secondary,
-    paddingBottom: 4,
-  },
-  tabActive: {
-    fontWeight: '500',
-    color: colors.fg.primary,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.fg.primary,
-  },
-  sortButton: {
-    marginLeft: 'auto',
-  },
-  sortLabel: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    color: colors.fg.secondary,
-  },
-});

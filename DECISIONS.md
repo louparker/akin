@@ -250,6 +250,113 @@ Skills: `.claude/skills/moderation/SKILL.md`, `security`, `i18n`, `testing`.
 
 ---
 
+## ADR-024 — Phase 8.4 accessibility audit: a11yCheck helper, tap-target fixes, ARIA roles
+
+> Renumbered from ADR-021 during the Phase 8 branch merge — ADR-021 here is the auth-email decision. This work landed in parallel on `claude/phase-8-settings-completion`.
+
+Date: 2026-06-21
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 8.4 performed a full WCAG 2.2 AA accessibility audit across all screens and components built in Phases 1–8.3. The `a11yCheck` helper referenced in CLAUDE.md and the UI skill did not exist; several interactive elements had missing or incorrect roles/labels; and two tap targets were below the 44pt minimum.
+
+### Issues found and fixed
+
+1. **`a11yCheck` helper missing** — Created `src/lib/test-utils/a11y.ts` plus `src/lib/test-utils/index.ts` barrel. The helper traverses the React test instance tree and fails on any interactive element (button, link, radio, tab, etc.) that has no accessible label. 324/324 tests pass with it wired in.
+
+2. **TopBar — duplicate `accessibilityRole="header"`** — The container `<View>` had the role and so did the title `<Text>`, causing double announcements. Removed from the View; kept on the Text (the semantic heading).
+
+3. **FeedHeader wordmark** — Added `accessibilityRole="header"` to the "akin" wordmark text so VoiceOver users can navigate to the screen heading.
+
+4. **FilterSheet overlay dismiss** — Had `accessibilityLabel` but no `accessibilityRole="button"`, making it invisible to assistive technology.
+
+5. **PostDetail more-menu overlay** — Same missing role. Also the `accessibilityLabel="More options"` was a hardcoded English string; replaced with `t('common.moreOptions')` and added the key to both locales.
+
+6. **CommentItem action-sheet overlay** — Same missing role.
+
+7. **CommentItem `⋯` menu button** — Icon glyph rendered at ~16pt with no hitSlop. Added `hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}` to reach the 44pt minimum. Also added explicit `accessibilityLabel` and `accessibilityState` to the inline-edit cancel/save buttons.
+
+8. **PostDetail send button** — 40×40pt; added `hitSlop={4}` to reach 48×48pt.
+
+9. **Settings section titles** — Inline `<Text>` section headings (Language, Appearance) and the `Section` component's header text now carry `accessibilityRole="header"` so screen readers can navigate by headings.
+
+### New i18n keys
+
+- `common.moreOptions` → EN: "More options" / SV: "Fler alternativ"
+
+### New test coverage
+
+- `src/lib/test-utils/a11y.ts` — `a11yCheck` helper
+- `src/components/composed/__tests__/PostCard.test.tsx` — PostCard a11y
+- `src/features/feed/components/__tests__/FilterSheet.test.tsx` — FilterSheet a11y
+- `src/features/post/components/__tests__/SpiceVoteSheet.test.tsx` — SpiceVoteSheet a11y
+- SettingsScreen and CommentItem tests extended with a11y assertions
+
+### Consequences
+
+- All interactive elements in the audited surface now have accessible labels and roles.
+- All tap targets meet the 44pt minimum (via hitSlop where the visual size is smaller).
+- The `a11yCheck` helper is now available from `@/lib/test-utils` for all future screen tests.
+- Screen tests written during later phases should include `expect(a11yCheck(root)).toEqual([])`.
+
+---
+
+## ADR-023 — Phase 8 settings: locale store, blocked_identifier, appConfig
+
+> Renumbered from ADR-020 during the Phase 8 branch merge — ADR-020 here is the T&S-hardening decision. This work landed in parallel on `claude/phase-8-settings-completion`.
+
+Date: 2026-06-20
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Phase 8 settings completion (sub-tasks 8.2c–8.2f) required three non-obvious
+architecture decisions: how to implement runtime locale switching without a new
+dependency, how to show blocked users' identifiers without leaking auth data, and
+how to pass build-time URLs into the app in a testable way.
+
+### Options considered
+
+**Locale switching (8.2c)**
+
+1. **i18next** — full i18n library, proper React integration, plural/format support. Pros: industry standard, polished. Cons: new top-level dependency (violates CLAUDE.md §6 without discussion), significant integration surface area across the codebase.
+2. **Custom Zustand locale store (chosen)** — `useLocaleStore` with persist middleware; `getActiveLocale()` reads the store on every `t()` call; `useT()` hook subscribes via Zustand for component re-renders. Pros: zero new deps, consistent with the existing Zustand pattern, fast. Cons: no plural formatting; `t()` is not reactive without `useT()`, so callers that call `t()` without `useT()` don't re-render on locale change (acceptable for one-shot strings and static UI).
+3. **Device locale only** — no user preference, read `getLocales()` once at module load. Pros: simplest. Cons: non-starter for the product requirement (user must be able to switch).
+
+**Blocked-identifier display (8.2e)**
+
+1. **Join through profiles at query time** — `SELECT p.anonymous_identifier FROM blocks b JOIN profiles p ON p.user_id = b.blocked_id`. Pros: always up to date. Cons: the profiles RLS policy that prevents leaking `auth.users` data is subtler here; a misconfigured join could expose the blocked user's profile row columns in excess of what's needed.
+2. **Denormalised `blocked_identifier` on the blocks row (chosen)** — migration 0024 adds the column, a BEFORE INSERT trigger auto-populates from profiles, backfill runs in the migration. The `useMyBlocks` hook selects only `blocked_id, blocked_identifier, created_at`. Pros: query is simple and safe; the identifier is stable once set (anonymous identifiers don't change); no join risk. Cons: identifier on the block row could theoretically diverge from profiles if identifiers were ever recycled — they are not (identifiers are assigned once at signup and never changed).
+
+**Build-time config testability (8.2f)**
+
+1. **Read `Constants.expoConfig?.extra` directly in the component** — simple but hard to mock in Jest (jest-expo's transformer wraps `expo-constants` in a way that resists standard `jest.mock` overrides).
+2. **Extract `src/lib/appConfig.ts` (chosen)** — thin module that reads `Constants.expoConfig.extra` once at module load and exports typed `legalConfig`, `supportConfig`, `appVersion`. Tests mock `@/lib/appConfig` directly with `jest.mock`. Pros: mockable, typed, single source of truth. Cons: values are static at module load time (fine — URLs never change during an app session).
+
+### Decision
+
+- **Locale**: Option B (custom Zustand locale store). Preference persists under `akin.locale.v1`. 'system' stays client-only; 'sv'/'en' mirror to `profiles.language` via `useLanguagePreference`. `seedLocaleFromProfile()` seeds the store on sign-in only if the local store is still at the 'system' default.
+- **Blocked identifier**: Option B (denormalized column + trigger). Migration `0024_blocks_add_blocked_identifier.sql` owns the schema change. The `blocks.blocked_identifier` column is NOT NULL, populated by the trigger, and never updated after insert.
+- **App config**: Extract `src/lib/appConfig.ts`. URL placeholders live in `app.config.ts → extra.legal / extra.support`. All three URLs are marked FIXME for replacement before public launch.
+
+### Consequences
+
+- Adding proper plural/format support later requires either adopting i18next (superseding this ADR) or extending the `t()` function with a mini-formatter. The current interpolation (`{{key}}` replace) handles the cases in scope.
+- The `posts.language` bug (all posts defaulting to 'sv' regardless of UI locale) is fixed: `useCreatePost` now calls `getActiveLocale()` on insert.
+- `blocked_identifier` on the blocks row will be stale if Akin ever introduces identifier changes (not planned). If that happens, a migration must backfill `blocks.blocked_identifier` from the new profile identifiers.
+- Legal URLs (`app.config.ts`) must be replaced with real URLs before the App Store submission. Files: `app.config.ts` only — search for `FIXME` comment.
+
+### Related work
+
+Migrations: [0024](supabase/migrations/0024_blocks_add_blocked_identifier.sql).
+pgTAP: [0024_blocks_add_blocked_identifier.test.sql](supabase/tests/0024_blocks_add_blocked_identifier.test.sql).
+New modules: `src/features/locale/store/useLocaleStore.ts`, `src/features/locale/api/useLanguagePreference.ts`, `src/lib/i18n.ts` (modified), `src/lib/appConfig.ts`, `src/features/post/api/useMyBlocks.ts`, `src/features/post/api/useUnblock.ts`.
+
+---
+
 ## ADR-019 — Phase 7 sign-off: trust & safety choices
 
 Date: 2026-06-19

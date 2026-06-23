@@ -44,3 +44,4 @@ export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptio
 
 // Re-export everything from RTL so tests import from one place.
 export * from '@testing-library/react-native';
+export { a11yCheck } from './a11y';

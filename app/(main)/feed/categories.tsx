@@ -1,8 +1,9 @@
+import { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { FeedHeader } from '@/features/feed/components/FeedHeader';
 import type { Enums } from '@/types/database';
@@ -43,8 +44,62 @@ const CATEGORIES: CategoryMeta[] = [
   { id: 'good_vibes', nameKey: 'category.good_vibes', descKey: 'category.good_vibes.desc' },
 ];
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 20,
+      paddingHorizontal: 22,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    rowLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    categoryName: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 19,
+      letterSpacing: -0.2,
+      color: c.fg.primary,
+      marginBottom: 4,
+    },
+    categoryDesc: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.secondary,
+      lineHeight: 13 * 1.45,
+    },
+    rowRight: {
+      alignItems: 'flex-end',
+      marginRight: 8,
+    },
+    openLabel: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: c.fg.faint,
+      letterSpacing: 0.3,
+      marginTop: 2,
+    },
+    chevron: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.faint,
+    },
+  });
+}
+
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   return (
     <View style={styles.container}>
@@ -77,53 +132,3 @@ export default function CategoriesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 22,
-  },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  rowLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  categoryName: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 19,
-    letterSpacing: -0.2,
-    color: colors.fg.primary,
-    marginBottom: 4,
-  },
-  categoryDesc: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.secondary,
-    lineHeight: 13 * 1.45,
-  },
-  rowRight: {
-    alignItems: 'flex-end',
-    marginRight: 8,
-  },
-  openLabel: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    color: colors.fg.faint,
-    letterSpacing: 0.3,
-    marginTop: 2,
-  },
-  chevron: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: colors.fg.faint,
-  },
-});

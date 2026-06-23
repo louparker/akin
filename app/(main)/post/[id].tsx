@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   View,
@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { CommentItem } from '@/components/composed/CommentItem';
@@ -40,6 +40,317 @@ import {
 import { useFullTransition } from '@/features/post/api/useFullTransition';
 import { timeAgo } from '@/features/feed/api/timeAgo';
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 80,
+    },
+    scrollContentFull: {
+      paddingBottom: 120,
+    },
+    // Loading / error states
+    skeletonContainer: {
+      padding: 22,
+      gap: 12,
+    },
+    skeletonItem: {
+      marginBottom: 0,
+    },
+    errorContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+    },
+    errorText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.secondary,
+    },
+    retryText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      fontWeight: '500',
+      color: c.brand.primary,
+    },
+    // TopBar slots
+    backIcon: {
+      fontFamily: 'Inter',
+      fontSize: 28,
+      color: c.fg.primary,
+      lineHeight: 32,
+      paddingHorizontal: 4,
+    },
+    moreIcon: {
+      fontFamily: 'Inter',
+      fontSize: 20,
+      color: c.fg.primary,
+      paddingHorizontal: 4,
+    },
+    // Post section
+    postSection: {
+      paddingTop: 8,
+      paddingHorizontal: 22,
+      paddingBottom: 22,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 10,
+    },
+    metaDot: {
+      width: 3,
+      height: 3,
+      borderRadius: 1.5,
+      backgroundColor: c.fg.tertiary,
+    },
+    metaTime: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.secondary,
+    },
+    postTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 24,
+      lineHeight: 24 * 1.25,
+      letterSpacing: -0.3,
+      color: c.fg.primary,
+      marginBottom: 14,
+    },
+    postBody: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      lineHeight: 15 * 1.6,
+      color: c.fg.secondary,
+      marginBottom: 18,
+    },
+    authorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: 4,
+    },
+    authorLeftCol: {
+      gap: 6,
+      flex: 1,
+      marginRight: 12,
+    },
+    capacityContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    capacityText: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 11.5,
+      color: c.fg.secondary,
+    },
+    // Spice section
+    spiceSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 22,
+      paddingTop: 18,
+      paddingBottom: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    spiceLeft: {
+      gap: 6,
+    },
+    spiceEyebrow: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 10.5,
+      letterSpacing: 1.2,
+      color: c.fg.secondary,
+    },
+    spiceRight: {
+      alignItems: 'flex-end',
+      gap: 2,
+    },
+    spiceStat: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: c.fg.secondary,
+    },
+    // Replies header
+    repliesHeader: {
+      paddingHorizontal: 22,
+      paddingTop: 18,
+      paddingBottom: 8,
+    },
+    repliesLabel: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 10.5,
+      letterSpacing: 1.2,
+      color: c.fg.secondary,
+    },
+    // Reply bar
+    replyBar: {
+      flexDirection: 'column',
+      backgroundColor: c.bg.base,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border.hairline,
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      gap: 6,
+    },
+    replyInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingBottom: 2,
+    },
+    filterErrorRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+    },
+    filterErrorText: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.semantic.danger,
+    },
+    filterErrorLink: {
+      fontFamily: 'Inter',
+      fontSize: 12.5,
+      color: c.brand.primary,
+      textDecorationLine: 'underline',
+    },
+    replyInput: {
+      flex: 1,
+      backgroundColor: c.bg.raised,
+      borderWidth: 1,
+      borderColor: c.border.divider,
+      borderRadius: 22,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      fontFamily: 'Inter',
+      fontSize: 14.5,
+      color: c.fg.primary,
+    },
+    sendButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.bg.inverse,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendButtonDisabled: {
+      opacity: 0.4,
+    },
+    sendIcon: {
+      fontFamily: 'Inter',
+      fontSize: 22,
+      color: c.fg.inverse,
+      lineHeight: 26,
+      marginLeft: 2,
+    },
+    // Full banner
+    fullBanner: {
+      backgroundColor: c.bg.raised,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border.hairline,
+      paddingHorizontal: 22,
+      paddingTop: 18,
+    },
+    fullBannerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    fullBannerLock: {
+      fontSize: 14,
+    },
+    fullBannerTitle: {
+      fontFamily: 'Inter',
+      fontSize: 13.5,
+      fontWeight: '500',
+      color: c.fg.primary,
+    },
+    fullBannerBody: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      lineHeight: 13 * 1.5,
+      color: c.fg.secondary,
+    },
+    // More menu
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
+    menuOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(35,31,33,0.45)',
+      justifyContent: 'flex-end',
+    },
+    menuSheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingHorizontal: 0,
+      paddingBottom: 40,
+      paddingTop: 8,
+    },
+    menuItem: {
+      paddingVertical: 16,
+      paddingHorizontal: 22,
+    },
+    menuItemText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.primary,
+    },
+    menuItemDanger: {
+      color: c.semantic.danger,
+    },
+    menuDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border.hairline,
+      marginHorizontal: 22,
+    },
+    // Full-transition notice
+    fullNotice: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 22,
+      marginBottom: 4,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      backgroundColor: c.bg.raised,
+      borderRadius: 8,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+    },
+    fullNoticeText: {
+      flex: 1,
+      fontFamily: 'Inter',
+      fontSize: 13,
+      lineHeight: 13 * 1.5,
+      color: c.fg.secondary,
+    },
+    fullNoticeDismiss: {
+      paddingLeft: 12,
+      paddingVertical: 4,
+    },
+    fullNoticeDismissIcon: {
+      fontFamily: 'Inter',
+      fontSize: 18,
+      color: c.fg.tertiary,
+      lineHeight: 20,
+    },
+  });
+}
+
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -50,6 +361,8 @@ export default function PostDetailScreen() {
   const { showNotice: showFullNotice, dismiss: dismissFullNotice } = useFullTransition(
     post?.is_full,
   );
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const [replyText, setReplyText] = useState('');
   const [replyFilterError, setReplyFilterError] = useState<string | null>(null);
@@ -67,7 +380,8 @@ export default function PostDetailScreen() {
   const currentUserId = session?.user.id ?? '';
   const isParticipant =
     post !== undefined &&
-    (post.author_id === currentUserId || post.comments.some((c) => c.author_id === currentUserId));
+    (post.author_id === currentUserId ||
+      post.comments.some((comment) => comment.author_id === currentUserId));
   const isOP = post !== undefined && post.author_id === currentUserId;
 
   // Participants the OP can remove: unique non-OP commenters who haven't already been removed.
@@ -77,8 +391,11 @@ export default function PostDetailScreen() {
       : Array.from(
           new Map(
             post.comments
-              .filter((c) => c.author_id !== post.author_id && !c.removed_by_op)
-              .map((c) => [c.author_id, { userId: c.author_id, identifier: c.author_identifier }]),
+              .filter((comment) => comment.author_id !== post.author_id && !comment.removed_by_op)
+              .map((comment) => [
+                comment.author_id,
+                { userId: comment.author_id, identifier: comment.author_identifier },
+              ]),
           ).values(),
         );
 
@@ -245,7 +562,7 @@ export default function PostDetailScreen() {
           <Pressable
             onPress={handleMoreMenu}
             accessibilityRole="button"
-            accessibilityLabel="More options"
+            accessibilityLabel={t('common.moreOptions')}
           >
             <Text style={styles.moreIcon}>⋯</Text>
           </Pressable>
@@ -373,7 +690,7 @@ export default function PostDetailScreen() {
               ref={inputRef}
               style={styles.replyInput}
               placeholder={t('post.reply.placeholder')}
-              placeholderTextColor={colors.fg.faint}
+              placeholderTextColor={c.fg.faint}
               value={replyText}
               onChangeText={setReplyText}
               multiline={false}
@@ -394,10 +711,11 @@ export default function PostDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('post.send.label')}
               accessibilityState={{ disabled: !replyText.trim() || !canReply || isSubmitting }}
+              hitSlop={4}
               testID="post-send-button"
             >
               {isSubmitting ? (
-                <ActivityIndicator color={colors.fg.inverse} size="small" />
+                <ActivityIndicator color={c.fg.inverse} size="small" />
               ) : (
                 <Text style={styles.sendIcon}>›</Text>
               )}
@@ -446,6 +764,7 @@ export default function PostDetailScreen() {
         <Pressable
           style={styles.menuOverlay}
           onPress={() => setShowMoreMenu(false)}
+          accessibilityRole="button"
           accessibilityLabel={t('common.close')}
         >
           <View style={styles.menuSheet}>
@@ -493,312 +812,3 @@ export default function PostDetailScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 80,
-  },
-  scrollContentFull: {
-    paddingBottom: 120,
-  },
-  // Loading / error states
-  skeletonContainer: {
-    padding: 22,
-    gap: 12,
-  },
-  skeletonItem: {
-    marginBottom: 0,
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  errorText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.secondary,
-  },
-  retryText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.brand.primary,
-  },
-  // TopBar slots
-  backIcon: {
-    fontFamily: 'Inter',
-    fontSize: 28,
-    color: colors.fg.primary,
-    lineHeight: 32,
-    paddingHorizontal: 4,
-  },
-  moreIcon: {
-    fontFamily: 'Inter',
-    fontSize: 20,
-    color: colors.fg.primary,
-    paddingHorizontal: 4,
-  },
-  // Post section
-  postSection: {
-    paddingTop: 8,
-    paddingHorizontal: 22,
-    paddingBottom: 22,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.fg.tertiary,
-  },
-  metaTime: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.secondary,
-  },
-  postTitle: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 24,
-    lineHeight: 24 * 1.25,
-    letterSpacing: -0.3,
-    color: colors.fg.primary,
-    marginBottom: 14,
-  },
-  postBody: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    lineHeight: 15 * 1.6,
-    color: colors.fg.secondary,
-    marginBottom: 18,
-  },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 4,
-  },
-  authorLeftCol: {
-    gap: 6,
-    flex: 1,
-    marginRight: 12,
-  },
-  capacityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  capacityText: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 11.5,
-    color: colors.fg.secondary,
-  },
-  // Spice section
-  spiceSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  spiceLeft: {
-    gap: 6,
-  },
-  spiceEyebrow: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10.5,
-    letterSpacing: 1.2,
-    color: colors.fg.secondary,
-  },
-  spiceRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  spiceStat: {
-    fontFamily: 'Inter',
-    fontSize: 12,
-    color: colors.fg.secondary,
-  },
-  // Replies header
-  repliesHeader: {
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 8,
-  },
-  repliesLabel: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 10.5,
-    letterSpacing: 1.2,
-    color: colors.fg.secondary,
-  },
-  // Reply bar
-  replyBar: {
-    flexDirection: 'column',
-    backgroundColor: colors.bg.base,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.hairline,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    gap: 6,
-  },
-  replyInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingBottom: 2,
-  },
-  filterErrorRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  filterErrorText: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.semantic.danger,
-  },
-  filterErrorLink: {
-    fontFamily: 'Inter',
-    fontSize: 12.5,
-    color: colors.brand.primary,
-    textDecorationLine: 'underline',
-  },
-  replyInput: {
-    flex: 1,
-    backgroundColor: colors.bg.raised,
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontFamily: 'Inter',
-    fontSize: 14.5,
-    color: colors.fg.primary,
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.bg.inverse,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
-  },
-  sendIcon: {
-    fontFamily: 'Inter',
-    fontSize: 22,
-    color: colors.fg.inverse,
-    lineHeight: 26,
-    marginLeft: 2,
-  },
-  // Full banner
-  fullBanner: {
-    backgroundColor: colors.bg.raised,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border.hairline,
-    paddingHorizontal: 22,
-    paddingTop: 18,
-  },
-  fullBannerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  fullBannerLock: {
-    fontSize: 14,
-  },
-  fullBannerTitle: {
-    fontFamily: 'Inter',
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: colors.fg.primary,
-  },
-  fullBannerBody: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    lineHeight: 13 * 1.5,
-    color: colors.fg.secondary,
-  },
-  // More menu
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha; not a design token
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(35,31,33,0.45)',
-    justifyContent: 'flex-end',
-  },
-  menuSheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 0,
-    paddingBottom: 40,
-    paddingTop: 8,
-  },
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-  },
-  menuItemText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.primary,
-  },
-  menuItemDanger: {
-    color: colors.semantic.danger,
-  },
-  menuDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border.hairline,
-    marginHorizontal: 22,
-  },
-  // Full-transition notice
-  fullNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 22,
-    marginBottom: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: colors.bg.raised,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border.divider,
-  },
-  fullNoticeText: {
-    flex: 1,
-    fontFamily: 'Inter',
-    fontSize: 13,
-    lineHeight: 13 * 1.5,
-    color: colors.fg.secondary,
-  },
-  fullNoticeDismiss: {
-    paddingLeft: 12,
-    paddingVertical: 4,
-  },
-  fullNoticeDismissIcon: {
-    fontFamily: 'Inter',
-    fontSize: 18,
-    color: colors.fg.tertiary,
-    lineHeight: 20,
-  },
-});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
@@ -6,7 +6,7 @@ import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { Input } from '@/components/primitives/Input';
 import { TopBar } from '@/components/composed/TopBar';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
@@ -37,11 +37,74 @@ function maskEmail(email: string): string {
   return `${local[0]}***@${domain}`;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    backButton: {
+      padding: 8,
+    },
+    backArrow: {
+      fontSize: 20,
+      color: c.fg.primary,
+    },
+    content: {
+      paddingHorizontal: 28,
+      paddingTop: 60,
+    },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 36,
+      lineHeight: 36 * 1.15,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 16,
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      lineHeight: 16 * 1.55,
+      color: c.fg.secondary,
+      marginBottom: 12,
+    },
+    confirmBtn: {
+      marginTop: 20,
+    },
+    mailBtn: {
+      marginTop: 12,
+    },
+    spam: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.fg.faint,
+      marginTop: 28,
+      marginBottom: 32,
+    },
+    resendBtn: {
+      alignSelf: 'flex-start',
+    },
+    secondaryLinks: {
+      marginTop: 36,
+      gap: 20,
+    },
+    link: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.brand.primary,
+      textDecorationLine: 'underline',
+    },
+  });
+}
+
 export default function VerifyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string }>();
   const email = params.email ?? '';
   const masked = maskEmail(email);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const [countdown, setCountdown] = useState(0);
   const [code, setCode] = useState('');
@@ -202,62 +265,3 @@ export default function VerifyScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  backButton: {
-    padding: 8,
-  },
-  backArrow: {
-    fontSize: 20,
-    color: colors.fg.primary,
-  },
-  content: {
-    paddingHorizontal: 28,
-    paddingTop: 60,
-  },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 36,
-    lineHeight: 36 * 1.15,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 16,
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    lineHeight: 16 * 1.55,
-    color: colors.fg.secondary,
-    marginBottom: 12,
-  },
-  confirmBtn: {
-    marginTop: 20,
-  },
-  mailBtn: {
-    marginTop: 12,
-  },
-  spam: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.fg.faint,
-    marginTop: 28,
-    marginBottom: 32,
-  },
-  resendBtn: {
-    alignSelf: 'flex-start',
-  },
-  secondaryLinks: {
-    marginTop: 36,
-    gap: 20,
-  },
-  link: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: colors.brand.primary,
-    textDecorationLine: 'underline',
-  },
-});

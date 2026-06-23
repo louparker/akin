@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -9,17 +9,45 @@ import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
 import { Input } from '@/components/primitives/Input';
 import { TopBar } from '@/components/composed/TopBar';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const schema = z.object({ email: z.string().email() });
 type FormValues = z.infer<typeof schema>;
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg.base },
+    backButton: { padding: 8 },
+    backArrow: { fontSize: 20, color: c.fg.primary },
+    content: { paddingTop: 48, paddingHorizontal: 28 },
+    title: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 36,
+      lineHeight: 36 * 1.15,
+      letterSpacing: -0.5,
+      color: c.fg.primary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      lineHeight: 14 * 1.5,
+      color: c.fg.secondary,
+      marginBottom: 32,
+    },
+    fieldError: { fontFamily: 'Inter', fontSize: 12, color: c.semantic.danger, marginTop: 4 },
+    cta: { marginTop: 28 },
+  });
+}
+
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const isLoading = useAuthStore((s) => s.isLoading);
   const [sent, setSent] = useState(false);
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const {
     control,
@@ -115,27 +143,3 @@ export default function ResetPasswordScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg.base },
-  backButton: { padding: 8 },
-  backArrow: { fontSize: 20, color: colors.fg.primary },
-  content: { paddingTop: 48, paddingHorizontal: 28 },
-  title: {
-    fontFamily: 'Source Serif 4',
-    fontSize: 36,
-    lineHeight: 36 * 1.15,
-    letterSpacing: -0.5,
-    color: colors.fg.primary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    lineHeight: 14 * 1.5,
-    color: colors.fg.secondary,
-    marginBottom: 32,
-  },
-  fieldError: { fontFamily: 'Inter', fontSize: 12, color: colors.semantic.danger, marginTop: 4 },
-  cta: { marginTop: 28 },
-});

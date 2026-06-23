@@ -1,13 +1,45 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { t } from '@/lib/i18n';
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: c.bg.base,
+    },
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      backgroundColor: c.bg.base,
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: 16,
+      color: c.brand.primary,
+    },
+    body: {
+      textAlign: 'center',
+      marginBottom: 40,
+      lineHeight: 22,
+    },
+    buttonWrapper: {
+      width: '100%',
+    },
+  });
+}
+
 export function BannedScreen(): React.JSX.Element {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   function handleLogOut(): void {
     void useAuthStore.getState().signOut();
   }
@@ -37,30 +69,3 @@ export function BannedScreen(): React.JSX.Element {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.bg.base,
-  },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    backgroundColor: colors.bg.base,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 16,
-    color: colors.brand.primary,
-  },
-  body: {
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 22,
-  },
-  buttonWrapper: {
-    width: '100%',
-  },
-});

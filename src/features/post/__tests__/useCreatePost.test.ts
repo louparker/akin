@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useLocaleStore } from '@/features/locale/store/useLocaleStore';
 import { useCreatePost, CreatePostError } from '../api/useCreatePost';
 
 jest.mock('@/lib/supabase', () => ({
@@ -41,6 +42,8 @@ beforeEach(() => {
     } as never,
     isLoading: false,
   });
+  // Default to Swedish so the explicit-locale tests assert the override clearly.
+  useLocaleStore.setState({ preference: 'sv' });
 });
 
 describe('useCreatePost', () => {
@@ -71,6 +74,30 @@ describe('useCreatePost', () => {
         author_identifier: 'CrimsonFox42',
       }),
     );
+  });
+
+  it('writes the active locale as posts.language (en when preference="en")', async () => {
+    useLocaleStore.setState({ preference: 'en' });
+    const chain = mockInsertResult({ data: { id: 'p1' }, error: null });
+    const { result } = renderHook(() => useCreatePost(), { wrapper: makeWrapper() });
+
+    await act(async () => {
+      await result.current.mutateAsync({ title: 'T', body: 'B', category: 'vent_space' });
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({ language: 'en' }));
+  });
+
+  it('writes the active locale as posts.language (sv when preference="sv")', async () => {
+    useLocaleStore.setState({ preference: 'sv' });
+    const chain = mockInsertResult({ data: { id: 'p2' }, error: null });
+    const { result } = renderHook(() => useCreatePost(), { wrapper: makeWrapper() });
+
+    await act(async () => {
+      await result.current.mutateAsync({ title: 'T', body: 'B', category: 'vent_space' });
+    });
+
+    expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({ language: 'sv' }));
   });
 
   it('returns the inserted post id on success', async () => {

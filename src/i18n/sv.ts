@@ -440,6 +440,7 @@ export const sv: TranslationDict = {
   'common.ok': 'OK',
   'common.loading': 'Laddar…',
   'common.cancel': 'Avbryt',
+  'common.moreOptions': 'Fler alternativ',
 
   // ── Profile (You tab) ────────────────────────────────────────────────────────
   'profile.title': 'Du',
@@ -455,6 +456,12 @@ export const sv: TranslationDict = {
   'settings.section.notifications': 'Notiser',
   'settings.section.blocked': 'Blockerade användare',
   'settings.placeholder.comingNext': 'Kommer snart',
+  'settings.language.system': 'System',
+  'settings.language.sv': 'Svenska',
+  'settings.language.en': 'English',
+  'settings.appearance.system': 'System',
+  'settings.appearance.light': 'Ljust',
+  'settings.appearance.dark': 'Mörkt',
   'settings.signOut.confirm.title': 'Logga ut?',
   'settings.signOut.confirm.body':
     'Du kan logga in igen när du vill med samma e-post. Dina inlägg och ditt alias finns kvar.',

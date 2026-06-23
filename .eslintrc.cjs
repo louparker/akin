@@ -56,6 +56,9 @@ module.exports = {
     // NativeWind uses className strings, not StyleSheet objects — these RN rules don't apply
     'react-native/no-inline-styles': 'warn', // warn rather than error; inline styles can appear in Reanimated
     'react-native/sort-styles': 'off', // not using StyleSheet objects
+    // makeStyles(c: ColorTokens) factory pattern wraps StyleSheet.create in a function;
+    // the static analyser cannot trace references through the call and flags every key as unused
+    'react-native/no-unused-styles': 'off',
   },
   overrides: [
     {

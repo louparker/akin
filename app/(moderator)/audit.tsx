@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,80 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { useAuditLog, type AuditEntry } from '@/features/moderation/api/useAuditLog';
 import { timeAgo } from '@/features/feed/api/timeAgo';
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg.base },
+    backIcon: { fontFamily: 'Inter', fontSize: 28, color: c.fg.primary, paddingHorizontal: 4 },
+    loader: { marginTop: 40 },
+    emptyText: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      color: c.fg.tertiary,
+      textAlign: 'center',
+      marginTop: 60,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 22,
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border.hairline,
+    },
+    rowLeft: { gap: 3 },
+    action: { fontFamily: 'Inter', fontSize: 14, color: c.fg.primary },
+    target: { fontFamily: 'Inter', fontSize: 12, color: c.fg.tertiary },
+    age: { fontFamily: 'Inter', fontSize: 12, color: c.fg.tertiary },
+    loadMore: { paddingVertical: 20, alignItems: 'center' },
+    loadMoreText: { fontFamily: 'Inter', fontSize: 14, color: c.brand.primary },
+    // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(35,31,33,0.55)' },
+    modalSheet: {
+      backgroundColor: c.bg.base,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 22,
+      paddingTop: 20,
+      paddingBottom: 36,
+      maxHeight: '70%',
+      gap: 10,
+    },
+    modalTitle: { fontFamily: 'Source Serif 4', fontSize: 20, color: c.fg.primary },
+    modalMeta: { fontFamily: 'Inter', fontSize: 12, color: c.fg.tertiary },
+    metadataScroll: { maxHeight: 200 },
+    metadataJson: {
+      fontFamily: 'JetBrains Mono',
+      fontSize: 12,
+      color: c.fg.secondary,
+      backgroundColor: c.bg.raised,
+      padding: 12,
+      borderRadius: 6,
+    },
+    closeButton: {
+      paddingVertical: 13,
+      borderRadius: 8,
+      backgroundColor: c.bg.raised,
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    closeText: { fontFamily: 'Inter', fontSize: 15, color: c.fg.primary },
+  });
+}
+
 export default function AuditLogScreen() {
   const [page, setPage] = useState(0);
   const [selectedEntry, setSelectedEntry] = useState<AuditEntry | null>(null);
   const { data, isLoading, isFetching } = useAuditLog({ page });
+
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
 
   const entries = data?.entries ?? [];
   const total = data?.total ?? 0;
@@ -41,7 +105,7 @@ export default function AuditLogScreen() {
       />
 
       {isLoading ? (
-        <ActivityIndicator style={styles.loader} color={colors.fg.tertiary} />
+        <ActivityIndicator style={styles.loader} color={c.fg.tertiary} />
       ) : (
         <FlashList
           data={entries}
@@ -110,62 +174,3 @@ export default function AuditLogScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.base },
-  backIcon: { fontFamily: 'Inter', fontSize: 28, color: colors.fg.primary, paddingHorizontal: 4 },
-  loader: { marginTop: 40 },
-  emptyText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    color: colors.fg.tertiary,
-    textAlign: 'center',
-    marginTop: 60,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border.hairline,
-  },
-  rowLeft: { gap: 3 },
-  action: { fontFamily: 'Inter', fontSize: 14, color: colors.fg.primary },
-  target: { fontFamily: 'Inter', fontSize: 12, color: colors.fg.tertiary },
-  age: { fontFamily: 'Inter', fontSize: 12, color: colors.fg.tertiary },
-  loadMore: { paddingVertical: 20, alignItems: 'center' },
-  loadMoreText: { fontFamily: 'Inter', fontSize: 14, color: colors.brand.primary },
-  // eslint-disable-next-line react-native/no-color-literals -- design spec overlay alpha
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(35,31,33,0.55)' },
-  modalSheet: {
-    backgroundColor: colors.bg.base,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 22,
-    paddingTop: 20,
-    paddingBottom: 36,
-    maxHeight: '70%',
-    gap: 10,
-  },
-  modalTitle: { fontFamily: 'Source Serif 4', fontSize: 20, color: colors.fg.primary },
-  modalMeta: { fontFamily: 'Inter', fontSize: 12, color: colors.fg.tertiary },
-  metadataScroll: { maxHeight: 200 },
-  metadataJson: {
-    fontFamily: 'JetBrains Mono',
-    fontSize: 12,
-    color: colors.fg.secondary,
-    backgroundColor: colors.bg.raised,
-    padding: 12,
-    borderRadius: 6,
-  },
-  closeButton: {
-    paddingVertical: 13,
-    borderRadius: 8,
-    backgroundColor: colors.bg.raised,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  closeText: { fontFamily: 'Inter', fontSize: 15, color: colors.fg.primary },
-});

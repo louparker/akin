@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors } from '@/theme/colors';
+import { useColorTokens } from '@/theme/useColorTokens';
 
 interface CapacityDotsProps {
   filled: number;
@@ -7,7 +8,28 @@ interface CapacityDotsProps {
   size?: number;
 }
 
+function makeStyles(c: ReturnType<typeof useColorTokens>) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    dot: {},
+    dotFilled: {
+      backgroundColor: c.brand.primary,
+    },
+    dotEmpty: {
+      borderWidth: 1,
+      borderColor: c.border.divider,
+    },
+  });
+}
+
 export function CapacityDots({ filled, total = 4, size = 6 }: CapacityDotsProps) {
+  const c = useColorTokens();
+  const styles = useMemo(() => makeStyles(c), [c]);
+
   return (
     <View
       style={styles.container}
@@ -27,19 +49,3 @@ export function CapacityDots({ filled, total = 4, size = 6 }: CapacityDotsProps)
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dot: {},
-  dotFilled: {
-    backgroundColor: colors.brand.primary,
-  },
-  dotEmpty: {
-    borderWidth: 1,
-    borderColor: colors.border.divider,
-  },
-});
