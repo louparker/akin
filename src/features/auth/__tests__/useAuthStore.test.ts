@@ -13,6 +13,7 @@ jest.mock('@/lib/supabase', () => ({
       signOut: jest.fn(),
       resetPasswordForEmail: jest.fn(),
       updateUser: jest.fn(),
+      verifyOtp: jest.fn(),
       getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: jest
         .fn()
@@ -86,7 +87,18 @@ const mockedResetPassword = jest.mocked(supabase.auth.resetPasswordForEmail);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedUpdateUser = jest.mocked(supabase.auth.updateUser);
 // eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedVerifyOtp = jest.mocked(supabase.auth.verifyOtp);
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedFrom = jest.mocked(supabase.from);
+
+function mockProfileFetchOnce(profile: Profile | null) {
+  mockedFrom.mockReturnValueOnce({
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValueOnce({ data: profile, error: profile ? null : 'not found' }),
+    update: jest.fn().mockReturnThis(),
+  });
+}
 
 describe('useAuthStore', () => {
   describe('signUp', () => {
@@ -160,6 +172,104 @@ describe('useAuthStore', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('verifyEmailOtp', () => {
+    it('calls verifyOtp with type signup and the entered code', async () => {
+      const session = mockSession();
+      mockedVerifyOtp.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+      mockProfileFetchOnce(mockProfile({ onboarded_at: null, anonymous_identifier: 'pending_1' }));
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.verifyEmailOtp('new@example.com', '12345678');
+      });
+
+      expect(mockedVerifyOtp).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        token: '12345678',
+        type: 'signup',
+      });
+    });
+
+    it('routes to identifier reveal after a fresh signup confirmation', async () => {
+      const session = mockSession();
+      mockedVerifyOtp.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+      mockProfileFetchOnce(mockProfile({ onboarded_at: null, anonymous_identifier: 'pending_1' }));
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.verifyEmailOtp('new@example.com', '12345678');
+      });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(auth)/identifier');
+      expect(result.current.session).toEqual(session);
+    });
+
+    it('sets error and does not route on an invalid/expired code', async () => {
+      mockedVerifyOtp.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { message: 'Token has expired or is invalid', status: 403 } as AuthError,
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.verifyEmailOtp('new@example.com', '00000000');
+      });
+
+      expect(result.current.error).toBe('Token has expired or is invalid');
+      expect(result.current.isLoading).toBe(false);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmFromDeepLink', () => {
+    it('verifies the token_hash and routes on success', async () => {
+      const session = mockSession();
+      mockedVerifyOtp.mockResolvedValueOnce({
+        data: { user: session.user, session },
+        error: null,
+      });
+      mockProfileFetchOnce(mockProfile({ onboarded_at: null, anonymous_identifier: 'pending_1' }));
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.confirmFromDeepLink('hash-abc', 'signup');
+      });
+
+      expect(mockedVerifyOtp).toHaveBeenCalledWith({ token_hash: 'hash-abc', type: 'signup' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jest.mocked(router).replace).toHaveBeenCalledWith('/(auth)/identifier');
+    });
+
+    it('returns an error result on an expired link without throwing', async () => {
+      mockedVerifyOtp.mockResolvedValueOnce({
+        data: { user: null, session: null },
+        error: { message: 'expired', status: 403 } as AuthError,
+      });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      let outcome: boolean | undefined;
+      await act(async () => {
+        outcome = await result.current.confirmFromDeepLink('hash-bad', 'signup');
+      });
+
+      expect(outcome).toBe(false);
+      expect(result.current.error).toBe('expired');
     });
   });
 

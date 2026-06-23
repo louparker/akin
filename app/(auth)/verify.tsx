@@ -1,14 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Text } from '@/components/primitives/Text';
 import { Button } from '@/components/primitives/Button';
+import { Input } from '@/components/primitives/Input';
 import { TopBar } from '@/components/composed/TopBar';
 import { colors } from '@/theme/colors';
 import { t } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+
+const CODE_LENGTH = 8;
+
+// Opens the device's default mail app so the user can grab the code without
+// hunting for it. iOS uses the message: scheme; Android falls back to a mail intent.
+async function openMailApp(): Promise<void> {
+  const primary = Platform.OS === 'ios' ? 'message://' : 'mailto:';
+  try {
+    if (await Linking.canOpenURL(primary)) {
+      await Linking.openURL(primary);
+      return;
+    }
+    await Linking.openURL('mailto:');
+  } catch {
+    // No mail app available (e.g. a bare simulator) — nothing to open.
+  }
+}
 
 const RESEND_COOLDOWN_S = 60;
 const POLL_INTERVAL_MS = 5_000;
@@ -26,9 +44,17 @@ export default function VerifyScreen() {
   const masked = maskEmail(email);
 
   const [countdown, setCountdown] = useState(0);
+  const [code, setCode] = useState('');
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const storeError = useAuthStore((s) => s.error);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isFocused = useRef(true);
+
+  async function handleConfirm() {
+    if (code.trim().length < CODE_LENGTH || !email) return;
+    await useAuthStore.getState().verifyEmailOtp(email, code.trim());
+  }
 
   function startCountdown() {
     setCountdown(RESEND_COOLDOWN_S);
@@ -104,6 +130,44 @@ export default function VerifyScreen() {
           {t('auth.verify.body', { email: masked || '…' })}
         </Text>
 
+        <Input
+          label={t('auth.verify.code.label')}
+          value={code}
+          onChangeText={(v) => {
+            setCode(v.replace(/\D/g, '').slice(0, CODE_LENGTH));
+            if (storeError) useAuthStore.getState().clearError();
+          }}
+          keyboardType="number-pad"
+          maxLength={CODE_LENGTH}
+          textContentType="oneTimeCode"
+          autoComplete="one-time-code"
+          error={storeError ? t('auth.verify.code.error') : undefined}
+          accessibilityLabel={t('auth.verify.code.label')}
+          testID="verify-code-input"
+        />
+
+        <Button
+          kind="primary"
+          size="lg"
+          full
+          loading={isLoading}
+          disabled={isLoading || code.trim().length < CODE_LENGTH}
+          onPress={() => void handleConfirm()}
+          accessibilityLabel={t('auth.verify.code.cta')}
+          style={styles.confirmBtn}
+        >
+          {t('auth.verify.code.cta')}
+        </Button>
+
+        <Button
+          kind="secondary"
+          onPress={() => void openMailApp()}
+          accessibilityLabel={t('auth.verify.openMail')}
+          style={styles.mailBtn}
+        >
+          {t('auth.verify.openMail')}
+        </Button>
+
         <Text style={styles.spam}>{t('auth.verify.spam')}</Text>
 
         <Button
@@ -170,10 +234,17 @@ const styles = StyleSheet.create({
     color: colors.fg.secondary,
     marginBottom: 12,
   },
+  confirmBtn: {
+    marginTop: 20,
+  },
+  mailBtn: {
+    marginTop: 12,
+  },
   spam: {
     fontFamily: 'Inter',
     fontSize: 13,
     color: colors.fg.faint,
+    marginTop: 28,
     marginBottom: 32,
   },
   resendBtn: {

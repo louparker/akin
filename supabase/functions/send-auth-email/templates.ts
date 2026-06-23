@@ -40,8 +40,27 @@ export function pickLanguage(metadata: { language?: string } | undefined | null)
   return 'sv';
 }
 
-/** Build the Supabase Auth verify URL that the email's CTA points to. */
+/**
+ * Build the URL the email's CTA points to.
+ *
+ * Signup confirmation uses a direct `akin://confirm` deep link carrying the
+ * single-use token_hash. This is deliberate: the Supabase web verify endpoint
+ * 303-redirects to `redirect_to`, and when that lands on the API domain the
+ * browser shows "No API key found". Going straight to the app and calling
+ * verifyOtp({ token_hash }) avoids the web round-trip entirely.
+ *
+ * Recovery and email-change keep the Supabase verify URL — those flows already
+ * pass an app deep link as redirect_to and are out of scope for this change.
+ */
 export function buildConfirmationUrl(data: EmailData): string {
+  if (data.email_action_type === 'signup') {
+    const params = new URLSearchParams({
+      token_hash: data.token_hash,
+      type: data.email_action_type,
+    });
+    return `akin://confirm?${params.toString()}`;
+  }
+
   const base = data.site_url.replace(/\/$/, '');
   const params = new URLSearchParams({
     token: data.token_hash,

@@ -20,25 +20,24 @@ describe('pickLanguage', () => {
 });
 
 describe('buildConfirmationUrl', () => {
-  it('builds the Supabase verify URL from email_data', () => {
+  it('builds a direct app deep link for signup (no Supabase web redirect)', () => {
     const url = buildConfirmationUrl({
       site_url: 'https://jxd.supabase.co',
       token_hash: 'abc123',
       email_action_type: 'signup',
       redirect_to: 'akin://welcome',
     });
-    expect(url).toBe(
-      'https://jxd.supabase.co/auth/v1/verify?token=abc123&type=signup&redirect_to=akin%3A%2F%2Fwelcome',
-    );
+    expect(url).toBe('akin://confirm?token_hash=abc123&type=signup');
   });
 
-  it('url-encodes the redirect_to deep link', () => {
+  it('builds the Supabase verify URL for recovery (unchanged)', () => {
     const url = buildConfirmationUrl({
       site_url: 'https://jxd.supabase.co',
       token_hash: 'xyz',
       email_action_type: 'recovery',
       redirect_to: 'akin://reset-confirm',
     });
+    expect(url).toContain('https://jxd.supabase.co/auth/v1/verify');
     expect(url).toContain('type=recovery');
     expect(url).toContain('redirect_to=akin%3A%2F%2Freset-confirm');
   });

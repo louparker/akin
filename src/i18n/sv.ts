@@ -81,13 +81,22 @@ export const sv: TranslationDict = {
   // ── Auth — Verify Email ──────────────────────────────────────────────────────
   'auth.verify.title': 'Kolla din e-post',
   'auth.verify.body':
-    'Vi har skickat en bekräftelselänk till {{email}}. Öppna den för att aktivera ditt konto.',
+    'Vi har skickat en bekräftelsekod till {{email}}. Ange den nedan, eller tryck på länken i mejlet.',
+  'auth.verify.code.label': 'Bekräftelsekod',
+  'auth.verify.code.cta': 'Bekräfta',
+  'auth.verify.code.error': 'Koden är felaktig eller har gått ut. Kolla mejlet eller skicka igen.',
+  'auth.verify.openMail': 'Öppna e-postappen',
   'auth.verify.resend': 'Skicka igen',
   'auth.verify.resend.sent': 'Skickat.',
   'auth.verify.resend.countdown': 'Skicka igen om {{n}}s',
   'auth.verify.spam': 'Kolla skräpposten om den inte dyker upp.',
   'auth.verify.wrongEmail': 'Fel e-post?',
   'auth.verify.signOut': 'Använd en annan e-post',
+  // TODO i18n review: Swedish auth-confirm copy, needs native review before launch
+  'auth.confirm.title': 'Bekräftar…',
+  'auth.confirm.error.title': 'Länken har gått ut',
+  'auth.confirm.error.body': 'Den här bekräftelselänken är ogiltig eller har gått ut. Begär en ny.',
+  'auth.confirm.error.cta': 'Tillbaka till inloggning',
 
   // ── Auth — Identifier Reveal ─────────────────────────────────────────────────
   'auth.identifier.eyebrow': 'Det här är du här inne',

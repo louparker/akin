@@ -29,6 +29,78 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-022 — Phase 8.3: Email confirmation via OTP code + token_hash deep link
+
+Date: 2026-06-23
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+After ADR-021 the signup confirmation email rendered and sent correctly, but
+two problems surfaced in real testing:
+
+1. **The "Confirm email" link returned `{"message":"No API key found..."}`.**
+   The Supabase web verify endpoint (`/auth/v1/verify`) works without an apikey,
+   but it then 303-redirects to `redirect_to`. Signup never set `emailRedirectTo`,
+   so `redirect_to` fell back to the project Site URL, which resolved to the
+   Supabase API domain — and landing on that gateway without an apikey produces
+   the error. (Verified empirically: the verify endpoint itself returned a clean
+   303; the error came from the post-verify redirect target.)
+2. **No way to confirm cross-device.** The verify screen only _polled_ for the
+   link to be clicked. A magic link can only re-open the app when the email is
+   opened on the same phone with the app installed — fragile for a mobile app.
+
+### Options considered
+
+1. **Fix the link redirect only** — set `emailRedirectTo` to an app deep link and
+   handle the returned tokens/code in a confirm route. Still leaves cross-device
+   confirmation impossible and requires fragment/PKCE handling on native.
+2. **OTP code entry as the primary path + a direct token_hash deep link
+   (chosen)** — the email shows a code the user types into the app, and the
+   "Confirm" button is a direct `akin://confirm?token_hash=…&type=signup` deep
+   link the app verifies with `verifyOtp({ token_hash })`. No Supabase web
+   redirect, so the apikey error disappears, and the code works on any device.
+
+### Decision
+
+- **Code entry (primary).** `verifyEmailOtp(email, token)` on the auth store calls
+  `verifyOtp({ email, token, type: 'signup' })`, fetches the profile, and routes
+  via the existing `routeAfterSignIn`. `verify.tsx` gains a numeric code input
+  (`oneTimeCode` autofill) and an "Open email app" button (`message://` on iOS,
+  `mailto:` fallback). The existing confirmation poll stays as a fallback.
+- **Deep link (secondary).** `buildConfirmationUrl` now emits
+  `akin://confirm?token_hash=…&type=signup` for signup only. A new
+  `app/(auth)/confirm.tsx` reads the params and calls `confirmFromDeepLink`,
+  which runs `verifyOtp({ token_hash, type })` and routes (recovery →
+  reset-confirm; everything else → `routeAfterSignIn`). A `ran` ref guards the
+  single-use token against a double-invoke on re-render.
+- **Recovery / email_change unchanged.** They keep the Supabase verify URL (their
+  `redirect_to` is already an app deep link), so this change doesn't touch that
+  flow. The `confirmFromDeepLink` recovery branch exists so the generic confirm
+  route is correct if those are migrated later.
+
+### Consequences
+
+- Signup confirmation now works on any device: type the code, or tap the link on
+  the same phone. The apikey error is gone because there is no web redirect.
+- No dashboard redirect allow-list entry is needed for signup (the deep link
+  never round-trips through Supabase). Recovery still relies on its existing
+  `akin://reset-confirm` allow-list entry.
+- Custom-scheme links (`akin://…`) won't open from a desktop browser — that's by
+  design; the code covers the cross-device case.
+- New store surface (`verifyEmailOtp`, `confirmFromDeepLink`) and a new route are
+  CRITICAL-PATH: auth and need expert review before production.
+
+### Related work
+
+Store: `src/features/auth/store/useAuthStore.ts` (+ tests).
+Screens: `app/(auth)/verify.tsx`, `app/(auth)/confirm.tsx`, `_layout.tsx`.
+Hook template: `supabase/functions/send-auth-email/templates.ts` (+ tests).
+Builds on ADR-021. Skills: `security`, `i18n`, `testing`.
+
+---
+
 ## ADR-021 — Phase 8.2: Auth emails via a Send Email Hook (bilingual, Resend)
 
 Date: 2026-06-22
