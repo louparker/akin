@@ -199,6 +199,11 @@ export default function CreateScreen() {
         body: body.trim(),
         category,
       });
+      // Reset to a blank slate: the Write tab stays mounted, so without this the
+      // just-posted draft would still be here on the next visit.
+      setTitle('');
+      setBody('');
+      setCategory(null);
       router.replace(`/(main)/post/${result.id}`);
     } catch (err) {
       const i18nKey = err instanceof CreatePostError ? err.i18nKey : 'error.generic';
