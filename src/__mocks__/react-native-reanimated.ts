@@ -62,8 +62,13 @@ export default Animated;
 export { AnimatedViewComponent as View };
 
 // Entering / exiting animation stubs — no-ops in tests.
-const noopAnimation = { duration: () => noopAnimation, delay: () => noopAnimation };
+const noopAnimation = {
+  duration: () => noopAnimation,
+  delay: () => noopAnimation,
+  springify: () => noopAnimation,
+};
 export const FadeIn = noopAnimation;
+export const FadeInDown = noopAnimation;
 export const FadeOut = noopAnimation;
 export const SlideInDown = noopAnimation;
 export const SlideOutDown = noopAnimation;

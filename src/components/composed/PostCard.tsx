@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useColorTokens } from '@/theme/useColorTokens';
 import { IdentChip } from './IdentChip';
 import { CapacityDots } from './CapacityDots';
@@ -16,6 +17,8 @@ interface PostCardProps {
   participantCount: number;
   isFull: boolean;
   spiceLevel?: number;
+  /** When true, the card fades + slides in — used for a just-created post. */
+  animateIn?: boolean;
   onPress: () => void;
 }
 
@@ -97,12 +100,13 @@ function PostCardImpl({
   authorIdentifier,
   participantCount,
   spiceLevel,
+  animateIn = false,
   onPress,
 }: PostCardProps) {
   const c = useColorTokens();
   const styles = useMemo(() => makeStyles(c), [c]);
 
-  return (
+  const card = (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
@@ -148,6 +152,14 @@ function PostCardImpl({
       <View style={styles.divider} />
     </Pressable>
   );
+
+  // The wrapper only exists for the highlighted post, so flipping animateIn
+  // false→true on a recycled FlashList cell remounts this subtree and fires
+  // the entrance animation.
+  if (animateIn) {
+    return <Animated.View entering={FadeInDown.duration(420)}>{card}</Animated.View>;
+  }
+  return card;
 }
 
 export const PostCard = memo(PostCardImpl, (prev, next) => {
@@ -161,6 +173,7 @@ export const PostCard = memo(PostCardImpl, (prev, next) => {
     prev.participantCount === next.participantCount &&
     prev.isFull === next.isFull &&
     prev.spiceLevel === next.spiceLevel &&
+    prev.animateIn === next.animateIn &&
     prev.onPress === next.onPress
   );
 });

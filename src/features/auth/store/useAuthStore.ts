@@ -28,6 +28,7 @@ export interface AuthActions {
   confirmFromDeepLink(tokenHash: string, type: EmailOtpType): Promise<boolean>;
   signIn(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
+  refreshProfile(): Promise<void>;
   generateIdentifier(options?: { force?: boolean }): Promise<void>;
   confirmIdentifier(): Promise<void>;
   completeOnboarding(): Promise<void>;
@@ -256,6 +257,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       logger.error(err instanceof Error ? err : new Error(String(err)), { action: 'signOut' });
       set({ error: 'Unknown error', isLoading: false });
     }
+  },
+
+  // Re-fetch the profile from the server. Used after writes that mutate
+  // server-side profile state via triggers (e.g. active_post_count on post
+  // creation), since the local store would otherwise show a stale value.
+  async refreshProfile() {
+    const { session } = get();
+    if (!session) return;
+    const profile = await fetchProfile(session.user.id);
+    if (profile) set({ profile });
   },
 
   async generateIdentifier(options) {

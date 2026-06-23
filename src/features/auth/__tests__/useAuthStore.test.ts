@@ -273,6 +273,35 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('refreshProfile', () => {
+    it('refetches the profile and updates active_post_count in the store', async () => {
+      useAuthStore.setState({
+        session: mockSession(),
+        profile: mockProfile({ active_post_count: 1 }),
+      });
+      mockProfileFetchOnce(mockProfile({ active_post_count: 2 }));
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.refreshProfile();
+      });
+
+      expect(result.current.profile?.active_post_count).toBe(2);
+    });
+
+    it('does nothing when there is no session', async () => {
+      useAuthStore.setState({ session: null, profile: null });
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.refreshProfile();
+      });
+
+      expect(result.current.profile).toBeNull();
+    });
+  });
+
   describe('signIn', () => {
     it('sets error on invalid credentials', async () => {
       mockedSignIn.mockResolvedValueOnce({
