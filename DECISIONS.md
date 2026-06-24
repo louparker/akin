@@ -29,6 +29,67 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-027 — Deleting your last comment frees your slot ("leave the conversation")
+
+Date: 2026-06-24
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Deleting a _post_ as OP frees every participant's active slot (ADR / migration
+0026). But deleting a _comment_ as a non-OP did nothing to the counts: the
+commenter stayed seated as one of the post's 4 participants and kept their
+elevated `active_post_count`, so they remained "active in a conversation" they
+had effectively left — stuck below their 3-post allowance. The founder reported
+exactly this asymmetry (post-delete reduced the active count, comment-delete did
+not).
+
+### Options considered
+
+1. **Leave the conversation** — deleting your last active comment on a not-full
+   post removes you as a participant (vacate the seat, `participant_count--`) and
+   frees your active slot. Full parity with OP post-delete; the seat reopens for
+   someone new; you may re-join later by commenting again. Most consistent.
+2. **Free your slot only** — decrement `active_post_count` but keep the seat. Simpler,
+   but the seat is held by someone no longer active, and re-commenting wouldn't
+   re-count them. Internally inconsistent.
+3. **Do nothing** — status quo; rejected (the reported bug).
+
+### Decision
+
+Option 1. Migration `0028_free_slot_on_comment_delete.sql` adds an
+`AFTER UPDATE OF status` trigger on `comments`: on `active → deleted`, if the
+author is **not** the OP, the post is **not full** (`participant_count < 4`), and
+this was their **last** active comment, they leave — removed from
+`post_participants`, `participant_count` decremented, `active_post_count`
+decremented (`GREATEST(x-1, 0)`). They are **not** added to
+`post_participant_removals`, so a fresh comment re-admits them.
+
+Deliberately scoped to **not-full** posts, exactly like 0026: a full post already
+returned everyone's slot when it filled (`decrement_active_on_full`, 0005);
+un-filling it would reopen a seat and double-count on the next join. Full posts
+are left untouched. `SECURITY DEFINER` so the `participant_count` write bypasses
+the authenticated column guard the same way 0005/0017 do.
+
+Client: `useDeleteComment` now calls `refreshProfile()` on success so the
+active-conversations pill reflects the freed slot.
+
+### Consequences
+
+- **Supersedes the old invariant** that "soft-deleting a comment does not change
+  participation counts." `participation_limits.test.sql` test 11 was rewritten to
+  assert the new leave behaviour, and `0028_free_slot_on_comment_delete.test.sql`
+  covers last-comment leave, not-last no-op, re-join, and the full-post no-op.
+- A "3/4" post a participant leaves becomes re-joinable — intended (they're no
+  longer in the conversation). Their soft-deleted comments stay hidden from others
+  via the existing `status = 'active'` SELECT policy.
+- Full-post comment deletes intentionally do **not** free a slot. If we later want
+  symmetric behaviour there, it needs the same careful re-charge handling as
+  `apply_op_participant_removal` Case B (0017) and its own pgTAP.
+
+---
+
 ## ADR-026 — Correction: the HostFunction app-load crash was a stale native build
 
 Date: 2026-06-23

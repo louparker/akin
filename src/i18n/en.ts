@@ -463,6 +463,7 @@ export const en = {
   'settings.language.system': 'System',
   'settings.language.sv': 'Svenska',
   'settings.language.en': 'English',
+  'settings.language.switching': 'Changing language…',
   'settings.appearance.system': 'System',
   'settings.appearance.light': 'Light',
   'settings.appearance.dark': 'Dark',

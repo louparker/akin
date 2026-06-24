@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useColorTokens } from '@/theme/useColorTokens';
-import { t } from '@/lib/i18n';
+import { useT } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
 import { CategoryTag } from '@/components/composed/CategoryTag';
 import { ActiveConversationsPill } from '@/components/composed/ActiveConversationsPill';
@@ -158,6 +158,11 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
 }
 
 export default function CreateScreen() {
+  // useT() subscribes to the locale store so this screen — which stays mounted as
+  // a background tab — re-renders the instant the language changes, rather than
+  // keeping stale strings (e.g. the input placeholders) until the next keystroke.
+  const { t, locale } = useT();
+
   const profile = useAuthStore((s) => s.profile);
   const activeCount = profile?.active_post_count ?? 0;
   const identifier = profile?.anonymous_identifier ?? '';
@@ -307,6 +312,7 @@ export default function CreateScreen() {
 
           {/* Title */}
           <TextInput
+            key={`create-title-${locale}`}
             value={title}
             onChangeText={setTitle}
             placeholder={t('create.title.placeholder')}
@@ -321,6 +327,7 @@ export default function CreateScreen() {
 
           {/* Body */}
           <TextInput
+            key={`create-body-${locale}`}
             value={body}
             onChangeText={setBody}
             placeholder={t('create.body.placeholder')}

@@ -8,9 +8,13 @@ jest.mock('@/lib/supabase', () => ({
   supabase: { from: jest.fn() },
 }));
 
-jest.mock('@/features/auth/store/useAuthStore', () => ({
-  useAuthStore: () => ({ session: { user: { id: 'user-1' } } }),
-}));
+const mockRefreshProfile = jest.fn();
+
+jest.mock('@/features/auth/store/useAuthStore', () => {
+  const useAuthStore = () => ({ session: { user: { id: 'user-1' } } });
+  useAuthStore.getState = () => ({ refreshProfile: mockRefreshProfile });
+  return { useAuthStore };
+});
 
 const mockedFrom = (supabase as unknown as { from: jest.Mock }).from;
 
@@ -53,6 +57,9 @@ describe('useDeleteComment', () => {
     const chain = mockedFrom.mock.results[0]?.value as { update: jest.Mock };
     expect(chain.update).toHaveBeenCalledWith({ status: 'deleted' });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['post', 'post-1'] });
+    // Refresh the profile so the active-conversations count reflects a freed
+    // slot when the user leaves a conversation by deleting their last comment.
+    expect(mockRefreshProfile).toHaveBeenCalled();
   });
 
   it('throws on a Supabase error', async () => {

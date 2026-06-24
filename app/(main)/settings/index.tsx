@@ -7,8 +7,17 @@
 // Section headers for Language / Appearance / Notifications / Blocked Users /
 // Legal / Support / Moderator are rendered as "Coming next" placeholders so the
 // shell is recognisable while later sub-tasks land.
-import { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
 import { router } from 'expo-router';
 import { legalConfig, supportConfig, appVersion } from '@/lib/appConfig';
 
@@ -16,7 +25,7 @@ import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 import { TopBar } from '@/components/composed/TopBar';
-import { SegmentedRow } from '@/components/composed/SegmentedRow';
+import { ToggleRowGroup } from '@/components/composed/ToggleRowGroup';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useLogout } from '@/features/auth/api/useLogout';
 import { useIsModerator } from '@/features/moderation/api/useIsModerator';
@@ -140,6 +149,19 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
       fontSize: 15,
       color: c.semantic.danger,
     },
+    switchOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: c.bg.base,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 14,
+      zIndex: 10,
+    },
+    switchOverlayText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
+    },
   });
 }
 
@@ -156,6 +178,25 @@ export default function SettingsScreen() {
   const styles = useMemo(() => makeStyles(c), [c]);
 
   const maskedEmail = useMemo(() => maskEmail(session?.user.email), [session?.user.email]);
+
+  // Language change shows a brief loading overlay (~1s) as a deliberate
+  // "something happened" separator before the UI settles into the new language.
+  const [switchingLanguage, setSwitchingLanguage] = useState(false);
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (switchTimer.current) clearTimeout(switchTimer.current);
+    },
+    [],
+  );
+
+  function handleLanguageChange(next: LocalePreference) {
+    if (next === languagePref) return;
+    setSwitchingLanguage(true);
+    void setLanguagePref(next);
+    if (switchTimer.current) clearTimeout(switchTimer.current);
+    switchTimer.current = setTimeout(() => setSwitchingLanguage(false), 1000);
+  }
 
   const languageOptions: { value: LocalePreference; label: string }[] = [
     { value: 'system', label: t('settings.language.system') },
@@ -230,30 +271,24 @@ export default function SettingsScreen() {
         </Section>
 
         {/* Language ────────────────────────────────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            {t('settings.section.language').toUpperCase()}
-          </Text>
-          <SegmentedRow<LocalePreference>
-            testID="settings-language"
+        <Section titleKey="settings.section.language" styles={styles}>
+          <ToggleRowGroup<LocalePreference>
+            testIDPrefix="settings-language"
             options={languageOptions}
             value={languagePref}
-            onChange={(v) => void setLanguagePref(v)}
+            onChange={handleLanguageChange}
           />
-        </View>
+        </Section>
 
         {/* Appearance ──────────────────────────────────────────────────────── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            {t('settings.section.appearance').toUpperCase()}
-          </Text>
-          <SegmentedRow<ThemePreference>
-            testID="settings-appearance"
+        <Section titleKey="settings.section.appearance" styles={styles}>
+          <ToggleRowGroup<ThemePreference>
+            testIDPrefix="settings-appearance"
             options={appearanceOptions}
             value={themePref}
             onChange={setThemePref}
           />
-        </View>
+        </Section>
 
         {/* Blocked users ───────────────────────────────────────────────────── */}
         <Section titleKey="settings.section.blocked" styles={styles}>
@@ -349,6 +384,17 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {switchingLanguage ? (
+        <View
+          style={styles.switchOverlay}
+          accessibilityRole="progressbar"
+          accessibilityLabel={t('settings.language.switching')}
+        >
+          <ActivityIndicator size="large" color={c.brand.primary} />
+          <Text style={styles.switchOverlayText}>{t('settings.language.switching')}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

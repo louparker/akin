@@ -476,11 +476,9 @@ export default function PostDetailScreen() {
   const canReply = post !== undefined && (!post.is_full || isParticipant);
   const showFullBanner = post?.is_full === true && !isParticipant;
 
-  // Check if the current user has already voted for spice
-  // We don't have per-user vote data in the query result — derive from spice_vote_count only.
-  // For simplicity treat as "not voted" when we don't have user-specific vote data.
-  // A production implementation would join spice_votes for the current user.
-  const userSpiceVote: number | null = null;
+  // The current user's own spice vote (null if not voted), from usePost's
+  // RLS-scoped spice_votes embed. Drives the read-only state of the vote sheet.
+  const userSpiceVote: number | null = post?.userSpiceVote ?? null;
 
   function handleSendReply() {
     const body = replyText.trim();
@@ -613,7 +611,7 @@ export default function PostDetailScreen() {
   const capacityText = post ? t(capacityKey, { filled: String(post.participant_count) }) : '';
 
   const avgSpice =
-    post && post.spice_vote_count > 0 ? (post.average_spice_level ?? 0).toFixed(1) : '—';
+    post && post.spice_vote_count > 0 ? Number(post.average_spice_level ?? 0).toFixed(1) : '—';
 
   if (isLoading) {
     return (
@@ -795,7 +793,7 @@ export default function PostDetailScreen() {
         >
           <View style={styles.spiceLeft}>
             <Text style={styles.spiceEyebrow}>{t('post.spice.label').toUpperCase()}</Text>
-            <SpiceFlames level={Math.round(post.average_spice_level ?? 0)} size={16} />
+            <SpiceFlames level={Math.round(Number(post.average_spice_level ?? 0))} size={16} />
           </View>
           <View style={styles.spiceRight}>
             <Text style={styles.spiceStat}>{t('post.spice.average', { avg: avgSpice })}</Text>

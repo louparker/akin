@@ -468,6 +468,7 @@ export const sv: TranslationDict = {
   'settings.language.system': 'System',
   'settings.language.sv': 'Svenska',
   'settings.language.en': 'English',
+  'settings.language.switching': 'Byter språk…',
   'settings.appearance.system': 'System',
   'settings.appearance.light': 'Ljust',
   'settings.appearance.dark': 'Mörkt',

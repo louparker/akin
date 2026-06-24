@@ -11,12 +11,15 @@ export type CommentRow = Tables<'comments'>;
 
 export interface PostWithComments extends PostRow {
   comments: CommentRow[];
+  // The current user's own spice vote on this post (null if they haven't voted).
+  // RLS on spice_votes only exposes the requester's own row, so the embed is safe.
+  userSpiceVote: number | null;
 }
 
 async function fetchPost(id: string): Promise<PostWithComments> {
   const { data, error } = await supabase
     .from('posts')
-    .select('*, comments(*)')
+    .select('*, comments(*), spice_votes(score)')
     .eq('id', id)
     .order('created_at', { referencedTable: 'comments', ascending: true })
     .single();
@@ -25,11 +28,15 @@ async function fetchPost(id: string): Promise<PostWithComments> {
     throw new Error(error.message);
   }
 
-  const comments = (data as PostRow & { comments: CommentRow[] | null }).comments ?? [];
+  const row = data as PostRow & {
+    comments: CommentRow[] | null;
+    spice_votes: { score: number }[] | null;
+  };
 
   return {
     ...(data as PostRow),
-    comments,
+    comments: row.comments ?? [],
+    userSpiceVote: row.spice_votes?.[0]?.score ?? null,
   };
 }
 

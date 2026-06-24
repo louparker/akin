@@ -290,7 +290,9 @@ SELECT throws_ok(
 );
 
 -- ---------------------------------------------------------------------------
--- Test 11: soft-deleting a comment does NOT decrement active/participant counts
+-- Test 11: soft-deleting your LAST comment on a not-full post frees your slot
+--          (you "leave the conversation" — migration 0028). This supersedes the
+--          earlier behaviour where a comment delete left the counts untouched.
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
@@ -316,13 +318,14 @@ END; $$;
 
 SELECT is(
   current_setting('t.e_count_after')::int,
-  current_setting('t.e_count_before')::int,
-  'soft-deleting a comment does not decrement active_post_count'
+  current_setting('t.e_count_before')::int - 1,
+  'soft-deleting your last comment on a not-full post frees your active slot'
 );
 
-SELECT ok(
-  current_setting('t.test11_pcount')::int >= 2,
-  'soft-deleting a comment does not decrement participant_count'
+SELECT is(
+  current_setting('t.test11_pcount')::int,
+  1,
+  'soft-deleting your last comment vacates the seat (participant_count 2 -> 1)'
 );
 
 SELECT * FROM finish();
