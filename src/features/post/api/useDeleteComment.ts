@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 export interface DeleteCommentInput {
   commentId: string;
@@ -29,6 +30,10 @@ export function useDeleteComment(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      // Deleting your last comment on a not-full post frees your active slot
+      // server-side (migration 0028). Refresh the profile so the
+      // active-conversations count reflects it without a manual reload.
+      void useAuthStore.getState().refreshProfile();
     },
   });
 }

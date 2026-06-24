@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -127,11 +127,14 @@ export default function FeedScreen() {
     }, [refetch]),
   );
 
-  // Once the highlighted (just-created) post is in view, let its entrance
-  // animation play, then clear the flag so it doesn't re-animate on return.
+  // Once the highlighted (just-created) post is in the data, jump to the top so
+  // it's visible (the feed tab keeps its old scroll position after posting),
+  // let its entrance animation play, then clear the flag so it doesn't re-animate.
+  const listRef = useRef<FlashListRef<PostRow>>(null);
   const highlightPresent = !!highlightPostId && posts.some((p) => p.id === highlightPostId);
   useEffect(() => {
     if (!highlightPresent) return;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
     const id = setTimeout(() => useFeedStore.getState().setHighlightPostId(null), 1200);
     return () => clearTimeout(id);
   }, [highlightPresent]);
@@ -220,6 +223,7 @@ export default function FeedScreen() {
     <View style={styles.container}>
       <FeedHeader tab="all" sort={sort} onSortPress={() => setFilterVisible(true)} />
       <FlashList
+        ref={listRef}
         data={posts}
         renderItem={renderItem}
         keyExtractor={keyExtractor}

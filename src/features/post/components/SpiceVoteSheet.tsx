@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { SpiceFlames } from '@/components/composed/SpiceFlames';
@@ -112,7 +112,13 @@ export function SpiceVoteSheet({ postId, visible, userVote, onClose }: SpiceVote
 
   function handleSelect(level: number) {
     if (readOnly || isPending) return;
-    voteSpice({ level }, { onSuccess: onClose });
+    voteSpice(
+      { level },
+      {
+        onSuccess: onClose,
+        onError: (err) => Alert.alert(t('error.generic'), err.message),
+      },
+    );
   }
 
   return (

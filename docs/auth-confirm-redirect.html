@@ -1,0 +1,63 @@
+<!doctype html>
+<!--
+  Akin signup-confirmation redirect page.
+
+  WHY THIS EXISTS
+  Email clients (Gmail, Apple Mail, Outlook, …) refuse to render custom-scheme
+  links like `akin://…` as tappable. That made the old "Confirm email" button a
+  dead link. This tiny https page is what the confirmation email now points at;
+  the browser opens it and immediately forwards to the app's `akin://confirm`
+  deep link, carrying the single-use token_hash through unchanged. The
+  browser → app-scheme handoff works reliably (unlike email → app-scheme).
+
+  DEPLOY
+  Host this file so it is served at exactly:
+      https://ourakin.com/auth/confirm
+  (matches APP_CONFIRM_REDIRECT in supabase/functions/send-auth-email/templates.ts).
+  No app changes are needed — app/(auth)/confirm.tsx already reads token_hash + type
+  and calls verifyOtp({ token_hash }).
+
+  CRITICAL-PATH: auth — have the founder/expert verify the live flow on a real
+  device (iOS + Android) before opening signups.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Opening Akin…</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, system-ui, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        color: #231f21;
+        background: #efeae2;
+        text-align: center;
+        padding: 24px;
+      }
+      a {
+        color: #2c4d55;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Opening Akin to confirm your email…</p>
+    <p><a id="open" href="#">Tap here if the app didn't open automatically.</a></p>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var target = 'akin://confirm?' + params.toString();
+        var link = document.getElementById('open');
+        if (link) link.setAttribute('href', target);
+        window.location.replace(target);
+      })();
+    </script>
+  </body>
+</html>

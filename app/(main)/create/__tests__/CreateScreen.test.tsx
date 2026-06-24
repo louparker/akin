@@ -98,7 +98,7 @@ describe('CreateScreen', () => {
     fireEvent.press(getByLabelText(t('create.submit')));
   }
 
-  it('submits the trimmed post and navigates to its detail', async () => {
+  it('submits the trimmed post and navigates to the feed', async () => {
     const { getByTestId, getByLabelText } = renderWithProviders(<CreateScreen />);
     fillAndSubmit(getByTestId, getByLabelText);
 
@@ -108,7 +108,9 @@ describe('CreateScreen', () => {
       body: 'It started fine and then…',
       category: 'vent_space',
     });
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(main)/post/new-post-1'));
+    // After posting we drop the user straight into the feed (not the post detail)
+    // so they watch their post animate into the list.
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(main)/feed'));
   });
 
   it('highlights the new post and refreshes the profile on success', async () => {

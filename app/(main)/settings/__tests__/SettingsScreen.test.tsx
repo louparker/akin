@@ -1,8 +1,8 @@
 // Settings screen — Language, Appearance, Blocked, Legal, and Support sections.
 //
-// Asserts each segmented control reflects the current preference and that
-// tapping a segment invokes the correct hook. Hooks and native modules are
-// mocked to keep tests focused on screen wiring.
+// Asserts each toggle row reflects the current preference and that flipping a
+// row's switch on invokes the correct hook. Hooks and native modules are mocked
+// to keep tests focused on screen wiring.
 
 import { render, fireEvent } from '@testing-library/react-native';
 import * as ReactNative from 'react-native';
@@ -94,28 +94,32 @@ describe('SettingsScreen — Language section', () => {
     expect(getByTestId('settings-language-en')).toBeOnTheScreen();
   });
 
-  it('marks the current preference as selected', () => {
+  it('switches the current preference on and the others off', () => {
     mockCurrentLangPref = 'en';
     const { getByTestId } = render(<SettingsScreen />);
-    expect(getByTestId('settings-language-en').props.accessibilityState).toMatchObject({
-      selected: true,
-    });
-    expect(getByTestId('settings-language-sv').props.accessibilityState).toMatchObject({
-      selected: false,
-    });
+    expect(getByTestId('settings-language-en').props.value).toBe(true);
+    expect(getByTestId('settings-language-sv').props.value).toBe(false);
+    expect(getByTestId('settings-language-system').props.value).toBe(false);
   });
 
-  it('invokes setPreference("sv") when the Svenska segment is tapped', () => {
+  it('invokes setPreference("sv") when the Svenska row is switched on', () => {
     const { getByTestId } = render(<SettingsScreen />);
-    fireEvent.press(getByTestId('settings-language-sv'));
+    fireEvent(getByTestId('settings-language-sv'), 'valueChange', true);
     expect(mockSetLanguagePref).toHaveBeenCalledWith('sv');
   });
 
-  it('invokes setPreference("system") when the System segment is tapped', () => {
+  it('invokes setPreference("system") when the System row is switched on', () => {
     mockCurrentLangPref = 'en';
     const { getByTestId } = render(<SettingsScreen />);
-    fireEvent.press(getByTestId('settings-language-system'));
+    fireEvent(getByTestId('settings-language-system'), 'valueChange', true);
     expect(mockSetLanguagePref).toHaveBeenCalledWith('system');
+  });
+
+  it('does not re-invoke setPreference when the already-selected row is toggled off', () => {
+    mockCurrentLangPref = 'en';
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent(getByTestId('settings-language-en'), 'valueChange', false);
+    expect(mockSetLanguagePref).not.toHaveBeenCalled();
   });
 });
 
@@ -127,27 +131,23 @@ describe('SettingsScreen — Appearance section', () => {
     expect(getByTestId('settings-appearance-dark')).toBeOnTheScreen();
   });
 
-  it('marks the current theme preference as selected', () => {
+  it('switches the current theme preference on and the others off', () => {
     mockCurrentThemePref = 'dark';
     const { getByTestId } = render(<SettingsScreen />);
-    expect(getByTestId('settings-appearance-dark').props.accessibilityState).toMatchObject({
-      selected: true,
-    });
-    expect(getByTestId('settings-appearance-light').props.accessibilityState).toMatchObject({
-      selected: false,
-    });
+    expect(getByTestId('settings-appearance-dark').props.value).toBe(true);
+    expect(getByTestId('settings-appearance-light').props.value).toBe(false);
   });
 
-  it('invokes setPreference("dark") when the Dark segment is tapped', () => {
+  it('invokes setPreference("dark") when the Dark row is switched on', () => {
     const { getByTestId } = render(<SettingsScreen />);
-    fireEvent.press(getByTestId('settings-appearance-dark'));
+    fireEvent(getByTestId('settings-appearance-dark'), 'valueChange', true);
     expect(mockSetThemePref).toHaveBeenCalledWith('dark');
   });
 
-  it('invokes setPreference("system") when the System segment is tapped', () => {
+  it('invokes setPreference("system") when the System row is switched on', () => {
     mockCurrentThemePref = 'light';
     const { getByTestId } = render(<SettingsScreen />);
-    fireEvent.press(getByTestId('settings-appearance-system'));
+    fireEvent(getByTestId('settings-appearance-system'), 'valueChange', true);
     expect(mockSetThemePref).toHaveBeenCalledWith('system');
   });
 });

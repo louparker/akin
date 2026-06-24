@@ -10,8 +10,11 @@ module.exports = function (api) {
     // call native modules at module-load time, crashing the Jest/Node runtime.
     // className props are untransformed in tests, which is fine — we test behaviour, not styles.
     presets: ['babel-preset-expo', ...(!isTest ? ['nativewind/babel'] : [])],
+    // NOTE: do NOT add 'react-native-reanimated/plugin' / 'react-native-worklets/plugin'
+    // here. babel-preset-expo (SDK 55) auto-adds the Worklets plugin whenever
+    // react-native-worklets is installed. Adding it manually double-transforms
+    // worklets and crashes at runtime with "Exception in HostFunction".
     plugins: [
-      'react-native-reanimated/plugin',
       [
         'module-resolver',
         {

@@ -67,6 +67,22 @@ describe('useEditComment', () => {
     expect((result.current.error as EditCommentError).kind).toBe('window_closed');
   });
 
+  it('throws EditCommentError window_closed on P0021 (edit window expired)', async () => {
+    mockedFrom.mockReturnValue(
+      makeChain({ data: null, error: { code: 'P0021', message: 'closed' } }),
+    );
+    const { Wrapper } = makeWrapper();
+
+    const { result } = renderHook(() => useEditComment('post-1'), { wrapper: Wrapper });
+
+    act(() => {
+      result.current.mutate({ commentId: 'comment-1', body: 'Updated body' });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect((result.current.error as EditCommentError).kind).toBe('window_closed');
+  });
+
   it('throws EditCommentError unknown on a Supabase error', async () => {
     mockedFrom.mockReturnValue(makeChain({ data: null, error: { message: 'DB error' } }));
     const { Wrapper } = makeWrapper();

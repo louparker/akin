@@ -83,6 +83,12 @@ export function useCreateComment(
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      // The post's comment_count changed, so the feed card is now stale.
+      void queryClient.invalidateQueries({ queryKey: ['feed'] });
+      // Mirror the post-create flow: the active-conversations count is updated
+      // server-side by the participation trigger, so pull the fresh profile
+      // rather than waiting for a manual refresh.
+      void useAuthStore.getState().refreshProfile();
     },
   });
 }
