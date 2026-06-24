@@ -34,9 +34,14 @@ export function useEditComment(
         .maybeSingle();
 
       if (error) {
+        const code = (error as { code?: string }).code;
+        // The edit-window guard (0025) raises P0021 once 15 minutes have passed.
+        if (code === 'P0021') {
+          throw new EditCommentError('window_closed', error.message);
+        }
         throw new EditCommentError('unknown', error.message);
       }
-      // RLS blocked the UPDATE (15-min window expired or not the author)
+      // No row returned means RLS blocked it (not the author).
       if (!data) {
         throw new EditCommentError('window_closed', 'Editing window has closed.');
       }

@@ -395,6 +395,25 @@ The Settings screen has six sub-sections, each independently shippable. Split th
 
 ---
 
+## Task 8.11 — UX & correctness batch ✅ SHIPPED 2026-06-23
+
+Founder-reported issues fixed in one batch (see ADR-023). All TDD, full suite green (374 tests), typecheck + lint clean.
+
+- [x] **Edit/delete posts.** New `useEditPost` / `useDeletePost` hooks + OP-only inline editor and menu actions on the post detail. (Comment edit/delete already shipped in Phase 6.)
+- [x] **Delete anytime, edit within 15 min.** Migration `0025` relaxes the post/comment UPDATE RLS to ownership-only and moves the 15-minute edit window into the `enforce_*_update_columns` triggers (`P0021`). Soft-delete is retained for moderation. pgTAP `edit_window.test.sql` updated.
+- [x] **Soft-delete RLS visibility fix.** Migration `0027`: authenticated soft-delete was failing `new row violates RLS` because the deleted row was no longer SELECT-visible. Added narrow `authors read own deleted {posts,comments}` SELECT policies. Whole pgTAP suite green (155 tests). See ADR-025.
+- [x] **Deleting a post frees the OP's active slot.** Migration `0026` adds `free_slots_on_post_delete` (AFTER UPDATE OF status): a not-full post returns every participant's `active_post_count` on delete; full posts are skipped (already freed on fill). pgTAP added. See ADR-024.
+- [x] **App-load `HostFunction` crash** — actually a **stale native build**, fixed by a full `pnpm ios` rebuild (not the babel/cache changes). Removed the redundant `react-native-reanimated/plugin` from `babel.config.js` as a valid cleanup regardless (`babel-preset-expo@55` already adds the Worklets plugin). ⚠️ reanimated `4.3.1`/worklets `0.8.3` are ahead of Expo 55's expected `4.2.1`/`0.7.4` — align before the EAS build. See ADR-026.
+- [x] **Confirm-email link fixed.** Signup CTA is now a clickable `https://ourakin.com/auth/confirm` redirect that forwards the `token_hash` to `akin://confirm` (email clients won't render `akin://` directly). App flow unchanged. ⚠️ Founder must deploy `docs/auth-confirm-redirect.html`. CRITICAL-PATH.
+- [x] **Post-create lands on the feed** with the new post animating in (no pull-to-refresh).
+- [x] **Spice vote persists + shows.** `useVoteSpice` upserts on `(post_id, user_id)` so re-voting works, and invalidates `['feed']` so the flame count appears on cards.
+- [x] **Language/Appearance toggle** restyled into a clear filled-teal segmented control (bigger targets, obvious selected state).
+- [x] **Comment active-count parity.** `useCreateComment` now calls `refreshProfile()` like the post-create flow.
+
+**Remaining founder action:** deploy the confirm-redirect page; apply migration `0025` (`supabase db push`); run `pnpm db:test` for the updated pgTAP (local stack / CI).
+
+---
+
 ## End of Phase 8
 
 Sign-off ritual:

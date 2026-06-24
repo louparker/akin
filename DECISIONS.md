@@ -29,6 +29,145 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-026 — Correction: the HostFunction app-load crash was a stale native build
+
+Date: 2026-06-23
+Status: Accepted (supersedes the crash-cause claim in ADR-024)
+Decided by: Founder
+
+### Context
+
+ADR-024 and the commit that introduced it claimed the `Exception in HostFunction`
+app-load crash (at the `react-native-reanimated` import in `PostCard`) was caused
+by a duplicate Babel worklets plugin. **That was wrong.** Removing the duplicate
+plugin and clearing the Metro cache did **not** fix it. Two further hypotheses —
+the reanimated/worklets version skew vs Expo's expected versions — also did not
+turn out to be the blocker.
+
+### What actually fixed it
+
+A full native rebuild via `pnpm ios` (`expo run:ios`). The device had been running
+a **stale native binary** (`ios/build` dated months earlier); `expo start -c` only
+refreshes the JS bundle, so it kept serving fresh JS to a native app whose
+Reanimated/Worklets host functions didn't match. Recompiling the native modules
+realigned them and the crash disappeared. The crash surfaced now (not earlier)
+because the dark-mode merge added the first real Reanimated usage (`FadeInDown`
+entrance animations), which forces the runtime to initialize on import.
+
+### Consequences
+
+- **Operational rule:** an `Exception in HostFunction` after a JS-only refresh means
+  do a full native rebuild (`pnpm ios`), not a cache clear. `expo start -c` is not enough.
+- The Babel change in ADR-024 is retained as a **valid cleanup** (babel-preset-expo 55
+  already auto-adds `react-native-worklets/plugin`), but it is explicitly _not_ a crash fix.
+- **Still open / latent:** the project pins reanimated `4.3.1` / worklets `0.8.3`, ahead
+  of Expo SDK 55's expected `4.2.1` / `0.7.4`. It runs after a clean rebuild, but
+  `expo-doctor` will warn and it could bite on the EAS production (closed-beta) build.
+  Align before cutting that build.
+
+---
+
+## ADR-025 — Soft-delete RLS visibility: authors must read their own deleted rows
+
+Date: 2026-06-23
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Running the pgTAP suite (as an authenticated client, not the bypassing `postgres`
+role) revealed that soft-delete was **fundamentally broken** for real users:
+`UPDATE <table> SET status='deleted'` raised `new row violates row-level security
+policy`. PostgreSQL requires a row modified by UPDATE to remain visible under the
+table's SELECT policies; the `anyone reads active <x>` policies only expose
+`status='active'`, so the new `deleted` row matched no SELECT policy and was
+rejected. This was latent because every prior pgTAP soft-delete ran as `postgres`
+(RLS bypassed). 0025 relaxed the UPDATE policy but did not address row visibility.
+
+### Decision
+
+Migration `0027` adds a permissive SELECT policy `authors read own deleted
+{posts,comments}` scoped to `USING (author_id = auth.uid() AND status =
+'deleted')`. Scoped to `deleted` deliberately — that is exactly the new row a
+soft-delete produces. Active-content visibility stays governed entirely by the
+block/removal-aware `anyone reads active` policies, so a **removed** user still
+cannot see their own active comments on a post they were removed from (a broad
+`author_id = auth.uid()` policy broke that invariant — caught by
+`op_participant_removal.test.sql`).
+
+### Consequences
+
+- Soft-delete (and the `.select('id')` RETURNING in the delete hooks) now works
+  for authenticated users. pgTAP green (155 tests).
+- General rule for this codebase: **any status transition that hides a row from
+  the public SELECT policy needs a matching narrow SELECT policy for the actor**,
+  or the UPDATE fails RLS. Moderation hides via SECURITY DEFINER, so it is unaffected.
+- Edits (status stays `active`) are still covered by `anyone reads active`; no
+  extra policy needed for them.
+
+---
+
+## ADR-024 — Soft-deleting a post frees participants' active slots + Babel worklets fix
+
+Date: 2026-06-23
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Two issues after ADR-023:
+
+1. **Deleting a post didn't return the OP's active slot.** `active_post_count` is incremented when you join a post and only decremented by `decrement_active_on_full` when the post reaches 4 participants (0005). Nothing handled deletion, so a soft-deleted post kept counting against the OP's 3-post limit.
+2. **App crashed on load** with `Exception in HostFunction` at the `react-native-reanimated` import (cascading to "missing default export" + routing warnings for every route that imports `PostCard`).
+
+### Decisions
+
+- **`free_slots_on_post_delete` trigger (0026).** AFTER UPDATE OF status on posts: on `active→deleted`, if the post was **not full** (`participant_count < 4`), decrement `active_post_count` for every row in `post_participants` (`GREATEST(x-1, 0)`). Full posts are skipped because `decrement_active_on_full` already returned everyone's slot when the post filled — decrementing again would double-count. SECURITY DEFINER, mirroring the other limit triggers. This frees **all** still-active participants, not just the OP, which is the invariant-correct behaviour (the conversation is gone for everyone). pgTAP added.
+- **Babel worklets double-plugin removed.** `babel-preset-expo@55` auto-adds `react-native-worklets/plugin` when `react-native-worklets` is installed. `babel.config.js` _also_ listed `react-native-reanimated/plugin` (a re-export of the same worklets plugin), so worklets were transformed twice → the HostFunction crash. Removed the manual entry; the preset is the single source.
+
+### Consequences
+
+- Migration `0026` must be applied. Comment soft-delete still does **not** free a slot (unchanged, and covered by `participation_limits.test.sql` test 11) — only post deletion does, by design.
+- Moderation hiding a post (`active→hidden`) does not free slots; out of scope here. Revisit if moderation load makes it matter.
+- The Babel change requires a Metro cache reset (`npx expo start -c`) and, if running a stale dev client, a native rebuild.
+- pgTAP for both `0025` and `0026` still needs a local-stack / CI run (`pnpm db:test`).
+
+---
+
+## ADR-023 — Phase 8: edit/delete windows, spice upsert, post-create flow, confirm-email link
+
+Date: 2026-06-23
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+A batch of Phase 8 UX/correctness fixes surfaced in real use:
+
+1. Authors could not delete their own post/comment after the 15-minute edit window (the UPDATE RLS policy gated _all_ updates, including the status→deleted soft-delete).
+2. There were no edit/delete affordances for **posts** (comments already had them).
+3. Spice votes failed silently on the second tap (plain INSERT against the `(post_id, user_id)` PK) and never refreshed the feed cards.
+4. After posting, the user landed on the post detail and had to pull-to-refresh to see the new post in the feed.
+5. The signup confirmation email's CTA was a raw `akin://confirm` custom-scheme link, which email clients refuse to render as tappable — a dead button.
+6. The comment-create flow never called `refreshProfile()`, so the active-conversations count went stale (posting already did).
+
+### Decisions
+
+- **Delete anytime, edit within 15 min (0025).** The UPDATE RLS policy on `posts`/`comments` is relaxed to ownership-only, and the 15-minute window moves into the `enforce_*_update_columns` triggers, which already see which columns change. A body/title change after the window raises `P0021`; `status active→deleted` is allowed at any time. Soft-delete means the row is retained for moderation, so "delete anytime" does not weaken accountability. `useEditComment`/`useEditPost` map `P0021` → `window_closed`.
+- **Post edit/delete UI** mirrors the comment pattern: inline editor + OP-only menu items on the post detail. The More menu is now role-split (OP: edit/delete/remove; others: report/block), which also removes the odd "report your own post" entry.
+- **Spice upsert.** `useVoteSpice` upserts on the `(post_id, user_id)` PK (the trigger already maintains the denormalised average across INSERT/UPDATE/DELETE, and RLS already allows "update own vote"), and invalidates both `['post']` and `['feed']`. Feed cards round `average_spice_level` for the flame count.
+- **Post-create routes to the feed.** `useCreatePost` already invalidated `['feed']`; the create screen now `router.replace('/(main)/feed')` instead of the post detail, so the existing highlight entrance animation plays without a manual pull.
+- **Confirm-email via https passthrough.** The signup CTA now points at `https://ourakin.com/auth/confirm` (clickable in email), a static page that immediately forwards to `akin://confirm?token_hash=…&type=signup`. This keeps the in-app `verifyOtp({ token_hash })` flow **unchanged** — the lowest-risk fix — rather than switching to the Supabase verify-redirect flow (which would consume the token server-side and require reworking `confirm.tsx`).
+
+### Consequences
+
+- **Founder action required:** deploy `docs/auth-confirm-redirect.html` at `https://ourakin.com/auth/confirm` before opening signups. CRITICAL-PATH auth — verify on real iOS + Android devices.
+- pgTAP `edit_window.test.sql` updated: old-post body edits now throw `P0021` (was: RLS-hidden), and old post/comment soft-deletes now succeed. Needs a local stack / CI run (`pnpm db:test`) — not executed in this session.
+- Migration `0025` must be applied (`supabase db push` / `migration up`) for delete-anytime to take effect.
+- The `report-your-own-post` menu entry is gone; if product ever wants self-report, re-add it under the `isOP` branch.
+
+---
+
 ## ADR-022 — Phase 8.3: Email confirmation via OTP code + token_hash deep link
 
 Date: 2026-06-23

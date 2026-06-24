@@ -142,7 +142,7 @@ function PostCardImpl({
             <CapacityDots filled={participantCount} total={4} />
             <Text style={styles.capacityText}>{participantCount}/4</Text>
             {spiceLevel !== undefined && spiceLevel > 0 ? (
-              <SpiceFlames level={spiceLevel} size={11} />
+              <SpiceFlames level={Math.round(spiceLevel)} size={11} />
             ) : null}
           </View>
         </View>

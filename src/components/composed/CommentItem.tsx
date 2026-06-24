@@ -187,7 +187,8 @@ export const CommentItem = memo(function CommentItem({
 
   const isOwn = comment.author_id === currentUserId;
   const withinWindow = isWithinEditWindow(comment.created_at);
-  const canEditDelete = isOwn && withinWindow;
+  // Edits are limited to the 15-minute window; deletes are allowed at any time.
+  const canEdit = isOwn && withinWindow;
 
   const isDeleted = comment.status === 'deleted';
   const isRemovedByOp = comment.removed_by_op;
@@ -379,16 +380,20 @@ export const CommentItem = memo(function CommentItem({
           accessibilityLabel={t('common.close')}
         >
           <View style={styles.sheet}>
-            {canEditDelete ? (
+            {isOwn ? (
               <>
-                <Pressable
-                  style={styles.sheetItem}
-                  onPress={handleEditPress}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.sheetItemText}>{t('comment.action.edit')}</Text>
-                </Pressable>
-                <View style={styles.divider} />
+                {canEdit ? (
+                  <>
+                    <Pressable
+                      style={styles.sheetItem}
+                      onPress={handleEditPress}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.sheetItemText}>{t('comment.action.edit')}</Text>
+                    </Pressable>
+                    <View style={styles.divider} />
+                  </>
+                ) : null}
                 <Pressable
                   style={styles.sheetItem}
                   onPress={handleDeletePress}
@@ -399,7 +404,7 @@ export const CommentItem = memo(function CommentItem({
                   </Text>
                 </Pressable>
               </>
-            ) : !isOwn ? (
+            ) : (
               <>
                 <Pressable
                   style={styles.sheetItem}
@@ -428,7 +433,7 @@ export const CommentItem = memo(function CommentItem({
                   </Text>
                 </Pressable>
               </>
-            ) : null}
+            )}
           </View>
         </Pressable>
       </Modal>

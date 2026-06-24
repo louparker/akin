@@ -147,7 +147,8 @@ describe('CommentItem', () => {
       });
     });
 
-    it('hides Edit and Delete outside the 15-min window', async () => {
+    it('hides Edit but still shows Delete outside the 15-min window', async () => {
+      // Edits are window-limited; deleting your own content is allowed anytime.
       render(
         <CommentItem
           comment={aComment({ author_id: 'user-99', created_at: OUTSIDE_WINDOW })}
@@ -160,9 +161,9 @@ describe('CommentItem', () => {
       fireEvent.press(screen.getByTestId('comment-menu-btn'));
 
       await waitFor(() => {
-        expect(screen.queryByText('Edit')).toBeNull();
-        expect(screen.queryByText('Delete')).toBeNull();
+        expect(screen.getByText('Delete')).toBeOnTheScreen();
       });
+      expect(screen.queryByText('Edit')).toBeNull();
     });
 
     it('opens an edit textarea pre-populated with the current body', async () => {

@@ -23,33 +23,43 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
     row: {
       flexDirection: 'row',
       backgroundColor: c.bg.raised,
-      borderRadius: 10,
+      borderRadius: 12,
       padding: 4,
       marginHorizontal: 22,
       gap: 4,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
     },
     segment: {
       flex: 1,
-      paddingVertical: 9,
+      // 44pt min target so each option is comfortably tappable (WCAG 2.2 AA).
+      minHeight: 44,
+      paddingVertical: 11,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 8,
+      borderRadius: 9,
     },
+    // Selected: filled brand teal with white label — an unmistakable active
+    // state rather than a faint shade change.
     segmentSelected: {
-      backgroundColor: c.bg.base,
+      backgroundColor: c.brand.primary,
     },
+    // Unselected press: a soft brand tint so the tap registers visually.
     segmentPressed: {
-      opacity: 0.7,
+      backgroundColor: c.brand.primaryTint,
+    },
+    segmentSelectedPressed: {
+      opacity: 0.9,
     },
     label: {
       fontFamily: 'Inter',
       fontSize: 14,
-      color: c.fg.tertiary,
+      color: c.fg.secondary,
     },
     labelSelected: {
       fontFamily: 'Inter Medium',
       fontWeight: '500',
-      color: c.fg.primary,
+      color: c.fg.onAccent,
     },
   });
 }
@@ -79,6 +89,7 @@ export function SegmentedRow<T extends string>({
               styles.segment,
               selected && styles.segmentSelected,
               pressed && !selected && styles.segmentPressed,
+              pressed && selected && styles.segmentSelectedPressed,
             ]}
           >
             <Text style={[styles.label, selected && styles.labelSelected]}>{opt.label}</Text>

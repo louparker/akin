@@ -209,7 +209,10 @@ export default function CreateScreen() {
       // the active-conversations count reflects the trigger-incremented value.
       useFeedStore.getState().setHighlightPostId(result.id);
       void useAuthStore.getState().refreshProfile();
-      router.replace(`/(main)/post/${result.id}`);
+      // Land on the feed (not the post detail): useCreatePost already invalidated
+      // the feed query, so it refetches and the new post slides in with its
+      // entrance animation — no pull-to-refresh needed.
+      router.replace('/(main)/feed');
     } catch (err) {
       const i18nKey = err instanceof CreatePostError ? err.i18nKey : 'error.generic';
       if (err instanceof CreatePostError && err.kind === 'active_limit') {

@@ -40,17 +40,25 @@ export function pickLanguage(metadata: { language?: string } | undefined | null)
   return 'sv';
 }
 
+// Email clients refuse to render custom-scheme (akin://) links as tappable, which
+// is why the old `akin://confirm` signup CTA was a dead button. The fix is an
+// https redirect page on the marketing site that immediately forwards to
+// akin://confirm?token_hash=...&type=signup. The browser→app-scheme handoff
+// (unlike email→app-scheme) works reliably, and the token_hash is preserved so
+// the in-app verifyOtp({ token_hash }) flow is completely unchanged.
+//
+// FOUNDER ACTION (deploy once): host a static page at APP_CONFIRM_REDIRECT that runs
+//   const p = new URLSearchParams(location.search);
+//   location.replace('akin://confirm?' + p.toString());
+// See docs/auth-confirm-redirect.html for the ready-to-deploy file.
+const APP_CONFIRM_REDIRECT = 'https://ourakin.com/auth/confirm';
+
 /**
  * Build the URL the email's CTA points to.
  *
- * Signup confirmation uses a direct `akin://confirm` deep link carrying the
- * single-use token_hash. This is deliberate: the Supabase web verify endpoint
- * 303-redirects to `redirect_to`, and when that lands on the API domain the
- * browser shows "No API key found". Going straight to the app and calling
- * verifyOtp({ token_hash }) avoids the web round-trip entirely.
- *
- * Recovery and email-change keep the Supabase verify URL — those flows already
- * pass an app deep link as redirect_to and are out of scope for this change.
+ * Signup forwards the single-use token_hash through the https redirect page
+ * above (clickable in email, then opens the app). Recovery and email-change keep
+ * the Supabase verify URL — already https, already clickable — unchanged.
  */
 export function buildConfirmationUrl(data: EmailData): string {
   if (data.email_action_type === 'signup') {
@@ -58,7 +66,7 @@ export function buildConfirmationUrl(data: EmailData): string {
       token_hash: data.token_hash,
       type: data.email_action_type,
     });
-    return `akin://confirm?${params.toString()}`;
+    return `${APP_CONFIRM_REDIRECT}?${params.toString()}`;
   }
 
   const base = data.site_url.replace(/\/$/, '');

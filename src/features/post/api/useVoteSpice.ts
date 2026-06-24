@@ -17,11 +17,18 @@ export function useVoteSpice(postId: string): UseMutationResult<void, Error, Vot
         throw new Error('Not authenticated');
       }
 
-      const { error } = await supabase.from('spice_votes').insert({
-        post_id: postId,
-        score: level,
-        user_id: session.user.id,
-      });
+      // Upsert on the (post_id, user_id) primary key so a change of mind updates
+      // the existing vote instead of failing with a duplicate-key error. The
+      // maintain_spice_averages trigger handles the INSERT and UPDATE paths, and
+      // RLS allows both ("users vote on others posts" + "users update own spice vote").
+      const { error } = await supabase.from('spice_votes').upsert(
+        {
+          post_id: postId,
+          score: level,
+          user_id: session.user.id,
+        },
+        { onConflict: 'post_id,user_id' },
+      );
 
       if (error) {
         throw new Error(error.message);
@@ -29,6 +36,9 @@ export function useVoteSpice(postId: string): UseMutationResult<void, Error, Vot
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['post', postId] });
+      // average_spice_level is denormalised on the post, so the feed cards that
+      // render the flames are now stale too.
+      void queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 }

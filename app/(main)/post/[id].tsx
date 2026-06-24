@@ -29,6 +29,8 @@ import { Skeleton } from '@/components/composed/Skeleton';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { usePost } from '@/features/post/api/usePost';
 import { useCreateComment, CreateCommentError } from '@/features/post/api/useCreateComment';
+import { useEditPost, EditPostError } from '@/features/post/api/useEditPost';
+import { useDeletePost } from '@/features/post/api/useDeletePost';
 import { useBlock } from '@/features/post/api/useBlock';
 import { SpiceVoteSheet } from '@/features/post/components/SpiceVoteSheet';
 import { LimitActiveSheet } from '@/features/post/components/LimitActiveSheet';
@@ -133,6 +135,67 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
       lineHeight: 15 * 1.6,
       color: c.fg.secondary,
       marginBottom: 18,
+    },
+    postEditTitle: {
+      fontFamily: 'Source Serif 4',
+      fontSize: 22,
+      color: c.fg.primary,
+      backgroundColor: c.bg.sunken,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 10,
+    },
+    postEditBody: {
+      fontFamily: 'Inter',
+      fontSize: 15,
+      lineHeight: 15 * 1.5,
+      color: c.fg.primary,
+      backgroundColor: c.bg.sunken,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border.divider,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      minHeight: 120,
+      textAlignVertical: 'top',
+      marginBottom: 10,
+    },
+    postEditError: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      color: c.semantic.danger,
+      marginBottom: 10,
+    },
+    postEditActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 10,
+      marginBottom: 18,
+    },
+    postEditBtn: {
+      minHeight: 40,
+      paddingHorizontal: 18,
+      paddingVertical: 9,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    postEditBtnPrimary: {
+      backgroundColor: c.brand.primary,
+    },
+    postEditBtnPrimaryText: {
+      fontFamily: 'Inter Medium',
+      fontWeight: '500',
+      fontSize: 14,
+      color: c.fg.onAccent,
+    },
+    postEditBtnSecondary: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: c.fg.secondary,
     },
     authorRow: {
       flexDirection: 'row',
@@ -357,6 +420,8 @@ export default function PostDetailScreen() {
   const { session, profile } = useAuthStore();
   const { data: post, isLoading, isError } = usePost(id ?? '');
   const { mutate: createComment, isPending: isSubmitting } = useCreateComment(id ?? '');
+  const { mutate: editPost, isPending: isEditingPost } = useEditPost(id ?? '');
+  const { mutate: deletePost } = useDeletePost(id ?? '');
   const { mutate: blockUser } = useBlock();
   const { showNotice: showFullNotice, dismiss: dismissFullNotice } = useFullTransition(
     post?.is_full,
@@ -370,6 +435,10 @@ export default function PostDetailScreen() {
   const [showLimitSheet, setShowLimitSheet] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRemoveSheet, setShowRemoveSheet] = useState(false);
+  const [editingPost, setEditingPost] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editPostError, setEditPostError] = useState<string | null>(null);
   const [reportTarget, setReportTarget] = useState<{
     id: string;
     type: 'post' | 'comment' | 'user';
@@ -383,6 +452,11 @@ export default function PostDetailScreen() {
     (post.author_id === currentUserId ||
       post.comments.some((comment) => comment.author_id === currentUserId));
   const isOP = post !== undefined && post.author_id === currentUserId;
+
+  // Edits are limited to 15 minutes; deletes are allowed anytime (soft-delete).
+  const postWithinWindow =
+    post !== undefined && Date.now() - new Date(post.created_at).getTime() < 15 * 60 * 1000;
+  const canEditPost = isOP && postWithinWindow;
 
   // Participants the OP can remove: unique non-OP commenters who haven't already been removed.
   const removableParticipants: RemovableParticipant[] =
@@ -449,6 +523,55 @@ export default function PostDetailScreen() {
 
   function handleMoreMenu() {
     setShowMoreMenu(true);
+  }
+
+  function handleEditPostPress() {
+    setShowMoreMenu(false);
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditBody(post.body);
+    setEditPostError(null);
+    setEditingPost(true);
+  }
+
+  function handleEditPostSave() {
+    const title = editTitle.trim();
+    const body = editBody.trim();
+    if (!title || !body || isEditingPost) return;
+    editPost(
+      { title, body },
+      {
+        onSuccess: () => setEditingPost(false),
+        onError: (err) => {
+          if (err instanceof EditPostError && err.kind === 'window_closed') {
+            setEditPostError(t('post.edit.error.windowClosed'));
+          } else {
+            setEditPostError(t('error.network'));
+          }
+        },
+      },
+    );
+  }
+
+  function handleEditPostCancel() {
+    setEditingPost(false);
+    setEditPostError(null);
+  }
+
+  function handleDeletePost() {
+    setShowMoreMenu(false);
+    Alert.alert(t('post.delete.confirm.title'), t('post.delete.confirm.body'), [
+      { text: t('post.delete.confirm.cancel'), style: 'cancel' },
+      {
+        text: t('post.delete.confirm.cta'),
+        style: 'destructive',
+        onPress: () =>
+          deletePost(undefined, {
+            onSuccess: () => router.replace('/(main)/feed'),
+            onError: () => Alert.alert(t('error.network')),
+          }),
+      },
+    ]);
   }
 
   function handleReportPost() {
@@ -582,10 +705,73 @@ export default function PostDetailScreen() {
             <Text style={styles.metaTime}>{timeAgo(post.created_at)}</Text>
           </View>
 
-          <Text testID="post-title" style={styles.postTitle}>
-            {post.title}
-          </Text>
-          <Text style={styles.postBody}>{post.body}</Text>
+          {editingPost ? (
+            <View>
+              <TextInput
+                testID="post-edit-title"
+                style={styles.postEditTitle}
+                value={editTitle}
+                onChangeText={(text) => {
+                  setEditTitle(text);
+                  setEditPostError(null);
+                }}
+                maxLength={200}
+                accessibilityLabel={t('post.menu.edit')}
+              />
+              <TextInput
+                testID="post-edit-body"
+                style={styles.postEditBody}
+                value={editBody}
+                onChangeText={(text) => {
+                  setEditBody(text);
+                  setEditPostError(null);
+                }}
+                multiline
+                maxLength={4000}
+                accessibilityLabel={t('post.menu.edit')}
+              />
+              {editPostError ? (
+                <Text testID="post-edit-error" style={styles.postEditError}>
+                  {editPostError}
+                </Text>
+              ) : null}
+              <View style={styles.postEditActions}>
+                <Pressable
+                  testID="post-edit-cancel"
+                  onPress={handleEditPostCancel}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('post.edit.cancel')}
+                  style={styles.postEditBtn}
+                >
+                  <Text style={styles.postEditBtnSecondary}>{t('post.edit.cancel')}</Text>
+                </Pressable>
+                <Pressable
+                  testID="post-edit-save"
+                  onPress={handleEditPostSave}
+                  disabled={!editTitle.trim() || !editBody.trim() || isEditingPost}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('post.edit.save')}
+                  accessibilityState={{
+                    disabled: !editTitle.trim() || !editBody.trim() || isEditingPost,
+                  }}
+                  style={[styles.postEditBtn, styles.postEditBtnPrimary]}
+                >
+                  {isEditingPost ? (
+                    <ActivityIndicator size="small" color={c.fg.onAccent} />
+                  ) : (
+                    <Text style={styles.postEditBtnPrimaryText}>{t('post.edit.save')}</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text testID="post-title" style={styles.postTitle}>
+                {post.title}
+              </Text>
+              <Text style={styles.postBody}>{post.body}</Text>
+            </>
+          )}
 
           <View style={styles.authorRow}>
             <View style={styles.authorLeftCol}>
@@ -768,31 +954,59 @@ export default function PostDetailScreen() {
           accessibilityLabel={t('common.close')}
         >
           <View style={styles.menuSheet}>
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleReportPost}
-              accessibilityRole="button"
-              accessibilityLabel={t('post.menu.report')}
-            >
-              <Text style={styles.menuItemText}>{t('post.menu.report')}</Text>
-            </Pressable>
-            {isOP && removableParticipants.length > 0 ? (
+            {isOP ? (
               <>
-                <View style={styles.menuDivider} />
+                {canEditPost ? (
+                  <>
+                    <Pressable
+                      testID="post-menu-edit"
+                      style={styles.menuItem}
+                      onPress={handleEditPostPress}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('post.menu.edit')}
+                    >
+                      <Text style={styles.menuItemText}>{t('post.menu.edit')}</Text>
+                    </Pressable>
+                    <View style={styles.menuDivider} />
+                  </>
+                ) : null}
                 <Pressable
+                  testID="post-menu-delete"
                   style={styles.menuItem}
-                  onPress={handleRemoveParticipant}
+                  onPress={handleDeletePost}
                   accessibilityRole="button"
-                  accessibilityLabel={t('post.menu.removeParticipant')}
+                  accessibilityLabel={t('post.menu.delete')}
                 >
                   <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                    {t('post.menu.removeParticipant')}
+                    {t('post.menu.delete')}
                   </Text>
                 </Pressable>
+                {removableParticipants.length > 0 ? (
+                  <>
+                    <View style={styles.menuDivider} />
+                    <Pressable
+                      style={styles.menuItem}
+                      onPress={handleRemoveParticipant}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('post.menu.removeParticipant')}
+                    >
+                      <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                        {t('post.menu.removeParticipant')}
+                      </Text>
+                    </Pressable>
+                  </>
+                ) : null}
               </>
-            ) : null}
-            {isOP ? null : (
+            ) : (
               <>
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleReportPost}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('post.menu.report')}
+                >
+                  <Text style={styles.menuItemText}>{t('post.menu.report')}</Text>
+                </Pressable>
                 <View style={styles.menuDivider} />
                 <Pressable
                   style={styles.menuItem}

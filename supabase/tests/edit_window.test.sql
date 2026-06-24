@@ -1,12 +1,14 @@
 -- supabase/tests/edit_window.test.sql
--- pgTAP tests for 0004_edit_window.sql
+-- pgTAP tests for 0004_edit_window.sql + 0025_delete_anytime_edit_window.sql
 --
--- Guard trigger tests (2, 3, 6) use SET LOCAL ROLE authenticated + JWT so the
--- current_user check in enforce_post_update_columns fires for client code paths.
--- Test 4 verifies the 15-minute RLS USING clause keeps the row invisible.
+-- Guard/edit-window tests run as SET LOCAL ROLE authenticated + JWT so the
+-- current_user check in the enforce_*_update_columns triggers fires for client
+-- code paths. After 0025 the 15-minute window is enforced by the trigger
+-- (P0021) for body/title edits, while soft-delete (active→deleted) is allowed
+-- at any time.
 BEGIN;
 
-SELECT plan(7);
+SELECT plan(10);
 
 -- ---------------------------------------------------------------------------
 -- Setup
@@ -27,11 +29,13 @@ END; $$;
 
 DO $$
 DECLARE
-  v_alice uuid;
-  v_bob   uuid;
-  v_main  uuid;
-  v_old   uuid;
-  v_post2 uuid;
+  v_alice      uuid;
+  v_bob        uuid;
+  v_main       uuid;
+  v_old        uuid;
+  v_post2      uuid;
+  v_bcpost     uuid;
+  v_oldcomment uuid;
 BEGIN
   v_alice := tests.make_verified_user('alice_edit@akin.test');
   v_bob   := tests.make_verified_user('bob_edit@akin.test');
@@ -41,7 +45,7 @@ BEGIN
   VALUES (v_alice, 'AliceEdit1', 'Original title', 'Original body text here', 'vent_space')
   RETURNING id INTO v_main;
 
-  -- Bob's old post (> 15 minutes) — used for test 4
+  -- Bob's old post (> 15 minutes) — used for tests 4 (edit blocked) + 8 (delete ok)
   INSERT INTO public.posts (author_id, author_identifier, title, body, category,
                             created_at, updated_at)
   VALUES (v_bob, 'BobEdit1', 'Old post', 'Old body content here', 'vent_space',
@@ -53,11 +57,23 @@ BEGIN
   VALUES (v_alice, 'AliceEdit1', 'Post two', 'Body content here two', 'good_vibes')
   RETURNING id INTO v_post2;
 
-  PERFORM set_config('tests.alice',   v_alice::text, true);
-  PERFORM set_config('tests.bob',     v_bob::text,   true);
-  PERFORM set_config('tests.main',    v_main::text,  true);
-  PERFORM set_config('tests.old',     v_old::text,   true);
-  PERFORM set_config('tests.post2',   v_post2::text, true);
+  -- Bob's old post + old comment — used for tests 9 (edit blocked) + 10 (delete ok)
+  INSERT INTO public.posts (author_id, author_identifier, title, body, category,
+                            created_at, updated_at)
+  VALUES (v_bob, 'BobEdit1', 'Bob old post two', 'Bob old body content', 'good_vibes',
+          now() - interval '30 minutes', now() - interval '30 minutes')
+  RETURNING id INTO v_bcpost;
+
+  INSERT INTO public.comments (post_id, author_id, author_identifier, body, created_at)
+  VALUES (v_bcpost, v_bob, 'BobEdit1', 'bob old comment', now() - interval '30 minutes')
+  RETURNING id INTO v_oldcomment;
+
+  PERFORM set_config('tests.alice',      v_alice::text,      true);
+  PERFORM set_config('tests.bob',        v_bob::text,        true);
+  PERFORM set_config('tests.main',       v_main::text,       true);
+  PERFORM set_config('tests.old',        v_old::text,        true);
+  PERFORM set_config('tests.post2',      v_post2::text,      true);
+  PERFORM set_config('tests.oldcomment', v_oldcomment::text, true);
 END; $$;
 
 -- ---------------------------------------------------------------------------
@@ -109,26 +125,22 @@ SELECT throws_ok(
 RESET ROLE;
 
 -- ---------------------------------------------------------------------------
--- Test 4: body is unchanged after attempting to update a post older than 15 min
--- RLS USING clause makes the row invisible to the author after the window.
--- The UPDATE silently affects 0 rows (no exception — RLS hides, not blocks).
+-- Test 4: editing a post older than 15 minutes is rejected by the edit-window
+-- guard (P0021). After 0025 the RLS time gate is gone, so the UPDATE reaches
+-- the trigger, which blocks the body change.
 -- ---------------------------------------------------------------------------
 SELECT set_config('request.jwt.claim.sub', current_setting('tests.bob'), true);
 SET LOCAL ROLE authenticated;
 
-DO $$
-BEGIN
-  UPDATE public.posts SET body = 'should not change'
-  WHERE id = current_setting('tests.old')::uuid;
-END; $$;
+SELECT throws_ok(
+  format($q$UPDATE public.posts SET body = 'should not change' WHERE id = %L$q$,
+    current_setting('tests.old')::uuid),
+  'P0021',
+  'EDIT_WINDOW_CLOSED: edits are only allowed within 15 minutes of posting',
+  'editing a post older than the 15-minute window is rejected (P0021)'
+);
 
 RESET ROLE;
-
-SELECT is(
-  (SELECT body FROM public.posts WHERE id = current_setting('tests.old')::uuid),
-  'Old body content here',
-  'body unchanged: cannot update post older than 15-minute edit window'
-);
 
 -- ---------------------------------------------------------------------------
 -- Test 5: self soft-delete (active → deleted) is allowed (as postgres/service)
@@ -194,6 +206,61 @@ SELECT is(
   current_setting('tests.edited_body'),
   'edited comment',
   'comment body can be updated within the edit window'
+);
+
+-- ---------------------------------------------------------------------------
+-- Test 8: soft-deleting a post older than 15 minutes is allowed at any time
+-- (delete-anytime, the core 0025 behaviour).
+-- ---------------------------------------------------------------------------
+SELECT set_config('request.jwt.claim.sub', current_setting('tests.bob'), true);
+SET LOCAL ROLE authenticated;
+
+-- Bare top-level UPDATE (not a DO block): auth.uid() reads request.jwt.claim.sub
+-- here, but does NOT propagate into a nested PL/pgSQL DO context, which would
+-- make the WITH CHECK see auth.uid() = NULL and reject the row.
+UPDATE public.posts SET status = 'deleted'
+WHERE id = current_setting('tests.old')::uuid;
+
+RESET ROLE;
+
+SELECT is(
+  (SELECT status::text FROM public.posts WHERE id = current_setting('tests.old')::uuid),
+  'deleted',
+  'author can soft-delete own post after the edit window (delete anytime)'
+);
+
+-- ---------------------------------------------------------------------------
+-- Test 9: editing a comment older than 15 minutes is rejected (P0021)
+-- ---------------------------------------------------------------------------
+SELECT set_config('request.jwt.claim.sub', current_setting('tests.bob'), true);
+SET LOCAL ROLE authenticated;
+
+SELECT throws_ok(
+  format($q$UPDATE public.comments SET body = 'late edit' WHERE id = %L$q$,
+    current_setting('tests.oldcomment')::uuid),
+  'P0021',
+  'EDIT_WINDOW_CLOSED: edits are only allowed within 15 minutes of posting',
+  'editing a comment older than the 15-minute window is rejected (P0021)'
+);
+
+RESET ROLE;
+
+-- ---------------------------------------------------------------------------
+-- Test 10: soft-deleting a comment older than 15 minutes is allowed at any time
+-- ---------------------------------------------------------------------------
+SELECT set_config('request.jwt.claim.sub', current_setting('tests.bob'), true);
+SET LOCAL ROLE authenticated;
+
+-- Bare top-level UPDATE (see note on test 8) so auth.uid() resolves to bob.
+UPDATE public.comments SET status = 'deleted'
+WHERE id = current_setting('tests.oldcomment')::uuid;
+
+RESET ROLE;
+
+SELECT is(
+  (SELECT status::text FROM public.comments WHERE id = current_setting('tests.oldcomment')::uuid),
+  'deleted',
+  'author can soft-delete own comment after the edit window (delete anytime)'
 );
 
 SELECT * FROM finish();

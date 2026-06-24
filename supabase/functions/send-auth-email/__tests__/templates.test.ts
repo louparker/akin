@@ -20,14 +20,16 @@ describe('pickLanguage', () => {
 });
 
 describe('buildConfirmationUrl', () => {
-  it('builds a direct app deep link for signup (no Supabase web redirect)', () => {
+  it('builds a clickable https redirect to the app for signup', () => {
     const url = buildConfirmationUrl({
       site_url: 'https://jxd.supabase.co',
       token_hash: 'abc123',
       email_action_type: 'signup',
       redirect_to: 'akin://welcome',
     });
-    expect(url).toBe('akin://confirm?token_hash=abc123&type=signup');
+    // https so email clients render it as a tappable link; the redirect page
+    // forwards the token_hash to akin://confirm for the in-app verifyOtp flow.
+    expect(url).toBe('https://ourakin.com/auth/confirm?token_hash=abc123&type=signup');
   });
 
   it('builds the Supabase verify URL for recovery (unchanged)', () => {
