@@ -182,7 +182,14 @@ export default function SettingsScreen() {
   // Language change shows a brief loading overlay (~1s) as a deliberate
   // "something happened" separator before the UI settles into the new language.
   const [switchingLanguage, setSwitchingLanguage] = useState(false);
+  const [selectedLanguagePref, setSelectedLanguagePref] = useState<LocalePreference>(languagePref);
   const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const languageSwitchId = useRef(0);
+
+  useEffect(() => {
+    setSelectedLanguagePref(languagePref);
+  }, [languagePref]);
+
   useEffect(
     () => () => {
       if (switchTimer.current) clearTimeout(switchTimer.current);
@@ -191,11 +198,20 @@ export default function SettingsScreen() {
   );
 
   function handleLanguageChange(next: LocalePreference) {
-    if (next === languagePref) return;
+    if (next === selectedLanguagePref) return;
+
+    const switchId = languageSwitchId.current + 1;
+    languageSwitchId.current = switchId;
+    setSelectedLanguagePref(next);
     setSwitchingLanguage(true);
-    void setLanguagePref(next);
     if (switchTimer.current) clearTimeout(switchTimer.current);
-    switchTimer.current = setTimeout(() => setSwitchingLanguage(false), 1000);
+
+    void setLanguagePref(next)
+      .finally(() => {
+        if (languageSwitchId.current !== switchId) return;
+        switchTimer.current = setTimeout(() => setSwitchingLanguage(false), 1000);
+      })
+      .catch(() => {});
   }
 
   const languageOptions: { value: LocalePreference; label: string }[] = [
@@ -275,7 +291,7 @@ export default function SettingsScreen() {
           <ToggleRowGroup<LocalePreference>
             testIDPrefix="settings-language"
             options={languageOptions}
-            value={languagePref}
+            value={selectedLanguagePref}
             onChange={handleLanguageChange}
           />
         </Section>

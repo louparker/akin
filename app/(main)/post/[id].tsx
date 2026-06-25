@@ -514,9 +514,14 @@ export default function PostDetailScreen() {
   }
 
   function handleSpiceTap() {
-    if (userSpiceVote === null) {
-      setShowSpiceSheet(true);
+    if (userSpiceVote !== null) return;
+
+    if (!isParticipant) {
+      Alert.alert(t('spice.error.participantsOnly.title'), t('spice.error.participantsOnly.body'));
+      return;
     }
+
+    setShowSpiceSheet(true);
   }
 
   function handleMoreMenu() {
@@ -913,6 +918,7 @@ export default function PostDetailScreen() {
         postId={post.id}
         visible={showSpiceSheet}
         userVote={userSpiceVote}
+        canVote={isParticipant}
         onClose={() => setShowSpiceSheet(false)}
       />
 

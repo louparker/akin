@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { a11yCheck } from '@/lib/test-utils';
 import { PostCard } from '../PostCard';
@@ -33,5 +34,23 @@ describe('PostCard — accessibility', () => {
   it('passes a11y checks when spice level is present', () => {
     const { root } = render(<PostCard {...DEFAULT_PROPS} spiceLevel={3} />);
     expect(a11yCheck(root)).toEqual([]);
+  });
+
+  it('always shows a spice level row above the participation counter', () => {
+    const { getByTestId, getByLabelText, rerender } = render(<PostCard {...DEFAULT_PROPS} />);
+
+    expect(getByTestId('post-card-spice-level')).toBeOnTheScreen();
+    expect(getByLabelText('Spice level 0 of 5')).toBeOnTheScreen();
+
+    rerender(<PostCard {...DEFAULT_PROPS} spiceLevel={3} />);
+    expect(getByLabelText('Spice level 3 of 5')).toBeOnTheScreen();
+  });
+
+  it('keeps clear vertical space between spice and participation', () => {
+    const { getByTestId } = render(<PostCard {...DEFAULT_PROPS} spiceLevel={3} />);
+
+    expect(StyleSheet.flatten(getByTestId('post-card-spice-level').props.style)).toMatchObject({
+      marginBottom: 8,
+    });
   });
 });

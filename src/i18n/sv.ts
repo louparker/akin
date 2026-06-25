@@ -191,6 +191,9 @@ export const sv: TranslationDict = {
   'spice.4.desc': 'Rör vid en nerv.',
   'spice.5.label': 'Brinnande',
   'spice.5.desc': 'Allt är i brand.',
+  'spice.error.participantsOnly.title': 'Gå med i samtalet först',
+  'spice.error.participantsOnly.body':
+    'Bara den som skrev inlägget och personer som har kommenterat kan rösta på spicenivån.',
 
   // ── Active Limit Sheet ────────────────────────────────────────────────────────
   'limit.active.title': 'Du är redan med i tre konversationer.',
