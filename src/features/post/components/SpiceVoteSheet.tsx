@@ -3,7 +3,7 @@ import { Modal, View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'rea
 import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { SpiceFlames } from '@/components/composed/SpiceFlames';
-import { useVoteSpice } from '../api/useVoteSpice';
+import { useVoteSpice, VoteSpiceError } from '../api/useVoteSpice';
 
 interface SpiceLevel {
   level: 1 | 2 | 3 | 4 | 5;
@@ -23,6 +23,7 @@ interface SpiceVoteSheetProps {
   postId: string;
   visible: boolean;
   userVote: number | null;
+  canVote: boolean;
   onClose: () => void;
 }
 
@@ -104,19 +105,41 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
   });
 }
 
-export function SpiceVoteSheet({ postId, visible, userVote, onClose }: SpiceVoteSheetProps) {
+export function SpiceVoteSheet({
+  postId,
+  visible,
+  userVote,
+  canVote,
+  onClose,
+}: SpiceVoteSheetProps) {
   const c = useColorTokens();
   const styles = useMemo(() => makeStyles(c), [c]);
   const { mutate: voteSpice, isPending } = useVoteSpice(postId);
   const readOnly = userVote !== null;
 
+  function showParticipantsOnlyAlert() {
+    Alert.alert(t('spice.error.participantsOnly.title'), t('spice.error.participantsOnly.body'));
+  }
+
   function handleSelect(level: number) {
     if (readOnly || isPending) return;
+    if (!canVote) {
+      showParticipantsOnlyAlert();
+      return;
+    }
+
     voteSpice(
       { level },
       {
         onSuccess: onClose,
-        onError: (err) => Alert.alert(t('error.generic'), err.message),
+        onError: (err) => {
+          if (err instanceof VoteSpiceError && err.kind === 'participant_required') {
+            showParticipantsOnlyAlert();
+            return;
+          }
+
+          Alert.alert(t('error.generic'), err.message);
+        },
       },
     );
   }

@@ -186,6 +186,9 @@ export const en = {
   'spice.4.desc': 'Nerve-touching.',
   'spice.5.label': 'Scorched',
   'spice.5.desc': 'Whole thing is on fire.',
+  'spice.error.participantsOnly.title': 'Join the conversation first',
+  'spice.error.participantsOnly.body':
+    'Only the original poster and people who have commented in this post can vote on spice level.',
 
   // ── Active Limit Sheet ────────────────────────────────────────────────────────
   'limit.active.title': "You're in three conversations already.",

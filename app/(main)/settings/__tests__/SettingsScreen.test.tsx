@@ -4,7 +4,7 @@
 // row's switch on invokes the correct hook. Hooks and native modules are mocked
 // to keep tests focused on screen wiring.
 
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import * as ReactNative from 'react-native';
 import { a11yCheck } from '@/lib/test-utils';
 import SettingsScreen from '../index';
@@ -84,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   mockLinkingSpy.mockRestore();
+  jest.useRealTimers();
 });
 
 describe('SettingsScreen — Language section', () => {
@@ -106,6 +107,23 @@ describe('SettingsScreen — Language section', () => {
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent(getByTestId('settings-language-sv'), 'valueChange', true);
     expect(mockSetLanguagePref).toHaveBeenCalledWith('sv');
+  });
+
+  it('keeps the newly selected language on when the switching overlay clears', async () => {
+    jest.useFakeTimers();
+    const { getByTestId } = render(<SettingsScreen />);
+
+    fireEvent(getByTestId('settings-language-sv'), 'valueChange', true);
+    expect(getByTestId('settings-language-sv').props.value).toBe(true);
+    expect(getByTestId('settings-language-system').props.value).toBe(false);
+
+    await act(async () => {});
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(getByTestId('settings-language-sv').props.value).toBe(true);
+    expect(getByTestId('settings-language-system').props.value).toBe(false);
   });
 
   it('invokes setPreference("system") when the System row is switched on', () => {

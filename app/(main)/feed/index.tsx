@@ -166,6 +166,18 @@ export default function FeedScreen() {
 
   const keyExtractor = useCallback((item: PostRow) => item.id, []);
 
+  const filterSheet = (
+    <FilterSheet
+      visible={filterVisible}
+      sort={sort}
+      minSpice={minSpice}
+      onSortChange={setSort}
+      onMinSpiceChange={setMinSpice}
+      onApply={() => setFilterVisible(false)}
+      onClose={() => setFilterVisible(false)}
+    />
+  );
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -174,6 +186,7 @@ export default function FeedScreen() {
         <PostSkeleton styles={styles} />
         <PostSkeleton styles={styles} />
         <PostSkeleton styles={styles} />
+        {filterSheet}
       </View>
     );
   }
@@ -193,6 +206,7 @@ export default function FeedScreen() {
             <Text style={styles.retryText}>{t('feed.error.retry')}</Text>
           </Pressable>
         </View>
+        {filterSheet}
       </View>
     );
   }
@@ -215,6 +229,7 @@ export default function FeedScreen() {
             <Text style={styles.ctaText}>{t('feed.empty.cta')}</Text>
           </Pressable>
         </View>
+        {filterSheet}
       </View>
     );
   }
@@ -231,15 +246,7 @@ export default function FeedScreen() {
         onEndReachedThreshold={0.3}
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
       />
-      <FilterSheet
-        visible={filterVisible}
-        sort={sort}
-        minSpice={minSpice}
-        onSortChange={setSort}
-        onMinSpiceChange={setMinSpice}
-        onApply={() => setFilterVisible(false)}
-        onClose={() => setFilterVisible(false)}
-      />
+      {filterSheet}
     </View>
   );
 }

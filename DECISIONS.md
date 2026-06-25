@@ -29,6 +29,96 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-029 — Align Expo SDK 55 native runtime packages before rebuilding
+
+Date: 2026-06-25
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+The app hit `Exception in HostFunction` while Expo Router imported routes that
+touch `react-native-reanimated` (`PostCard`, post detail). Router then reported
+false "missing default export" and nested route warnings because those modules
+threw during route discovery. ADR-026 already identified the stale-native-build
+pattern, but `expo-doctor` also showed that the project had drifted from Expo
+SDK 55's expected native package versions: Reanimated/Worklets were ahead of the
+SDK, and Metro packages were pinned behind Expo's current patch line.
+
+### Options considered
+
+1. **Align to Expo Doctor's SDK 55 versions and rebuild native iOS** — fixes the
+   native ABI/runtime mismatch at the source and keeps Reanimated available.
+2. **Only rebuild the old dependency set** — may clear a stale binary locally,
+   but keeps the latent Expo SDK drift.
+3. **Remove Reanimated from route-imported components** — avoids the crashing
+   import path, but drops animations and masks the native runtime mismatch.
+
+### Decision
+
+Option 1. Use Expo's compatibility matrix (`expo install --fix`) to align SDK 55
+packages, pin `react-native-reanimated` to `4.2.1` and
+`react-native-worklets` to `0.7.4`, add the required `expo-font` and
+`expo-localization` config plugins, update the dev tooling packages, remove the
+Metro `0.83.6` overrides that blocked Expo's expected `0.83.7` Metro packages,
+and run a fresh iOS native rebuild.
+
+### Consequences
+
+- `expo-doctor` now passes all checks.
+- The rebuilt native app has Reanimated/Worklets compiled against the SDK-aligned
+  versions, which is the intended fix for the HostFunction route-import crash.
+- Sentry is aligned back to Expo SDK 55's expected `~7.11.0`; revisit before a
+  production build if a newer Sentry feature is needed.
+- The code fallback (removing Reanimated animations from route-imported files)
+  remains available only if testing the rebuilt app still reproduces the crash.
+
+---
+
+## ADR-028 — Spice averages trigger bypasses post RLS
+
+Date: 2026-06-25
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+Spice votes were accepted by `spice_votes` RLS, but the post aggregate fields
+(`total_spice_score`, `spice_vote_count`, `average_spice_level`) did not update
+for real authenticated voters. The `maintain_spice_averages` trigger wrote to
+`public.posts` as the voter, and voters are not allowed to update posts they do
+not own. That left feed cards without spice flames and made "highest spice"
+filters operate on stale zero/null aggregates.
+
+### Options considered
+
+1. **Make the aggregate trigger `SECURITY DEFINER`** — keeps writes server-side,
+   matches the other denormalised counters, and bypasses only the post aggregate
+   write blocked by RLS.
+2. **Relax posts UPDATE RLS for aggregate columns** — exposes a broad client
+   write path and is harder to reason about safely.
+3. **Recalculate spice averages in client queries** — avoids trigger privileges,
+   but makes feed sorting/filtering slower and duplicates aggregate logic.
+
+### Decision
+
+Option 1. Migration `0029_spice_averages_security_definer.sql` recreates
+`public.maintain_spice_averages()` with `SECURITY DEFINER` and
+`SET search_path = public`. The trigger still only responds to
+`spice_votes` inserts, updates, and deletes; clients gain no direct authority to
+modify post aggregate columns.
+
+### Consequences
+
+- Authenticated votes now update post aggregates immediately at the database
+  layer, so feed spice display and spice sorting/filtering use current data.
+- `spice_votes.test.sql` now includes an authenticated-voter regression case
+  proving that the trigger can update `posts` through RLS.
+- Security review for future aggregate triggers should check whether the actor
+  has permission to write the denormalised target row, not only the source row.
+
+---
+
 ## ADR-027 — Deleting your last comment frees your slot ("leave the conversation")
 
 Date: 2026-06-24

@@ -80,6 +80,14 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
       justifyContent: 'space-between',
     },
     footerRight: {
+      alignItems: 'flex-end',
+    },
+    spiceRow: {
+      minHeight: 14,
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    capacityRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
@@ -105,6 +113,7 @@ function PostCardImpl({
 }: PostCardProps) {
   const c = useColorTokens();
   const styles = useMemo(() => makeStyles(c), [c]);
+  const roundedSpiceLevel = Math.max(0, Math.min(5, Math.round(spiceLevel ?? 0)));
 
   const card = (
     <Pressable
@@ -139,11 +148,13 @@ function PostCardImpl({
         <View style={styles.footer}>
           <IdentChip name={authorIdentifier} />
           <View style={styles.footerRight}>
-            <CapacityDots filled={participantCount} total={4} />
-            <Text style={styles.capacityText}>{participantCount}/4</Text>
-            {spiceLevel !== undefined && spiceLevel > 0 ? (
-              <SpiceFlames level={Math.round(spiceLevel)} size={11} />
-            ) : null}
+            <View testID="post-card-spice-level" style={styles.spiceRow}>
+              <SpiceFlames level={roundedSpiceLevel} size={11} />
+            </View>
+            <View style={styles.capacityRow}>
+              <CapacityDots filled={participantCount} total={4} />
+              <Text style={styles.capacityText}>{participantCount}/4</Text>
+            </View>
           </View>
         </View>
       </View>

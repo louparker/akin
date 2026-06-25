@@ -1,7 +1,8 @@
--- supabase/tests/00_setup.sql
+-- supabase/tests/0000_setup.sql
 -- Creates the 'tests' schema used by all pgTAP test helper functions.
--- This file runs FIRST (alphabetical order) and does NOT use BEGIN/ROLLBACK,
--- so the schema creation auto-commits and persists for all subsequent test files.
+-- This file must sort before migration-numbered test files like 0024_*.test.sql.
+-- It does NOT use BEGIN/ROLLBACK, so the schema creation auto-commits and
+-- persists for all subsequent test files.
 --
 -- The tests schema is used to namespace helper functions like:
 --   tests.make_user()  tests.make_post()  tests.add_comment()  etc.
