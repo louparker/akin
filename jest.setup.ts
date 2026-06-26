@@ -40,6 +40,27 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
+// expo-notifications initialises native notification emitters on import. In the
+// Jest runtime those native objects are absent, and getLastNotificationResponse()
+// can crash while mapping an undefined native response. Keep a complete default
+// mock here so any test that imports auth/root-layout code does not load the
+// real native module by accident.
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { DEFAULT: 'default' },
+  PermissionStatus: {
+    GRANTED: 'granted',
+    DENIED: 'denied',
+    UNDETERMINED: 'undetermined',
+  },
+  setNotificationHandler: jest.fn(),
+  getLastNotificationResponse: jest.fn(() => null),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'ExpoPushToken[jest-token]' })),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
+}));
+
 beforeAll(() =>
   supabaseServer.listen({
     // Warn (not error) on unhandled requests — catches gaps in mocking without

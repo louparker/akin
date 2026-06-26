@@ -32,7 +32,7 @@ export interface CommentItemProps {
   currentUserId: string;
   onReport: (commentId: string) => void;
   onReportPerson: (authorId: string) => void;
-  onBlock: (authorId: string) => void;
+  onBlock: (authorId: string, authorIdentifier: string) => void;
 }
 
 function makeStyles(c: ReturnType<typeof useColorTokens>) {
@@ -261,7 +261,7 @@ export const CommentItem = memo(function CommentItem({
       {
         text: t('block.confirm.cta'),
         style: 'destructive',
-        onPress: () => onBlock(comment.author_id),
+        onPress: () => onBlock(comment.author_id, comment.author_identifier),
       },
     ]);
   }

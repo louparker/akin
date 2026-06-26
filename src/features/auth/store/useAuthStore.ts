@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { useLocaleStore } from '@/features/locale/store/useLocaleStore';
 import type { Database } from '@/types/database';
+import { disablePushTokensForUser } from '@/features/notifications/api/pushRegistration';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'] & {
   onboarded_at: string | null;
@@ -250,6 +251,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   async signOut() {
     set({ isLoading: true, error: null });
     try {
+      const { session } = get();
+      if (session) {
+        await disablePushTokensForUser(session.user.id);
+      }
       await supabase.auth.signOut();
       set({ session: null, profile: null, isLoading: false });
       router.replace('/(auth)');
@@ -402,6 +407,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ error: deleteError.message, isLoading: false });
         return;
       }
+      await disablePushTokensForUser(session.user.id);
       await supabase.auth.signOut();
       set({ session: null, profile: null, isLoading: false });
       router.replace({ pathname: '/(auth)', params: { deleted: '1' } });

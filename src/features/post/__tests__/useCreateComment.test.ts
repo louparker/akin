@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useCreateComment, CreateCommentError } from '../api/useCreateComment';
 
 jest.mock('@/lib/supabase', () => ({
-  supabase: { from: jest.fn() },
+  supabase: { from: jest.fn(), functions: { invoke: jest.fn() } },
 }));
 
 const mockRefreshProfile = jest.fn();
@@ -21,15 +21,28 @@ jest.mock('@/features/auth/store/useAuthStore', () => {
 });
 
 jest.mock('@/lib/analytics', () => ({ track: jest.fn() }));
+jest.mock('@/lib/logger', () => ({
+  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() },
+}));
 
 const mockedFrom = (supabase as unknown as { from: jest.Mock }).from;
+const mockedInvoke = (supabase as unknown as { functions: { invoke: jest.Mock } }).functions.invoke;
 
-function makeInsertChain(result: { error: unknown }) {
-  return { insert: jest.fn().mockResolvedValue(result) };
+function makeInsertChain(result: { data?: { id: string } | null; error: unknown }) {
+  return {
+    insert: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: result.data ?? null, error: result.error }),
+  };
 }
 
 function makeWrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { gcTime: Infinity, retry: false },
+      mutations: { retry: false },
+    },
+  });
   return {
     client,
     Wrapper: ({ children }: { children: React.ReactNode }) =>
@@ -43,7 +56,8 @@ beforeEach(() => {
 
 describe('useCreateComment', () => {
   it('refreshes the profile and invalidates post + feed on success', async () => {
-    mockedFrom.mockReturnValue(makeInsertChain({ error: null }));
+    mockedFrom.mockReturnValue(makeInsertChain({ data: { id: 'comment-1' }, error: null }));
+    mockedInvoke.mockResolvedValue({ data: { sent: 1 }, error: null });
     const { client, Wrapper } = makeWrapper();
     const spy = jest.spyOn(client, 'invalidateQueries');
 
@@ -62,6 +76,38 @@ describe('useCreateComment', () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: ['feed'] });
   });
 
+  it('invokes notify-comment with the inserted comment id after success', async () => {
+    mockedFrom.mockReturnValue(makeInsertChain({ data: { id: 'comment-1' }, error: null }));
+    mockedInvoke.mockResolvedValue({ data: { sent: 1 }, error: null });
+    const { Wrapper } = makeWrapper();
+
+    const { result } = renderHook(() => useCreateComment('post-1'), { wrapper: Wrapper });
+
+    act(() => {
+      result.current.mutate({ body: 'Nice take' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedInvoke).toHaveBeenCalledWith('notify-comment', {
+      body: { commentId: 'comment-1' },
+    });
+  });
+
+  it('does not fail the comment mutation when notify-comment fails', async () => {
+    mockedFrom.mockReturnValue(makeInsertChain({ data: { id: 'comment-1' }, error: null }));
+    mockedInvoke.mockResolvedValue({ data: null, error: { message: 'edge down' } });
+    const { Wrapper } = makeWrapper();
+
+    const { result } = renderHook(() => useCreateComment('post-1'), { wrapper: Wrapper });
+
+    act(() => {
+      result.current.mutate({ body: 'Nice take' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
   it('does not refresh the profile when the conversation is full', async () => {
     mockedFrom.mockReturnValue(makeInsertChain({ error: { code: 'P0001', message: 'full' } }));
     const { Wrapper } = makeWrapper();
@@ -75,5 +121,6 @@ describe('useCreateComment', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect((result.current.error as CreateCommentError).kind).toBe('post_full');
     expect(mockRefreshProfile).not.toHaveBeenCalled();
+    expect(mockedInvoke).not.toHaveBeenCalled();
   });
 });

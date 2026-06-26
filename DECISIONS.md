@@ -29,6 +29,43 @@ When you make a non-obvious choice — picking a library, structuring a query, d
 
 ---
 
+## ADR-030 — Use app.config.ts as the only Expo app config
+
+Date: 2026-06-25
+Status: Accepted
+Decided by: Founder
+
+### Context
+
+The repo had both `app.config.ts` and `app.json`. Expo resolved runtime values
+from `app.config.ts`, while `app.json` still contained a few native/EAS fields
+(`ios.infoPlist.ITSAppUsesNonExemptEncryption`, `extra.eas.projectId`,
+`extra.router`). Keeping both files made it easy for bundle identifiers, legal
+URLs, plugins, or EAS metadata to drift.
+
+### Options considered
+
+1. **Keep both files** — works, but creates two places to inspect and update.
+2. **Use only `app.json`** — simpler static config, but loses the environment-
+   driven values already needed for Supabase, Sentry, PostHog, and legal links.
+3. **Use only `app.config.ts` (chosen)** — keeps dynamic values and gives one
+   canonical source for Expo, EAS, iOS, Android, plugins, and app extras.
+
+### Decision
+
+Move the remaining `app.json`-only fields into `app.config.ts`, delete
+`app.json`, and update docs/comments to point at `app.config.ts`. New
+Architecture remains provided by the Expo SDK 55 / React Native 0.83 runtime;
+the current Expo config type does not expose a `newArchEnabled` field.
+
+### Consequences
+
+- Future Expo config changes go in `app.config.ts` only.
+- `expo config` and EAS builds read one source of truth.
+- Docs that previously mentioned `app.json` now point at `app.config.ts`.
+
+---
+
 ## ADR-029 — Align Expo SDK 55 native runtime packages before rebuilding
 
 Date: 2026-06-25

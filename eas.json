@@ -44,6 +44,17 @@
     }
   },
   "submit": {
+    "internal": {
+      "ios": {
+        "appleId": "lupaka91@gmail.com",
+        "ascAppId": "",
+        "appleTeamId": ""
+      },
+      "android": {
+        "serviceAccountKeyPath": "./secrets/google-service-account.json",
+        "track": "internal"
+      }
+    },
     "production": {
       "ios": {
         "appleId": "lupaka91@gmail.com",

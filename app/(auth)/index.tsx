@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/primitives/Text';
 import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
+import { legalConfig } from '@/lib/appConfig';
 
 function makeStyles(c: ReturnType<typeof useColorTokens>) {
   return StyleSheet.create({
@@ -130,7 +131,7 @@ export default function WelcomeScreen() {
             accessibilityRole="link"
             accessibilityLabel={t('auth.welcome.tos.terms')}
             suppressHighlighting
-            onPress={() => void Linking.openURL('https://akin.app/terms')}
+            onPress={() => void Linking.openURL(legalConfig.termsUrl)}
           >
             {t('auth.welcome.tos.terms')}
           </RNText>
@@ -140,7 +141,7 @@ export default function WelcomeScreen() {
             accessibilityRole="link"
             accessibilityLabel={t('auth.welcome.tos.privacy')}
             suppressHighlighting
-            onPress={() => void Linking.openURL('https://akin.app/privacy')}
+            onPress={() => void Linking.openURL(legalConfig.privacyUrl)}
           >
             {t('auth.welcome.tos.privacy')}
           </RNText>

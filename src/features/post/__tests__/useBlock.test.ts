@@ -35,7 +35,7 @@ describe('useBlock', () => {
     const { result } = renderHook(() => useBlock(), { wrapper: Wrapper });
 
     act(() => {
-      result.current.mutate({ blocked_id: 'user-2' });
+      result.current.mutate({ blocked_id: 'user-2', blocked_identifier: 'BlueWolf99' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -50,7 +50,11 @@ describe('useBlock', () => {
     const { result } = renderHook(() => useBlock(), { wrapper: Wrapper });
 
     act(() => {
-      result.current.mutate({ blocked_id: 'user-2', postId: 'post-abc' });
+      result.current.mutate({
+        blocked_id: 'user-2',
+        blocked_identifier: 'BlueWolf99',
+        postId: 'post-abc',
+      });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -66,7 +70,7 @@ describe('useBlock', () => {
     const { result } = renderHook(() => useBlock(), { wrapper: Wrapper });
 
     act(() => {
-      result.current.mutate({ blocked_id: 'user-2' });
+      result.current.mutate({ blocked_id: 'user-2', blocked_identifier: 'BlueWolf99' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

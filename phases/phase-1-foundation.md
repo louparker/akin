@@ -33,7 +33,7 @@
 **Acceptance criteria:**
 
 - Repo created at `akin/` with `package.json` showing Expo SDK 55+ and React Native 0.83+.
-- New Architecture is enabled (`expo.newArchEnabled: true` in `app.json`).
+- New Architecture is enabled by the Expo SDK 55 / React Native 0.83 runtime.
 - Hermes V1 is enabled.
 - TypeScript strict mode in `tsconfig.json` (`strict: true`, `noUncheckedIndexedAccess: true`).
 - iOS simulator builds and launches the default Expo screen.

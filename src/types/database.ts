@@ -67,7 +67,7 @@ export type Database = {
         };
         Insert: {
           blocked_id: string;
-          blocked_identifier?: string;
+          blocked_identifier: string;
           blocker_id: string;
           created_at?: string;
         };
@@ -113,35 +113,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'comments_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      post_participant_removals: {
-        Row: {
-          created_at: string;
-          post_id: string;
-          removed_by: string;
-          removed_user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          post_id: string;
-          removed_by: string;
-          removed_user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          post_id?: string;
-          removed_by?: string;
-          removed_user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'post_participant_removals_post_id_fkey';
             columns: ['post_id'];
             isOneToOne: false;
             referencedRelation: 'posts';
@@ -217,6 +188,56 @@ export type Database = {
           word?: string;
         };
         Relationships: [];
+      };
+      notification_preferences: {
+        Row: {
+          created_at: string;
+          push_replies: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          push_replies?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          push_replies?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      post_participant_removals: {
+        Row: {
+          created_at: string;
+          post_id: string;
+          removed_by: string;
+          removed_user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          post_id: string;
+          removed_by: string;
+          removed_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          post_id?: string;
+          removed_by?: string;
+          removed_user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_participant_removals_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       post_participants: {
         Row: {
@@ -349,6 +370,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          expo_push_token: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          expo_push_token: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          expo_push_token?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       reports: {
         Row: {
           created_at: string;
@@ -444,6 +498,11 @@ export type Database = {
     };
     Functions: {
       check_content_filter: { Args: { p_content: string }; Returns: undefined };
+      is_active_post_participant: {
+        Args: { p_post_id: string };
+        Returns: boolean;
+      };
+      is_email_confirmed: { Args: never; Returns: boolean };
       is_moderator: { Args: never; Returns: boolean };
       log_audit: {
         Args: {
@@ -453,6 +512,10 @@ export type Database = {
           p_target_id: string;
           p_target_type: string;
         };
+        Returns: undefined;
+      };
+      moderate_report: {
+        Args: { p_action: string; p_reason: string; p_report_id: string };
         Returns: undefined;
       };
     };

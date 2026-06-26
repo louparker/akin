@@ -28,6 +28,7 @@ import { track } from '@/lib/analytics';
 import { initSentry } from '@/lib/sentry';
 import { Text } from '@/components/primitives/Text';
 import { useColorTokens } from '@/theme/useColorTokens';
+import { useNotificationObserver } from '@/features/notifications/useNotificationObserver';
 
 // Initialise Sentry as early as possible — before the first component render.
 initSentry({
@@ -149,6 +150,8 @@ function InAppSplash({ visible }: InAppSplashProps) {
 // ── Root layout ──────────────────────────────────────────────────────────────
 
 export default function RootLayout() {
+  useNotificationObserver();
+
   const [fontsLoaded, fontError] = useFonts(FONTS);
   const isLoading = useAuthStore((s) => s.isLoading);
   const profile = useAuthStore((s) => s.profile);

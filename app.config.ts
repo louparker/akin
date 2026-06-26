@@ -15,6 +15,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.ourakin.app',
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       adaptiveIcon: {
@@ -23,7 +26,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
       package: 'com.ourakin.app',
     },
-    plugins: ['expo-router', 'expo-font', 'expo-localization', '@sentry/react-native'],
+    plugins: [
+      'expo-router',
+      'expo-font',
+      'expo-localization',
+      'expo-notifications',
+      'expo-secure-store',
+      '@sentry/react-native',
+    ],
     experiments: {
       typedRoutes: true,
     },
@@ -32,12 +42,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
       sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
       posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
-      // FIXME: replace with real URLs before first public release.
-      // Files to update: app.config.ts (this file) — search for extras.legal / extras.support.
+      router: {},
+      eas: {
+        projectId: '41090bd6-f28a-4ffc-b139-3ba8e31287d9',
+      },
+      // Site URLs used by in-app legal/support links.
       legal: {
         privacyUrl: 'https://ourakin.com/privacy',
         termsUrl: 'https://ourakin.com/terms',
-        guidelinesUrl: 'https://ourakin.com/guidelines',
+        guidelinesUrl: 'https://ourakin.com/community-guidelines',
+        dataRequestsUrl: 'https://ourakin.com/privacy/requests',
       },
       support: {
         feedbackEmail: 'feedback@ourakin.com',
