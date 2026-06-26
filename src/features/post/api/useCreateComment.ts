@@ -3,6 +3,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { track } from '@/lib/analytics';
+import { logger } from '@/lib/logger';
 
 // Postgres error codes raised by triggers
 const ERR_POST_FULL = 'P0001';
@@ -36,22 +37,26 @@ export interface CreateCommentInput {
 
 export function useCreateComment(
   postId: string,
-): UseMutationResult<void, CreateCommentError, CreateCommentInput> {
+): UseMutationResult<string | null, CreateCommentError, CreateCommentInput> {
   const queryClient = useQueryClient();
   const { session, profile } = useAuthStore();
 
-  return useMutation<void, CreateCommentError, CreateCommentInput>({
+  return useMutation<string | null, CreateCommentError, CreateCommentInput>({
     mutationFn: async ({ body }) => {
       if (!session) {
         throw new CreateCommentError('unknown', 'Not authenticated');
       }
 
-      const { error } = await supabase.from('comments').insert({
-        post_id: postId,
-        body,
-        author_id: session.user.id,
-        author_identifier: profile?.anonymous_identifier ?? '',
-      });
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          post_id: postId,
+          body,
+          author_id: session.user.id,
+          author_identifier: profile?.anonymous_identifier ?? '',
+        })
+        .select('id')
+        .single();
 
       if (error) {
         const code = (error as { code?: string }).code;
@@ -80,8 +85,10 @@ export function useCreateComment(
         }
         throw new CreateCommentError('unknown', error.message);
       }
+
+      return data?.id ?? null;
     },
-    onSuccess: () => {
+    onSuccess: (commentId) => {
       void queryClient.invalidateQueries({ queryKey: ['post', postId] });
       // The post's comment_count changed, so the feed card is now stale.
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
@@ -89,6 +96,16 @@ export function useCreateComment(
       // server-side by the participation trigger, so pull the fresh profile
       // rather than waiting for a manual refresh.
       void useAuthStore.getState().refreshProfile();
+
+      if (commentId) {
+        void supabase.functions
+          .invoke('notify-comment', { body: { commentId } })
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('notify-comment invocation failed', { action: 'comment_created' });
+            }
+          });
+      }
     },
   });
 }

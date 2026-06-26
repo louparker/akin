@@ -597,7 +597,12 @@ export default function PostDetailScreen() {
       {
         text: t('block.confirm.cta'),
         style: 'destructive',
-        onPress: () => blockUser({ blocked_id: post.author_id, postId: post.id }),
+        onPress: () =>
+          blockUser({
+            blocked_id: post.author_id,
+            blocked_identifier: post.author_identifier,
+            postId: post.id,
+          }),
       },
     ]);
   }
@@ -844,7 +849,13 @@ export default function PostDetailScreen() {
             currentUserId={currentUserId}
             onReport={handleReportComment}
             onReportPerson={handleReportPerson}
-            onBlock={(authorId) => blockUser({ blocked_id: authorId, postId: post.id })}
+            onBlock={(authorId, authorIdentifier) =>
+              blockUser({
+                blocked_id: authorId,
+                blocked_identifier: authorIdentifier,
+                postId: post.id,
+              })
+            }
           />
         ))}
       </ScrollView>

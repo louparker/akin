@@ -3,8 +3,7 @@ import { Modal, View, Text, Pressable, StyleSheet, Linking } from 'react-native'
 import { useColorTokens } from '@/theme/useColorTokens';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/primitives/Button';
-
-const GUIDELINES_URL = 'https://akin.app/guidelines';
+import { legalConfig } from '@/lib/appConfig';
 
 interface GuidelinesSheetProps {
   visible: boolean;
@@ -113,7 +112,7 @@ export function GuidelinesSheet({ visible, onContinue }: GuidelinesSheetProps) {
 
           <Pressable
             onPress={() => {
-              void Linking.openURL(GUIDELINES_URL);
+              void Linking.openURL(legalConfig.guidelinesUrl);
             }}
             accessibilityRole="link"
             accessibilityLabel={t('create.guidelines.link')}

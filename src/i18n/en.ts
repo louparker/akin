@@ -260,10 +260,20 @@ export const en = {
   'settings.safety.blocked': 'Blocked people',
   'settings.safety.notifications': 'Notifications',
   'settings.notifications.off': 'Off',
+  'settings.notifications.replies': 'Conversation replies',
+  'settings.notifications.replies.body':
+    'Get a quiet push when someone replies in a conversation you are part of.',
+  'settings.notifications.replies.hint':
+    'Turns push notifications for conversation replies on or off.',
+  'settings.notifications.error.title': 'Notifications not enabled',
+  'settings.notifications.error.permission':
+    'Allow notifications in your device settings, then try again.',
+  'settings.notifications.error.generic': "Couldn't update notification settings. Try again.",
   'settings.legal.title': 'Legal',
   'settings.legal.privacy': 'Privacy Policy',
   'settings.legal.terms': 'Terms of Service',
   'settings.legal.guidelines': 'Community Guidelines',
+  'settings.legal.yourData': 'Your Data',
   'settings.support.title': 'Support',
   'settings.support.feedback': 'Send feedback',
   'settings.support.version': 'App version',

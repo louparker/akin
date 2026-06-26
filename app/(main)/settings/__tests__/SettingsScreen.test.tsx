@@ -13,7 +13,8 @@ jest.mock('@/lib/appConfig', () => ({
   legalConfig: {
     privacyUrl: 'https://ourakin.com/privacy',
     termsUrl: 'https://ourakin.com/terms',
-    guidelinesUrl: 'https://ourakin.com/guidelines',
+    guidelinesUrl: 'https://ourakin.com/community-guidelines',
+    dataRequestsUrl: 'https://ourakin.com/privacy/requests',
   },
   supportConfig: { feedbackEmail: 'feedback@ourakin.com' },
   appVersion: '1.2.3',
@@ -26,6 +27,12 @@ let mockCurrentLangPref: 'sv' | 'en' | 'system' = 'system';
 
 const mockSetThemePref = jest.fn();
 let mockCurrentThemePref: 'system' | 'light' | 'dark' = 'system';
+
+const mockSetPushRepliesEnabled: jest.Mock<Promise<void>, [boolean]> = jest.fn((_enabled) =>
+  Promise.resolve(),
+);
+let mockPushRepliesEnabled = false;
+let mockNotificationPending = false;
 
 type MockBlock = { blocked_id: string; blocked_identifier: string; created_at: string };
 let mockBlocks: MockBlock[] = [];
@@ -53,6 +60,18 @@ jest.mock('@/features/post/api/useUnblock', () => ({
   useUnblock: () => ({ mutate: mockUnblock, isPending: false }),
 }));
 
+jest.mock('@/features/notifications/api/useNotificationPreference', () => ({
+  useNotificationPreference: () => ({
+    data: { pushReplies: mockPushRepliesEnabled },
+    isLoading: false,
+  }),
+  useSetPushRepliesPreference: () => ({
+    mutate: (enabled: boolean) => mockSetPushRepliesEnabled(enabled),
+    isPending: mockNotificationPending,
+  }),
+  PushPermissionError: class PushPermissionError extends Error {},
+}));
+
 jest.mock('@/features/auth/api/useLogout', () => ({
   useLogout: () => ({ logout: jest.fn() }),
 }));
@@ -77,6 +96,9 @@ beforeEach(() => {
   mockSetLanguagePref.mockClear();
   mockCurrentThemePref = 'system';
   mockSetThemePref.mockClear();
+  mockPushRepliesEnabled = false;
+  mockNotificationPending = false;
+  mockSetPushRepliesEnabled.mockClear();
   mockBlocks = [];
   mockUnblock.mockClear();
   mockLinkingSpy = jest.spyOn(ReactNative.Linking, 'openURL').mockResolvedValue(undefined);
@@ -170,6 +192,32 @@ describe('SettingsScreen — Appearance section', () => {
   });
 });
 
+describe('SettingsScreen — Notifications section', () => {
+  it('renders the conversation replies push toggle', () => {
+    const { getByTestId, getByText } = render(<SettingsScreen />);
+    expect(getByText('Conversation replies')).toBeOnTheScreen();
+    expect(getByTestId('settings-notifications-replies').props.value).toBe(false);
+  });
+
+  it('reflects an enabled push preference', () => {
+    mockPushRepliesEnabled = true;
+    const { getByTestId } = render(<SettingsScreen />);
+    expect(getByTestId('settings-notifications-replies').props.value).toBe(true);
+  });
+
+  it('invokes the push preference mutation when toggled on', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent(getByTestId('settings-notifications-replies'), 'valueChange', true);
+    expect(mockSetPushRepliesEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('disables the push toggle while the preference is saving', () => {
+    mockNotificationPending = true;
+    const { getByTestId } = render(<SettingsScreen />);
+    expect(getByTestId('settings-notifications-replies').props.disabled).toBe(true);
+  });
+});
+
 describe('SettingsScreen — Blocked users section', () => {
   it('shows empty state when no users are blocked', () => {
     const { getByText } = render(<SettingsScreen />);
@@ -210,7 +258,13 @@ describe('SettingsScreen — Legal + Support sections', () => {
   it('opens the guidelines URL when Community Guidelines row is pressed', () => {
     const { getByTestId } = render(<SettingsScreen />);
     fireEvent.press(getByTestId('settings-legal-guidelines'));
-    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/guidelines');
+    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/community-guidelines');
+  });
+
+  it('opens the data requests URL when Your Data row is pressed', () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    fireEvent.press(getByTestId('settings-legal-your-data'));
+    expect(mockLinkingSpy).toHaveBeenCalledWith('https://ourakin.com/privacy/requests');
   });
 
   it('opens a mailto link when Send feedback is pressed', () => {

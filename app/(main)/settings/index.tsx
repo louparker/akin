@@ -17,6 +17,7 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import { router } from 'expo-router';
 import { legalConfig, supportConfig, appVersion } from '@/lib/appConfig';
@@ -35,6 +36,11 @@ import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import type { ThemePreference } from '@/features/theme/store/useThemeStore';
 import { useMyBlocks } from '@/features/post/api/useMyBlocks';
 import { useUnblock } from '@/features/post/api/useUnblock';
+import {
+  PushPermissionError,
+  useNotificationPreference,
+  useSetPushRepliesPreference,
+} from '@/features/notifications/api/useNotificationPreference';
 
 function maskEmail(email: string | undefined): string {
   if (!email) return '';
@@ -43,12 +49,6 @@ function maskEmail(email: string | undefined): string {
   const visible = local.slice(0, 1);
   return `${visible}${'*'.repeat(Math.max(local.length - 1, 1))}@${domain}`;
 }
-
-interface PendingSection {
-  titleKey: TranslationKey;
-}
-
-const PENDING_SECTIONS: PendingSection[] = [{ titleKey: 'settings.section.notifications' }];
 
 function makeStyles(c: ReturnType<typeof useColorTokens>) {
   return StyleSheet.create({
@@ -100,6 +100,17 @@ function makeStyles(c: ReturnType<typeof useColorTokens>) {
       fontSize: 15,
       color: c.fg.primary,
       flex: 1,
+    },
+    rowText: {
+      flex: 1,
+      paddingRight: 12,
+      gap: 4,
+    },
+    rowCaption: {
+      fontFamily: 'Inter',
+      fontSize: 13,
+      lineHeight: 18,
+      color: c.fg.secondary,
     },
     rowLabelDestructive: {
       color: c.semantic.danger,
@@ -174,6 +185,8 @@ export default function SettingsScreen() {
   const setThemePref = useThemeStore((s) => s.setPreference);
   const { data: blocks } = useMyBlocks();
   const { mutate: unblock } = useUnblock();
+  const { data: notificationPreference } = useNotificationPreference();
+  const setPushRepliesPreference = useSetPushRepliesPreference();
   const c = useColorTokens();
   const styles = useMemo(() => makeStyles(c), [c]);
 
@@ -245,6 +258,18 @@ export default function SettingsScreen() {
     router.push('/(main)/delete-account');
   }
 
+  function handlePushRepliesChange(enabled: boolean) {
+    setPushRepliesPreference.mutate(enabled, {
+      onError: (err) => {
+        const body =
+          err instanceof PushPermissionError
+            ? t('settings.notifications.error.permission')
+            : t('settings.notifications.error.generic');
+        Alert.alert(t('settings.notifications.error.title'), body);
+      },
+    });
+  }
+
   return (
     <View style={styles.container}>
       <TopBar
@@ -306,6 +331,30 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        {/* Notifications ──────────────────────────────────────────────────── */}
+        <Section titleKey="settings.section.notifications" styles={styles}>
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>{t('settings.notifications.replies')}</Text>
+              <Text style={styles.rowCaption}>{t('settings.notifications.replies.body')}</Text>
+            </View>
+            <Switch
+              testID="settings-notifications-replies"
+              value={notificationPreference?.pushReplies ?? false}
+              disabled={setPushRepliesPreference.isPending}
+              onValueChange={handlePushRepliesChange}
+              accessibilityRole="switch"
+              accessibilityLabel={t('settings.notifications.replies')}
+              accessibilityHint={t('settings.notifications.replies.hint')}
+              accessibilityState={{
+                checked: notificationPreference?.pushReplies ?? false,
+                disabled: setPushRepliesPreference.isPending,
+              }}
+              trackColor={{ true: c.brand.primary, false: c.border.divider }}
+            />
+          </View>
+        </Section>
+
         {/* Blocked users ───────────────────────────────────────────────────── */}
         <Section titleKey="settings.section.blocked" styles={styles}>
           {blocks && blocks.length > 0 ? (
@@ -343,19 +392,13 @@ export default function SettingsScreen() {
           </Section>
         ) : null}
 
-        {/* Placeholder sections — remaining sub-tasks ─────────────────────── */}
-        {PENDING_SECTIONS.map((s) => (
-          <Section key={s.titleKey} titleKey={s.titleKey} styles={styles}>
-            <Row label={t('settings.placeholder.comingNext')} muted isLast styles={styles} />
-          </Section>
-        ))}
-
         {/* Legal ───────────────────────────────────────────────────────────── */}
         <Section titleKey="settings.legal.title" styles={styles}>
           <Row
             testID="settings-legal-privacy"
             label={t('settings.legal.privacy')}
             chevron
+            accessibilityRole="link"
             onPress={() => void Linking.openURL(legalConfig.privacyUrl)}
             styles={styles}
           />
@@ -363,6 +406,7 @@ export default function SettingsScreen() {
             testID="settings-legal-terms"
             label={t('settings.legal.terms')}
             chevron
+            accessibilityRole="link"
             onPress={() => void Linking.openURL(legalConfig.termsUrl)}
             styles={styles}
           />
@@ -370,7 +414,16 @@ export default function SettingsScreen() {
             testID="settings-legal-guidelines"
             label={t('settings.legal.guidelines')}
             chevron
+            accessibilityRole="link"
             onPress={() => void Linking.openURL(legalConfig.guidelinesUrl)}
+            styles={styles}
+          />
+          <Row
+            testID="settings-legal-your-data"
+            label={t('settings.legal.yourData')}
+            chevron
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL(legalConfig.dataRequestsUrl)}
             isLast
             styles={styles}
           />
@@ -382,6 +435,7 @@ export default function SettingsScreen() {
             testID="settings-support-feedback"
             label={t('settings.support.feedback')}
             chevron
+            accessibilityRole="link"
             onPress={() => void Linking.openURL(`mailto:${supportConfig.feedbackEmail}`)}
             styles={styles}
           />
@@ -440,6 +494,7 @@ interface RowProps {
   muted?: boolean;
   isLast?: boolean;
   onPress?: () => void;
+  accessibilityRole?: 'button' | 'link';
   accessibilityLabel?: string;
   testID?: string;
   styles: ReturnType<typeof makeStyles>;
@@ -453,6 +508,7 @@ function Row({
   muted,
   isLast,
   onPress,
+  accessibilityRole = 'button',
   accessibilityLabel,
   testID,
   styles,
@@ -481,7 +537,7 @@ function Row({
     <Pressable
       testID={testID}
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [pressed && styles.pressed]}
     >

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Profile } from '../store/useAuthStore';
 import { supabase } from '@/lib/supabase';
+import { disablePushTokensForUser } from '@/features/notifications/api/pushRegistration';
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
@@ -37,6 +38,10 @@ jest.mock('expo-router', () => ({
     replace: jest.fn(),
     push: jest.fn(),
   },
+}));
+
+jest.mock('@/features/notifications/api/pushRegistration', () => ({
+  disablePushTokensForUser: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockSession = (userId = 'user-1'): Session =>
@@ -89,7 +94,10 @@ const mockedUpdateUser = jest.mocked(supabase.auth.updateUser);
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedVerifyOtp = jest.mocked(supabase.auth.verifyOtp);
 // eslint-disable-next-line @typescript-eslint/unbound-method
+const mockedSignOut = jest.mocked(supabase.auth.signOut);
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const mockedFrom = jest.mocked(supabase.from);
+const mockedDisablePushTokens = jest.mocked(disablePushTokensForUser);
 
 function mockProfileFetchOnce(profile: Profile | null) {
   mockedFrom.mockReturnValueOnce({
@@ -503,6 +511,28 @@ describe('useAuthStore', () => {
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(jest.mocked(router).replace).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('signOut', () => {
+    it('disables push tokens before signing out', async () => {
+      useAuthStore.setState({
+        session: mockSession('user-1'),
+        profile: mockProfile(),
+        isLoading: false,
+        error: null,
+      });
+      mockedSignOut.mockResolvedValueOnce({ error: null });
+
+      const { result } = renderHook(() => useAuthStore());
+
+      await act(async () => {
+        await result.current.signOut();
+      });
+
+      expect(mockedDisablePushTokens).toHaveBeenCalledWith('user-1');
+      expect(mockedSignOut).toHaveBeenCalled();
+      expect(result.current.session).toBeNull();
     });
   });
 

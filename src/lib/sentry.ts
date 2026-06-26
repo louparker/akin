@@ -5,7 +5,7 @@
  * CRITICAL-PATH: auth / error-reporting surface — review before production.
  *
  * Source maps are uploaded via the EAS Build `@sentry/react-native/metro` plugin.
- * Add `@sentry/react-native` to the `plugins` array in app.json and configure
+ * Add `@sentry/react-native` to the `plugins` array in app.config.ts and configure
  * `sentry.properties` with the org + project slugs before the first production build.
  */
 

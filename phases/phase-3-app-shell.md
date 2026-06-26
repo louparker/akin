@@ -37,7 +37,7 @@
 - `app/(auth)/_layout.tsx` is a stack navigator for auth screens.
 - `app/(main)/_layout.tsx` is a tab navigator (Feed / Create / Profile / Settings).
 - A stub screen in each group renders correctly (`(auth)/welcome.tsx`, `(main)/feed.tsx`, etc.).
-- Deep linking config (`app.json` `scheme: "akin"`) registered.
+- Deep linking config (`app.config.ts` `scheme: "akin"`) registered.
 
 **Tests to write first:**
 

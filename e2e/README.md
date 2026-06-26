@@ -55,7 +55,7 @@ pnpm exec maestro test e2e/smoke.yaml   # single flow
 - Prefer text assertions over `id:` selectors when copy is stable. Use `testID` only when the same text appears in multiple places.
 - Keep flows under ~20 steps. If a flow needs more, split it.
 
-The bundle ID for both platforms is `com.ourakin.app` — set in [`app.json`](../app.json) and referenced at the top of every flow.
+The bundle ID for both platforms is `com.ourakin.app` — set in [`app.config.ts`](../app.config.ts) and referenced at the top of every flow.
 
 ## CI
 
